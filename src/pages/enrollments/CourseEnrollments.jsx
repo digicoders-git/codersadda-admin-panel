@@ -230,11 +230,28 @@ const CourseEnrollments = () => {
                   >
                     <Eye size={14} /> Profile
                   </button>
+                  {student.isCertificateIssued ? (
+                    <a
+                      href={student.certificateUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 py-2 rounded border font-bold text-[10px] uppercase tracking-widest bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100 transition-all"
+                    >
+                      <CheckCircle size={14} /> Certificate
+                    </a>
+                  ) : (
+                    <button
+                      disabled
+                      className="flex items-center justify-center gap-2 py-2 rounded border font-bold text-[10px] uppercase tracking-widest opacity-30 cursor-not-allowed"
+                    >
+                      <RotateCcw size={14} /> Pending
+                    </button>
+                  )}
                   <button
                     onClick={() => handleResetProgress(student, course)}
-                    className="flex items-center justify-center gap-2 py-2 rounded border font-bold text-[10px] uppercase tracking-widest hover:bg-red-50 hover:text-red-500 transition-all"
+                    className="flex items-center justify-center gap-2 py-2 rounded border font-bold text-[10px] uppercase tracking-widest hover:bg-red-50 hover:text-red-500 transition-all col-span-2"
                   >
-                    <RotateCcw size={14} /> Reset
+                    <RotateCcw size={14} /> Reset Progress
                   </button>
                 </div>
               </div>

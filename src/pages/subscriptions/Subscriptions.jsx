@@ -119,7 +119,10 @@ function Subscriptions() {
         {loading ? (
           <div className="h-full flex flex-col items-center justify-center">
             <Loader size={40} />
-            <p className="text-[10px] font-bold uppercase tracking-widest opacity-40 -mt-4">
+            <p
+              className="text-[10px] font-bold uppercase tracking-widest opacity-40 -mt-4 text-center"
+              style={{ color: colors.textSecondary }}
+            >
               Fetching student list...
             </p>
           </div>
@@ -131,11 +134,20 @@ function Subscriptions() {
               return (
                 <div
                   key={enrollment._id}
-                  className="p-4 rounded border bg-white flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow group"
-                  style={{ borderColor: colors.accent + "10" }}
+                  className="p-4 rounded border flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow group"
+                  style={{
+                    borderColor: colors.accent + "10",
+                    backgroundColor: colors.background,
+                  }}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-slate-50 bg-slate-100 flex items-center justify-center">
+                    <div
+                      className="w-12 h-12 rounded-full overflow-hidden border-2 flex items-center justify-center"
+                      style={{
+                        borderColor: colors.accent + "10",
+                        backgroundColor: colors.sidebar,
+                      }}
+                    >
                       {student.profilePicture?.url ? (
                         <img
                           src={student.profilePicture.url}
@@ -143,7 +155,11 @@ function Subscriptions() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <UserIcon size={24} className="opacity-20" />
+                        <UserIcon
+                          size={24}
+                          className="opacity-20"
+                          style={{ color: colors.text }}
+                        />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -153,7 +169,10 @@ function Subscriptions() {
                       >
                         {student.name}
                       </p>
-                      <p className="text-[10px] font-bold opacity-40 uppercase tracking-tighter truncate">
+                      <p
+                        className="text-[10px] font-bold opacity-40 uppercase tracking-tighter truncate"
+                        style={{ color: colors.textSecondary }}
+                      >
                         {student.email}
                       </p>
                       <p
@@ -168,10 +187,11 @@ function Subscriptions() {
                     onClick={() =>
                       navigate(`/dashboard/users/view/${student._id}`)
                     }
-                    className="w-full py-2.5 rounded border-2 font-bold text-[10px] uppercase tracking-widest transition-all hover:bg-slate-50 active:scale-[0.98] cursor-pointer"
+                    className="w-full py-2.5 rounded border border-dashed font-bold text-[10px] uppercase tracking-widest transition-all active:scale-[0.98] cursor-pointer"
                     style={{
-                      borderColor: colors.primary,
+                      borderColor: colors.primary + "40",
                       color: colors.primary,
+                      backgroundColor: colors.primary + "05",
                     }}
                   >
                     View Full Profile
@@ -181,9 +201,16 @@ function Subscriptions() {
             })}
           </div>
         ) : (
-          <div className="h-full flex flex-col items-center justify-center opacity-20 text-center p-10">
-            <Users size={64} className="mb-4" />
-            <p className="font-bold uppercase tracking-widest text-xs">
+          <div className="h-full flex flex-col items-center justify-center text-center p-10">
+            <Users
+              size={64}
+              className="mb-4 opacity-10"
+              style={{ color: colors.text }}
+            />
+            <p
+              className="font-bold uppercase tracking-widest text-xs opacity-40"
+              style={{ color: colors.textSecondary }}
+            >
               No active students found
             </p>
           </div>
@@ -313,7 +340,7 @@ function Subscriptions() {
         <button
           onClick={() => navigate("/dashboard/subscriptions/add")}
           className="flex items-center justify-center gap-2 px-6 py-2.5 rounded font-bold text-sm uppercase tracking-widest transition-all shadow-lg active:scale-95 cursor-pointer shadow-black/10"
-          style={{ backgroundColor: colors.primary, color: "#fff" }}
+          style={{ backgroundColor: colors.primary, color: colors.background }}
         >
           <Plus size={18} /> Add New Plan
         </button>
@@ -364,22 +391,40 @@ function Subscriptions() {
                   backgroundColor: colors.accent + "03",
                 }}
               >
-                <th className="p-5 text-[10px] font-bold uppercase tracking-widest opacity-40">
+                <th
+                  className="p-5 text-[10px] font-bold uppercase tracking-widest opacity-60"
+                  style={{ color: colors.text }}
+                >
                   Plan Details
                 </th>
-                <th className="p-5 text-[10px] font-bold uppercase tracking-widest opacity-40">
+                <th
+                  className="p-5 text-[10px] font-bold uppercase tracking-widest opacity-60"
+                  style={{ color: colors.text }}
+                >
                   Duration
                 </th>
-                <th className="p-5 text-[10px] font-bold uppercase tracking-widest opacity-40">
+                <th
+                  className="p-5 text-[10px] font-bold uppercase tracking-widest opacity-60"
+                  style={{ color: colors.text }}
+                >
                   Students
                 </th>
-                <th className="p-5 text-[10px] font-bold uppercase tracking-widest opacity-40">
+                <th
+                  className="p-5 text-[10px] font-bold uppercase tracking-widest opacity-60"
+                  style={{ color: colors.text }}
+                >
                   Price
                 </th>
-                <th className="p-5 text-[10px] font-bold uppercase tracking-widest opacity-40 text-center">
+                <th
+                  className="p-5 text-[10px] font-bold uppercase tracking-widest opacity-60 text-center"
+                  style={{ color: colors.text }}
+                >
                   Status
                 </th>
-                <th className="p-5 text-[10px] font-bold uppercase tracking-widest opacity-40 text-right">
+                <th
+                  className="p-5 text-[10px] font-bold uppercase tracking-widest opacity-60 text-right"
+                  style={{ color: colors.text }}
+                >
                   Actions
                 </th>
               </tr>
@@ -401,7 +446,11 @@ function Subscriptions() {
                 filteredPlans.map((plan) => (
                   <tr
                     key={plan._id}
-                    className="group transition-colors hover:bg-black/1"
+                    className="border-b transition-colors hover:bg-black/5"
+                    style={{
+                      borderColor: colors.accent + "05",
+                      color: colors.text,
+                    }}
                   >
                     <td className="p-5 py-6">
                       <div className="flex items-center gap-4">
@@ -424,7 +473,7 @@ function Subscriptions() {
                             </span>
                             {plan.isInUse && (
                               <div
-                                className="p-1 rounded-full bg-amber-50 text-amber-500"
+                                className="p-1 rounded-full bg-amber-500/10 text-amber-500"
                                 title="Locked (Used by Students)"
                               >
                                 <Lock size={10} />
@@ -441,7 +490,13 @@ function Subscriptions() {
                       </div>
                     </td>
                     <td className="p-5">
-                      <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-slate-50 border border-slate-100 w-fit">
+                      <div
+                        className="flex items-center gap-2 px-3 py-1.5 rounded border w-fit"
+                        style={{
+                          backgroundColor: colors.background,
+                          borderColor: colors.accent + "10",
+                        }}
+                      >
                         <Clock
                           size={14}
                           className="opacity-40"
@@ -459,7 +514,7 @@ function Subscriptions() {
                       <button
                         disabled={plan.totalStudents === 0}
                         onClick={() => fetchPlanStudents(plan)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded font-bold text-[10px] uppercase tracking-wider transition-all shadow-sm ${plan.totalStudents > 0 ? "bg-purple-50 text-purple-600 hover:scale-105 active:scale-95 cursor-pointer shadow-purple-500/10" : "bg-slate-100 text-slate-400 cursor-not-allowed opacity-50"}`}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded font-bold text-[10px] uppercase tracking-wider transition-all shadow-sm ${plan.totalStudents > 0 ? "bg-purple-500/10 text-purple-500 hover:scale-105 active:scale-95 cursor-pointer" : "bg-slate-100/10 text-slate-400 cursor-not-allowed opacity-50"}`}
                       >
                         <Users size={14} />
                         {plan.totalStudents} Students
@@ -514,7 +569,7 @@ function Subscriptions() {
                               `/dashboard/subscriptions/edit/${plan._id}`,
                             )
                           }
-                          className="p-2.5 rounded hover:bg-blue-50 text-blue-500 transition-all active:scale-90"
+                          className="p-2 rounded bg-blue-500/10 text-blue-500 transition-all hover:bg-blue-500/20 active:scale-95 cursor-pointer"
                           title="Edit Plan"
                         >
                           <Edit size={18} />
@@ -527,12 +582,14 @@ function Subscriptions() {
                                 text: "Cannot delete this plan while active students are using it.",
                                 icon: "info",
                                 confirmButtonColor: colors.primary,
+                                background: colors.background,
+                                color: colors.text,
                               });
                               return;
                             }
                             handleDelete(plan._id);
                           }}
-                          className={`p-2.5 rounded transition-all active:scale-90 ${plan.isInUse ? "opacity-20 cursor-not-allowed text-slate-400" : "hover:bg-red-50 text-red-500 cursor-pointer"}`}
+                          className={`p-2 rounded transition-all active:scale-90 ${plan.isInUse ? "opacity-20 cursor-not-allowed text-slate-400" : "bg-red-500/10 text-red-500 hover:bg-red-500/20 cursor-pointer"}`}
                           title={plan.isInUse ? "Locked (In Use)" : "Delete"}
                         >
                           <Trash2 size={18} />

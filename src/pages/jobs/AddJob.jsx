@@ -77,7 +77,7 @@ function AddJob() {
 
   return (
     <div className="w-full mx-auto pb-20 pt-4 px-4 h-full overflow-auto">
-      {actionLoading && <Loader size={128} fullPage={true} />}
+      {/* {actionLoading && <Loader size={128} fullPage={true} />} */}
       <div className="flex items-center gap-4 mb-8">
         <button
           onClick={() => navigate(-1)}
@@ -95,7 +95,7 @@ function AddJob() {
         </h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-4xl space-y-6">
+      <form onSubmit={handleSubmit} className="max-w-full space-y-6">
         {/* Job Info */}
         <div
           className="p-6 rounded-lg border shadow-sm"
@@ -474,13 +474,18 @@ function AddJob() {
         <div className="flex flex-col sm:flex-row gap-3 pt-4">
           <button
             type="submit"
-            className="flex-1 py-4 rounded font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all cursor-pointer"
+            disabled={actionLoading}
+            className="flex-1 py-4 rounded font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-70"
             style={{
               backgroundColor: colors.primary,
               color: colors.background,
             }}
           >
-            Confirm & Post
+            {actionLoading ? (
+              <Loader size={18} variant="button" />
+            ) : (
+              "Confirm & Post"
+            )}
           </button>
           <button
             type="button"

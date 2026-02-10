@@ -38,6 +38,8 @@ import ViewReferral from "../pages/referrals/ViewReferral";
 import EditReferral from "../pages/referrals/EditReferral";
 import QuizReport from "../pages/quizzes/QuizReport";
 import UserQuizResult from "../pages/quizzes/UserQuizResult";
+import Topics from "../pages/quizzes/Topics";
+import ManageQuestions from "../pages/quizzes/ManageQuestions";
 import Sales from "../pages/sales/Sales";
 import CourseSales from "../pages/sales/CourseSales";
 import EbookSales from "../pages/sales/EbookSales";
@@ -73,9 +75,15 @@ import EbookEnrollments from "../pages/enrollments/EbookEnrollments";
 import JobEnrollments from "../pages/enrollments/JobEnrollments";
 import ViewEnrolledStudent from "../pages/enrollments/ViewEnrolledStudent";
 import GenerateCertificate from "../pages/courses/GenerateCertificate";
+import ManageCertificates from "../pages/courses/ManageCertificates";
+import ManageQuizCertificates from "../pages/quizzes/ManageQuizCertificates";
+import GenerateQuizCertificate from "../pages/quizzes/GenerateQuizCertificate";
 
 export const AppRoute = [
+  { path: "courses/manage-certificates", component: ManageCertificates },
   { path: "courses/generate-certificate", component: GenerateCertificate },
+  { path: "quizzes/manage-certificates", component: ManageQuizCertificates },
+  { path: "quizzes/generate-certificate", component: GenerateQuizCertificate },
   { path: "sales", component: Sales },
   { path: "sales/courses", component: CourseSales },
   { path: "sales/ebooks", component: EbookSales },
@@ -148,6 +156,8 @@ export const AppRoute = [
   { path: "quizzes/add", component: AddQuiz },
   { path: "quizzes/edit/:id", component: EditQuiz },
   { path: "quizzes/view/:id", component: ViewQuiz },
+  { path: "quizzes/topics", component: Topics },
+  { path: "quizzes/topic/:id/questions", component: ManageQuestions },
   { path: "referrals", component: Referrals },
   { path: "referrals/view/:id", component: ViewReferral },
   { path: "referrals/edit/:id", component: EditReferral },

@@ -109,7 +109,7 @@ function AddEBook() {
       className="h-full w-full flex flex-col overflow-hidden"
       style={{ backgroundColor: colors.background }}
     >
-      {loading && <Loader size={128} />}
+      {/* {loading && <Loader size={128} />} */}
       {/* Header */}
       <div className="flex-shrink-0 mb-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -354,13 +354,20 @@ function AddEBook() {
           >
             <button
               type="submit"
-              className="px-10 py-4 rounded font-bold uppercase tracking-widest text-sm transition-all shadow-xl active:scale-95 flex items-center gap-3 cursor-pointer"
+              disabled={loading}
+              className="px-10 py-4 rounded font-bold uppercase tracking-widest text-sm transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3 cursor-pointer min-w-[240px] disabled:opacity-70"
               style={{
                 backgroundColor: colors.primary,
                 color: colors.background,
               }}
             >
-              <Check size={20} /> Register E-Book
+              {loading ? (
+                <Loader size={20} variant="button" />
+              ) : (
+                <>
+                  <Check size={20} /> Register E-Book
+                </>
+              )}
             </button>
           </div>
         </form>

@@ -186,6 +186,7 @@ function Quizzes() {
                   <th className="p-4">Quiz Title</th>
                   <th className="p-4">Code</th>
                   <th className="p-4">Details</th>
+                  <th className="p-4 text-center">Attempts</th>
                   <th className="p-4 text-center">Status</th>
                   <th className="p-4 text-right">Actions</th>
                 </tr>
@@ -193,7 +194,7 @@ function Quizzes() {
               <tbody className="text-sm font-semibold">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center opacity-60">
+                    <td colSpan={6} className="p-8 text-center opacity-60">
                       <div className="max-h-[300px] flex items-center justify-center">
                         <Loader size={80} />
                       </div>
@@ -252,6 +253,21 @@ function Quizzes() {
                           <span className="flex items-center gap-1">
                             <Layout size={12} /> {quiz.level}
                           </span>
+                        </div>
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="flex flex-col items-center">
+                            <span
+                              className="text-lg font-bold"
+                              style={{ color: colors.primary }}
+                            >
+                              {quiz.attempts?.length || 0}
+                            </span>
+                            <span className="text-[10px] font-black uppercase opacity-40">
+                              Total
+                            </span>
+                          </div>
                         </div>
                       </td>
                       <td className="p-4 text-center">
@@ -317,7 +333,7 @@ function Quizzes() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center opacity-40">
+                    <td colSpan={6} className="p-8 text-center opacity-40">
                       <FileQuestion size={48} className="mx-auto mb-2" />
                       <p>No quizzes found</p>
                     </td>

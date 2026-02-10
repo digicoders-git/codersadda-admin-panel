@@ -29,3 +29,20 @@ export const toggleQuizStatus = async (id) => {
   const response = await http.patch(`/quiz/toggle-status/${id}`);
   return response.data;
 };
+
+export const getAttemptsByQuiz = async (quizId) => {
+  const response = await http.get(`/quiz/attempt/quiz/${quizId}`);
+  return response.data;
+};
+
+export const exportReportExcel = async (quizId) => {
+  return await http.get(`/quiz/export/report/${quizId}`, {
+    responseType: "blob",
+  });
+};
+
+export const exportResultPDF = async (quizId, studentId) => {
+  return await http.get(`/quiz/export/result/${quizId}/${studentId}`, {
+    responseType: "blob",
+  });
+};

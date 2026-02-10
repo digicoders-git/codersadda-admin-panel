@@ -17,18 +17,21 @@ const Toggle = ({ active, onClick }) => {
       //   backgroundColor:  active ? colors.primary : (colors.accent || '#888888'),
       // }}>
       style={{
-        backgroundColor:
-          currentTheme === "mono" && isDarkMode
-            ? "#6B7280"
-            : active
-            ? colors.accent
-            : colors.accent || "#888888",
+        backgroundColor: active
+          ? colors.primary
+          : isDarkMode
+            ? "#334155"
+            : "#cbd5e1",
       }}
     >
       <div
         className="w-4 h-4 rounded-full absolute top-0.5 transition-all duration-300 shadow-sm"
         style={{
-          backgroundColor: active ? 'green':'red',
+          backgroundColor: active
+            ? colors.primary === "#FFFFFF" || colors.primary === "#ffffff"
+              ? "#000000"
+              : "#FFFFFF"
+            : "#FFFFFF",
           left: active ? "calc(100% - 18px)" : "2px",
         }}
       ></div>

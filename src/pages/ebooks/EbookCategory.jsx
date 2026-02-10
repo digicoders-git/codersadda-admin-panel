@@ -174,7 +174,7 @@ function EbookCategory() {
       className="h-full w-full flex flex-col overflow-hidden"
       style={{ backgroundColor: colors.background }}
     >
-      {globalLoading && <Loader size={128} fullPage={true} />}
+      {/* {globalLoading && <Loader size={128} fullPage={true} />} */}
       <div
         className="shrink-0 mb-6 sticky top-0 z-30 pb-4 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6"
         style={{ backgroundColor: colors.background }}
@@ -461,7 +461,11 @@ function EbookCategory() {
                     color: colors.background,
                   }}
                 >
-                  Confirm
+                  {globalLoading ? (
+                    <Loader size={18} variant="button" />
+                  ) : (
+                    "Confirm"
+                  )}
                 </button>
                 <button
                   onClick={handleCloseModal}

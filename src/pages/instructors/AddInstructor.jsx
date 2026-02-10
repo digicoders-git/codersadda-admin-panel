@@ -286,7 +286,7 @@ function AddInstructor() {
               disabled={actionLoading}
             >
               {actionLoading ? (
-                <Loader size={18} />
+                <Loader size={18} variant="button" />
               ) : (
                 <>
                   <Save size={18} />{" "}

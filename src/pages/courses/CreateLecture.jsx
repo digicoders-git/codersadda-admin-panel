@@ -17,19 +17,23 @@ import {
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import { getAllCourses, getCourseById } from "../../apis/course";
+import { getCourseCategories } from "../../apis/courseCategory";
 import { createLecture } from "../../apis/lecture";
 import { toast } from "react-toastify";
 import Loader from "../../components/Loader";
+import ModernSelect from "../../components/ModernSelect";
 
 function CreateLecture() {
   const { colors, isDarkMode } = useTheme();
   const navigate = useNavigate();
 
   const [courses, setCourses] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [topics, setTopics] = useState([]);
 
   const [formData, setFormData] = useState({
+    categoryId: "",
     courseId: "",
     topicId: "",
     srNo: "",
@@ -53,20 +57,46 @@ function CreateLecture() {
   const pdfInputRef = useRef(null);
 
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchInitialData = async () => {
       try {
-        const res = await getAllCourses();
-        if (res.success) {
-          setCourses(res.data);
+        const [catsRes, coursesRes] = await Promise.all([
+          getCourseCategories(),
+          getAllCourses(),
+        ]);
+
+        if (catsRes.success) {
+          setCategories(catsRes.data.filter((c) => c.isActive));
+        }
+        if (coursesRes.success) {
+          setCourses(coursesRes.data);
         }
       } catch (error) {
-        toast.error("Failed to fetch courses");
+        toast.error("Failed to fetch initial data");
       } finally {
         setLoading(false);
       }
     };
-    fetchCourses();
+    fetchInitialData();
   }, []);
+
+  const handleCategoryChange = async (categoryId) => {
+    setFormData((prev) => ({ ...prev, categoryId, courseId: "", topicId: "" }));
+    setTopics([]);
+    if (!categoryId) {
+      const res = await getAllCourses();
+      if (res.success) setCourses(res.data);
+      return;
+    }
+
+    try {
+      const res = await getAllCourses({ category: categoryId });
+      if (res.success) {
+        setCourses(res.data);
+      }
+    } catch (error) {
+      toast.error("Failed to filter courses");
+    }
+  };
 
   const handleCourseChange = async (courseId) => {
     setFormData({ ...formData, courseId, topicId: "" });
@@ -239,7 +269,7 @@ function CreateLecture() {
       ) : (
         <form
           onSubmit={handleSubmit}
-          className="max-w-5xl grid grid-cols-1 lg:grid-cols-3 gap-8"
+          className="max-w-full grid grid-cols-1 lg:grid-cols-3 gap-8"
         >
           <div className="lg:col-span-2 space-y-6">
             <div
@@ -253,68 +283,50 @@ function CreateLecture() {
                 Course & Module Selection
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                <div className="space-y-1">
+                  <label style={labelStyle}>Course Category</label>
+                  <ModernSelect
+                    options={categories.map((c) => ({
+                      label: c.name,
+                      value: c._id,
+                    }))}
+                    value={formData.categoryId}
+                    onChange={handleCategoryChange}
+                    placeholder="Select Category"
+                  />
+                </div>
+
                 <div className="space-y-1">
                   <label style={labelStyle}>Select Course</label>
-                  <div className="relative">
-                    <BookOpen
-                      className="absolute left-3 top-1/2 -translate-y-1/2 opacity-30"
-                      size={18}
-                    />
-                    <select
-                      required
-                      value={formData.courseId}
-                      onChange={(e) => handleCourseChange(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 rounded border outline-none text-sm font-semibold cursor-pointer appearance-none"
-                      style={{
-                        backgroundColor: colors.background,
-                        borderColor: colors.accent + "20",
-                        color: colors.text,
-                      }}
-                    >
-                      <option value="">Select Course</option>
-                      {courses.map((c) => (
-                        <option key={c._id} value={c._id}>
-                          {c.title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <ModernSelect
+                    options={courses.map((c) => ({
+                      label: c.title,
+                      value: c._id,
+                    }))}
+                    value={formData.courseId}
+                    onChange={handleCourseChange}
+                    placeholder="Select Course"
+                    disabled={!formData.categoryId && courses.length === 0}
+                  />
                 </div>
 
                 <div className="space-y-1">
                   <label style={labelStyle}>Select Module / Topic</label>
-                  <div className="relative">
-                    <Layers
-                      className="absolute left-3 top-1/2 -translate-y-1/2 opacity-30"
-                      size={18}
-                    />
-                    <select
-                      required
-                      value={formData.topicId}
-                      onChange={(e) =>
-                        setFormData({ ...formData, topicId: e.target.value })
-                      }
-                      disabled={!formData.courseId || topics.length === 0}
-                      className="w-full pl-10 pr-4 py-3 rounded border outline-none text-sm font-semibold cursor-pointer appearance-none disabled:opacity-30"
-                      style={{
-                        backgroundColor: colors.background,
-                        borderColor: colors.accent + "20",
-                        color: colors.text,
-                      }}
-                    >
-                      <option value="">
-                        {topics.length > 0
-                          ? "Select Module"
-                          : "No Modules Found"}
-                      </option>
-                      {topics.map((t) => (
-                        <option key={t._id} value={t._id}>
-                          {t.title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <ModernSelect
+                    options={topics.map((t) => ({
+                      label: t.title,
+                      value: t._id,
+                    }))}
+                    value={formData.topicId}
+                    onChange={(val) =>
+                      setFormData({ ...formData, topicId: val })
+                    }
+                    placeholder={
+                      topics.length > 0 ? "Select Module" : "No Modules Found"
+                    }
+                    disabled={!formData.courseId || topics.length === 0}
+                  />
                 </div>
               </div>
 
@@ -591,7 +603,11 @@ function CreateLecture() {
                       color: colors.background,
                     }}
                   >
-                    {actionLoading ? <Loader size={18} /> : <Save size={18} />}{" "}
+                    {actionLoading ? (
+                      <Loader size={18} variant="button" />
+                    ) : (
+                      <Save size={18} />
+                    )}{" "}
                     Save Lecture
                   </button>
                   <button

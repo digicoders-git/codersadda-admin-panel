@@ -20,6 +20,7 @@ import {
 import { getAllCourses } from "../../apis/course";
 import { getEbooks } from "../../apis/ebook";
 import { toast } from "react-toastify";
+import Loader from "../../components/Loader";
 import ModernSelect from "../../components/ModernSelect";
 
 function AddSubscription() {
@@ -44,6 +45,7 @@ function AddSubscription() {
     includedEbooks: [],
     planStatus: true,
   });
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -132,6 +134,7 @@ function AddSubscription() {
     const dataToSave = { ...formData, planBenefits: cleanBenefits };
 
     try {
+      setActionLoading(true);
       if (isEdit) {
         const res = await apiUpdateSubscription(id, dataToSave);
         if (res.success) {
@@ -147,6 +150,8 @@ function AddSubscription() {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Error saving plan");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -187,7 +192,7 @@ function AddSubscription() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-4xl space-y-6">
+      <form onSubmit={handleSubmit} className="max-w-full space-y-6">
         {/* Basic Details */}
         <div
           className="p-6 rounded border shadow-sm space-y-6"
@@ -490,13 +495,20 @@ function AddSubscription() {
         <div className="flex flex-col sm:flex-row gap-3 pt-4">
           <button
             type="submit"
-            className="flex-1 py-4 rounded font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3 cursor-pointer"
+            disabled={actionLoading}
+            className="flex-1 py-4 rounded font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-70"
             style={{
               backgroundColor: colors.primary,
               color: colors.background,
             }}
           >
-            <Save size={18} /> {isEdit ? "Update Plan" : "Publish Plan"}
+            {actionLoading ? (
+              <Loader size={18} variant="button" />
+            ) : (
+              <>
+                <Save size={18} /> {isEdit ? "Update Plan" : "Publish Plan"}
+              </>
+            )}
           </button>
           <button
             type="button"

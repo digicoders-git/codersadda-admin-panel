@@ -66,7 +66,7 @@ function EditJob() {
 
   return (
     <div className="w-full mx-auto pb-20 pt-4 px-4 h-full overflow-auto">
-      {actionLoading && <Loader size={128} fullPage={true} />}
+      {/* {actionLoading && <Loader size={128} fullPage={true} />} */}
       <div className="flex items-center gap-4 mb-8">
         <button
           onClick={() => navigate(-1)}
@@ -439,13 +439,20 @@ function EditJob() {
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-md font-bold transition-all shadow-md text-sm uppercase tracking-wider active:scale-[0.98] cursor-pointer mb-3 flex items-center justify-center gap-2"
+                disabled={actionLoading}
+                className="w-full py-3 rounded-md font-bold transition-all shadow-md text-sm uppercase tracking-wider active:scale-[0.98] cursor-pointer mb-3 flex items-center justify-center gap-2 disabled:opacity-70"
                 style={{
                   backgroundColor: colors.primary,
                   color: colors.background,
                 }}
               >
-                <Save size={18} /> Save Changes
+                {actionLoading ? (
+                  <Loader size={18} variant="button" />
+                ) : (
+                  <>
+                    <Save size={18} /> Save Changes
+                  </>
+                )}
               </button>
               <button
                 type="button"

@@ -139,7 +139,7 @@ const Dashboard = () => {
         { name: "Add Lecture", path: "/dashboard/lectures/create" },
         {
           name: "Manage Certificate",
-          path: "/dashboard/courses/generate-certificate",
+          path: "/dashboard/courses/manage-certificates",
         },
         { name: "Enrolled Students", path: "/dashboard/courses/enrolled" },
       ],
@@ -177,7 +177,18 @@ const Dashboard = () => {
     },
     { name: "Slider", icon: ImageIcon, path: "/dashboard/slider" },
     { name: "Shorts", icon: Film, path: "/dashboard/shorts" },
-    { name: "Quizzes", icon: FileQuestion, path: "/dashboard/quizzes" },
+    {
+      name: "Quizzes",
+      icon: FileQuestion,
+      submenu: [
+        { name: "Add Topic", path: "/dashboard/quizzes/topics" },
+        { name: "All Quizzes", path: "/dashboard/quizzes" },
+        {
+          name: "Manage Certificate",
+          path: "/dashboard/quizzes/manage-certificates",
+        },
+      ],
+    },
     { name: "Referrals", icon: Share2, path: "/dashboard/referrals" },
     {
       name: "Website",
@@ -252,7 +263,7 @@ const Dashboard = () => {
                     onClick={() => setOpenSubmenu(isOpen ? null : link.name)}
                     className={`flex items-center justify-between w-[93%] px-4 py-2 mx-2 rounded mb-1 transition-all duration-200 cursor-pointer ${
                       isAnySubmenuActive ? "ring-1" : ""
-                    } ${!sidebarOpen ? "!justify-center !w-auto" : ""}`}
+                    } ${!sidebarOpen ? "justify-center! w-auto!" : ""}`}
                     style={{
                       color: isAnySubmenuActive ? colors.primary : colors.text,
                       backgroundColor: isAnySubmenuActive

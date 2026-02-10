@@ -21,7 +21,9 @@ import {
 import Loader from "../../components/Loader";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
+// import LinkIcon from "../../components/ui/LinkIcon";
 import Toggle from "../../components/ui/Toggle";
+import ModernSelect from "../../components/ModernSelect";
 
 function Jobs() {
   const { colors } = useTheme();
@@ -121,7 +123,7 @@ function Jobs() {
         </div>
         <button
           onClick={() => navigate("/dashboard/jobs/add")}
-          className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg font-semibold transition-all shadow-md hover:shadow-lg active:scale-95 cursor-pointer"
+          className="flex items-center justify-center gap-2 px-6 py-2.5 rounded font-semibold transition-all shadow-md hover:shadow-lg active:scale-95 cursor-pointer"
           style={{ backgroundColor: colors.primary, color: colors.background }}
         >
           <Plus size={18} /> Add New Job
@@ -129,9 +131,9 @@ function Jobs() {
       </div>
 
       <div
-        className="p-6 rounded-xl border shadow-sm mb-6"
+        className="p-6 rounded mb-6"
         style={{
-          backgroundColor: colors.sidebar || colors.background,
+          // backgroundColor: colors.sidebar || colors.background,
           borderColor: colors.accent + "20",
         }}
       >
@@ -152,55 +154,47 @@ function Jobs() {
                   placeholder="Search by title or company..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 rounded-lg border outline-none transition-all text-sm"
+                  className="w-full pl-10 pr-4 py-2 rounded border outline-none transition-all text-sm"
                   style={{
                     backgroundColor: colors.background,
-                    borderColor: colors.accent + "30",
+                    borderColor: colors.text + "30",
                     color: colors.text,
                   }}
                 />
               </div>
               <div>
-                <select
+                <ModernSelect
+                  options={[
+                    { label: "All Job Types", value: "All" },
+                    { label: "Work From Home", value: "Work From Home" },
+                    { label: "Work From Office", value: "Work From Office" },
+                    { label: "Hybrid", value: "Hybrid" },
+                  ]}
                   value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border outline-none cursor-pointer text-sm"
-                  style={{
-                    backgroundColor: colors.background,
-                    borderColor: colors.accent + "30",
-                    color: colors.text,
-                  }}
-                >
-                  <option value="All">All Job Types</option>
-                  <option value="Work From Home">Work From Home</option>
-                  <option value="Work From Office">Work From Office</option>
-                  <option value="Hybrid">Hybrid</option>
-                </select>
+                  onChange={setFilterType}
+                  placeholder="Filter by Type"
+                />
               </div>
               <div>
-                <select
+                <ModernSelect
+                  options={[
+                    { label: "All Experience", value: "All" },
+                    { label: "Fresher", value: "Fresher" },
+                    { label: "1-2 Years", value: "1-2 Years" },
+                    { label: "3-5 Years", value: "3-5 Years" },
+                    { label: "5+ Years", value: "5+ Years" },
+                  ]}
                   value={filterExperience}
-                  onChange={(e) => setFilterExperience(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border outline-none cursor-pointer text-sm"
-                  style={{
-                    backgroundColor: colors.background,
-                    borderColor: colors.accent + "30",
-                    color: colors.text,
-                  }}
-                >
-                  <option value="All">All Experience</option>
-                  <option value="Fresher">Fresher</option>
-                  <option value="1-2 Years">1-2 Years</option>
-                  <option value="3-5 Years">3-5 Years</option>
-                  <option value="5+ Years">5+ Years</option>
-                </select>
+                  onChange={setFilterExperience}
+                  placeholder="Filter by Experience"
+                />
               </div>
             </div>
             <div
-              className="mt-6 rounded-xl border overflow-hidden shadow-sm"
+              className="mt-6 rounded border overflow-hidden shadow-sm"
               style={{
                 backgroundColor: colors.sidebar || colors.background,
-                borderColor: colors.accent + "20",
+                borderColor: colors.text + "20",
               }}
             >
               <div className="overflow-x-auto">
@@ -312,7 +306,7 @@ function Jobs() {
                                 onClick={() =>
                                   navigate(`/dashboard/jobs/view/${job._id}`)
                                 }
-                                className="p-2 rounded-lg hover:bg-primary/10 text-primary transition-all cursor-pointer"
+                                className="p-2 rounded hover:bg-primary/10 text-primary transition-all cursor-pointer"
                                 title="View"
                               >
                                 <Eye size={18} />
@@ -321,7 +315,7 @@ function Jobs() {
                                 onClick={() =>
                                   navigate(`/dashboard/jobs/edit/${job._id}`)
                                 }
-                                className="p-2 rounded-lg hover:bg-blue-500/10 text-blue-500 transition-all cursor-pointer"
+                                className="p-2 rounded bg-blue-500/10 text-blue-500 transition-all cursor-pointer"
                                 title="Edit"
                               >
                                 <Edit size={18} />
@@ -329,7 +323,7 @@ function Jobs() {
                               <button
                                 onClick={() => handleDelete(job._id)}
                                 disabled={actionLoading === job._id}
-                                className="p-2 rounded-lg hover:bg-red-500/10 text-red-500 transition-all cursor-pointer disabled:opacity-50"
+                                className="p-2 rounded bg-red-500/10 text-red-500 transition-all cursor-pointer disabled:opacity-50"
                                 title="Delete"
                               >
                                 {actionLoading === job._id ? (

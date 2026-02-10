@@ -389,7 +389,7 @@ const Home = () => {
                     >
                       <IconComponent size={24} style={{ color: stat.color }} />
                     </div>
-                    <span
+                    {/* <span
                       className="text-xs px-2 py-1 rounded-full font-semibold"
                       style={{
                         backgroundColor: "#10b981" + "20",
@@ -397,7 +397,7 @@ const Home = () => {
                       }}
                     >
                       {stat.growth}
-                    </span>
+                    </span> */}
                   </div>
                   <h3
                     className="text-3xl font-bold mb-2"

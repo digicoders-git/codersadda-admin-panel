@@ -7,6 +7,7 @@ import {
   updateReferral as apiUpdateReferral,
 } from "../../apis/referral";
 import { toast } from "react-toastify";
+import Loader from "../../components/Loader";
 
 function EditReferral() {
   const { colors } = useTheme();
@@ -22,6 +23,7 @@ function EditReferral() {
     course: "",
     referralCode: "",
   });
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     const fetchReferral = async () => {
@@ -52,6 +54,7 @@ function EditReferral() {
       return;
     }
     try {
+      setActionLoading(true);
       const res = await apiUpdateReferral(id, formData);
       if (res.success) {
         toast.success("Referral updated successfully!");
@@ -59,6 +62,8 @@ function EditReferral() {
       }
     } catch (err) {
       toast.error("Failed to update referral");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -193,13 +198,20 @@ function EditReferral() {
         <div className="flex flex-col sm:flex-row gap-3 pt-4">
           <button
             type="submit"
-            className="flex-1 py-4 rounded font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3 cursor-pointer"
+            disabled={actionLoading}
+            className="flex-1 py-4 rounded font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-70"
             style={{
               backgroundColor: colors.primary,
               color: colors.background,
             }}
           >
-            <Save size={18} /> Update Referral
+            {actionLoading ? (
+              <Loader size={18} variant="button" />
+            ) : (
+              <>
+                <Save size={18} /> Update Referral
+              </>
+            )}
           </button>
           <button
             type="button"

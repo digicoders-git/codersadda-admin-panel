@@ -20,6 +20,7 @@ import {
 import { createCourse } from "../../apis/course";
 import { getCourseCategories } from "../../apis/courseCategory";
 import { getInstructors } from "../../apis/instructor";
+import { getAllCertificateTemplates } from "../../apis/certificate";
 import { toast } from "react-toastify";
 import ModernSelect from "../../components/ModernSelect";
 import { useTheme } from "../../context/ThemeContext";
@@ -34,6 +35,7 @@ function AddCourse() {
 
   const [categories, setCategories] = useState([]);
   const [instructors, setInstructors] = useState([]);
+  const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -41,9 +43,10 @@ function AddCourse() {
     const fetchDependencies = async () => {
       try {
         console.log("Fetching instructors and categories...");
-        const [catsRes, insRes] = await Promise.all([
+        const [catsRes, insRes, templatesRes] = await Promise.all([
           getCourseCategories(),
           getInstructors(),
+          getAllCertificateTemplates(),
         ]);
         if (catsRes.success) {
           setCategories(catsRes.data.filter((cat) => cat.isActive));
@@ -51,6 +54,10 @@ function AddCourse() {
 
         if (insRes.success) {
           setInstructors(insRes.data.filter((ins) => ins.isActive));
+        }
+
+        if (templatesRes.success) {
+          setTemplates(templatesRes.data);
         }
       } catch (error) {
         console.error("Error fetching dependencies:", error);
@@ -79,6 +86,7 @@ function AddCourse() {
     whatYouWillLearn: [""],
     faqs: [],
     reviews: [],
+    status: "Active",
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -161,6 +169,7 @@ function AddCourse() {
       payload.append("priceForInstructor", formData.priceForInstructor || "0");
       payload.append("priceType", formData.priceType);
       payload.append("badge", formData.badge);
+      payload.append("isActive", formData.status === "Active");
 
       // Add price only if paid
       if (formData.priceType === "paid") {
@@ -180,9 +189,12 @@ function AddCourse() {
         payload.append("faqs", JSON.stringify(formData.faqs));
       }
 
-      // Add reviews as JSON string
-      if (formData.reviews && formData.reviews.length > 0) {
-        payload.append("reviews", JSON.stringify(formData.reviews));
+      // Add reviews as JSON string (filter out empty names/comments)
+      const validReviews = (formData.reviews || []).filter(
+        (rev) => rev.studentName?.trim() !== "" || rev.comment?.trim() !== "",
+      );
+      if (validReviews.length > 0) {
+        payload.append("reviews", JSON.stringify(validReviews));
       }
 
       // Add files
@@ -239,7 +251,7 @@ function AddCourse() {
           <Loader size={80} />
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="max-w-full space-y-6">
+        <form onSubmit={handleSubmit} className="max-w-full mx-auto space-y-6">
           {/* General Information */}
           <div
             className="p-6 rounded-lg border shadow-sm"
@@ -348,24 +360,7 @@ function AddCourse() {
                   }}
                 />
               </div>
-              {/* <div className="space-y-1">
-                <label style={labelStyle}>Duration</label>
-                <input 
-                  type="text" value={formData.duration} onChange={(e) => setFormData({...formData, duration: e.target.value})}
-                  placeholder="Ex: 20 Hours"
-                  className="w-full px-4 py-2 rounded-md border outline-none text-sm"
-                  style={{ backgroundColor: colors.background, borderColor: colors.accent + '30', color: colors.text }}
-                />
-              </div> */}
-              {/* <div className="space-y-1">
-                <label style={labelStyle}>Lecture Number</label>
-                <input 
-                  type="number" value={formData.LectureNumber} onChange={(e) => setFormData({...formData, LectureNumber: e.target.value})}
-                  placeholder="Ex: 50"
-                  className="w-full px-4 py-2 rounded-md border outline-none text-sm"
-                  style={{ backgroundColor: colors.background, borderColor: colors.accent + '30', color: colors.text }}
-                />
-              </div> */}
+
               <div className="space-y-1">
                 <label style={labelStyle}>Price Type</label>
                 <div className="flex gap-2">
@@ -739,7 +734,7 @@ function AddCourse() {
                     ...prev,
                     reviews: [
                       ...(prev.reviews || []),
-                      { user: "", rating: 5, comment: "" },
+                      { studentName: "", rating: 5, comment: "" },
                     ],
                   }))
                 }
@@ -760,10 +755,10 @@ function AddCourse() {
                       <input
                         style={{ color: colors.text }}
                         type="text"
-                        value={review.user}
+                        value={review.studentName}
                         onChange={(e) => {
                           const newReviews = [...(formData.reviews || [])];
-                          newReviews[index].user = e.target.value;
+                          newReviews[index].studentName = e.target.value;
                           setFormData({ ...formData, reviews: newReviews });
                         }}
                         placeholder="Student Name"
@@ -883,7 +878,11 @@ function AddCourse() {
                 color: colors.background,
               }}
             >
-              {actionLoading ? <Loader /> : "Publish Course"}
+              {actionLoading ? (
+                <Loader size={18} variant="button" />
+              ) : (
+                "Publish Course"
+              )}
             </button>
             <button
               type="button"

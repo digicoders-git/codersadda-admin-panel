@@ -2,10 +2,26 @@ import React from "react";
 import mainLogoo from "../assets/logoo.png";
 import { useTheme } from "../context/ThemeContext";
 
-const Loader = ({ size = 128, fullPage = false }) => {
+const Loader = ({ size = 128, fullPage = false, variant = "full" }) => {
+  const { colors } = useTheme();
+
+  if (variant === "button") {
+    return (
+      <div
+        className="animate-spin rounded-full border-t-transparent shrink-0"
+        style={{
+          height: `${size}px`,
+          width: `${size}px`,
+          borderWidth: "2px",
+          borderColor: "rgba(255,255,255,0.3)",
+          borderTopColor: "currentColor",
+        }}
+      />
+    );
+  }
+
   // size prop controls the outer ring size in pixels.
   // Other elements scale proportionally.
-  const { colors } = useTheme();
 
   // Calculate proportional sizes
   const outerSize = size;

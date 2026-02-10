@@ -135,7 +135,7 @@ function EditEBook() {
       className="h-full w-full flex flex-col overflow-hidden"
       style={{ backgroundColor: colors.background }}
     >
-      {actionLoading && <Loader size={128} fullPage={true} />}
+      {/* {actionLoading && <Loader size={128} fullPage={true} />} */}
       {/* Header */}
       <div className="shrink-0 mb-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -388,13 +388,20 @@ function EditEBook() {
               >
                 <button
                   type="submit"
-                  className="px-10 py-4 rounded font-bold uppercase tracking-widest text-sm transition-all shadow-xl active:scale-95 flex items-center gap-3 cursor-pointer"
+                  disabled={actionLoading}
+                  className="px-10 py-4 rounded font-bold uppercase tracking-widest text-sm transition-all shadow-xl active:scale-95 flex items-center gap-3 cursor-pointer disabled:opacity-70"
                   style={{
                     backgroundColor: colors.primary,
                     color: colors.background,
                   }}
                 >
-                  <Check size={20} /> Update E-Book
+                  {actionLoading ? (
+                    <Loader size={18} variant="button" />
+                  ) : (
+                    <>
+                      <Check size={20} /> Update E-Book
+                    </>
+                  )}
                 </button>
               </div>
             </form>

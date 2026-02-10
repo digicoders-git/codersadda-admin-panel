@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -11,9 +11,11 @@ import {
   FileSpreadsheet,
   Hash,
   Download,
+  BookOpen,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import { createQuiz } from "../../apis/quiz";
+import { getAllTopics } from "../../apis/questionTopic";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 import ModernSelect from "../../components/ModernSelect";
@@ -23,6 +25,9 @@ function AddQuiz() {
   const { colors } = useTheme();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [topics, setTopics] = useState([]);
+  const [selectedTopicId, setSelectedTopicId] = useState("");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -32,159 +37,61 @@ function AddQuiz() {
     points: "1",
     level: "Beginner",
     status: "Active",
-    questions: [],
+    questionTopicId: "",
   });
 
-  const [currentQuestion, setCurrentQuestion] = useState({
-    question: "",
-    options: ["", "", "", ""],
-    correctOption: 0,
-  });
+  const [questions, setQuestions] = useState([]);
 
-  const downloadSampleExcel = () => {
-    const sampleData = [
-      {
-        Question: "What is React.js?",
-        "Option A": "A library for building UI",
-        "Option B": "A database",
-        "Option C": "A backend framework",
-        "Option D": "A styling tool",
-        "Correct Option": "A",
-      },
-      {
-        Question: "Which hook is used for state?",
-        "Option A": "useEffect",
-        "Option B": "useState",
-        "Option C": "useContext",
-        "Option D": "useReducer",
-        "Correct Option": "B",
-      },
-    ];
-
-    const worksheet = XLSX.utils.json_to_sheet(sampleData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Sample Questions");
-    XLSX.writeFile(workbook, "quiz_sample_format.xlsx");
-  };
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
+  useEffect(() => {
+    const fetchTopics = async () => {
       try {
-        const bstr = evt.target.result;
-        const wb = XLSX.read(bstr, { type: "binary" });
-        const wsname = wb.SheetNames[0];
-        const ws = wb.Sheets[wsname];
-        const data = XLSX.utils.sheet_to_json(ws);
-
-        // Expected Format: Question, Option A, Option B, Option C, Option D, Correct Option
-        if (data.length === 0) {
-          toast.warning("Excel file is empty");
-          return;
+        setPageLoading(true);
+        const res = await getAllTopics("", 1, 100, "true"); // Fetch active topics
+        if (res.success) {
+          setTopics(res.data);
         }
-
-        const parsedQuestions = data.map((row) => {
-          const options = [
-            row["Option A"] || "",
-            row["Option B"] || "",
-            row["Option C"] || "",
-            row["Option D"] || "",
-          ];
-
-          // Determine correct option index
-          let correctIdx = 0;
-          const correctVal = (row["Correct Option"] || "").toString().trim();
-
-          if (
-            correctVal.toLowerCase() === "option a" ||
-            correctVal.toLowerCase() === "a"
-          )
-            correctIdx = 0;
-          else if (
-            correctVal.toLowerCase() === "option b" ||
-            correctVal.toLowerCase() === "b"
-          )
-            correctIdx = 1;
-          else if (
-            correctVal.toLowerCase() === "option c" ||
-            correctVal.toLowerCase() === "c"
-          )
-            correctIdx = 2;
-          else if (
-            correctVal.toLowerCase() === "option d" ||
-            correctVal.toLowerCase() === "d"
-          )
-            correctIdx = 3;
-          else {
-            // Try matching exact text
-            const matchIdx = options.findIndex(
-              (opt) => opt.trim() === correctVal,
-            );
-            if (matchIdx !== -1) correctIdx = matchIdx;
-          }
-
-          return {
-            id: Date.now() + Math.random().toString(),
-            question: row["Question"] || "Untitled Question",
-            options: options,
-            correctOption: correctIdx,
-          };
-        });
-
-        setFormData((prev) => ({
-          ...prev,
-          questions: [...prev.questions, ...parsedQuestions],
-        }));
-
-        toast.success(`Added ${parsedQuestions.length} questions from Excel!`);
-      } catch (error) {
-        console.error(error);
-        toast.error("Error parsing Excel file. Check format.");
+      } catch (err) {
+        console.error("Failed to fetch topics:", err);
+      } finally {
+        setPageLoading(false);
       }
     };
-    reader.readAsBinaryString(file);
-  };
+    fetchTopics();
+  }, []);
 
-  const handleAddQuestion = () => {
-    if (
-      !currentQuestion.question ||
-      currentQuestion.options.some((opt) => !opt)
-    ) {
-      toast.warning("Please fill question and all 4 options");
-      return;
+  const handleTopicChange = (topicId) => {
+    const topic = topics.find((t) => t._id === topicId);
+    if (topic) {
+      // Map topic questions for preview
+      const mappedQuestions = (topic.questions || []).map((q) => {
+        const optionsArr = [q.options.a, q.options.b, q.options.c, q.options.d];
+        const correctIdx = ["a", "b", "c", "d"].indexOf(
+          q.correctAnswer.toLowerCase(),
+        );
+        return {
+          id: q._id,
+          question: q.question,
+          options: optionsArr,
+          correctOption: correctIdx !== -1 ? correctIdx : 0,
+        };
+      });
+      setQuestions(mappedQuestions);
+      setFormData((prev) => ({ ...prev, questionTopicId: topicId }));
+    } else {
+      setQuestions([]);
+      setFormData((prev) => ({ ...prev, questionTopicId: "" }));
     }
-
-    setFormData({
-      ...formData,
-      questions: [
-        ...formData.questions,
-        { ...currentQuestion, id: Date.now().toString() },
-      ],
-    });
-
-    setCurrentQuestion({
-      question: "",
-      options: ["", "", "", ""],
-      correctOption: 0,
-    });
-  };
-
-  const removeQuestion = (index) => {
-    const newQuestions = formData.questions.filter((_, i) => i !== index);
-    setFormData({ ...formData, questions: newQuestions });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title || !formData.duration || !formData.quizCode) {
-      toast.warning("Please fill basic quiz details");
-      return;
-    }
-    if (formData.questions.length === 0) {
-      toast.warning("Please add at least one question");
+    if (
+      !formData.title ||
+      !formData.duration ||
+      !formData.quizCode ||
+      !formData.questionTopicId
+    ) {
+      toast.warning("Please fill all quiz details including Topic");
       return;
     }
 
@@ -194,8 +101,7 @@ function AddQuiz() {
         ...formData,
         duration: Number(formData.duration),
         points: Number(formData.points),
-        totalQuestions: formData.questions.length,
-        questions: formData.questions.map(({ id, ...rest }) => rest),
+        status: formData.status === "Active", // Backend likely expects boolean
       };
 
       const res = await createQuiz(payload);
@@ -205,7 +111,7 @@ function AddQuiz() {
       }
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.error || "Failed to create quiz");
+      toast.error(err.response?.data?.message || "Failed to create quiz");
     } finally {
       setLoading(false);
     }
@@ -219,9 +125,17 @@ function AddQuiz() {
     display: "block",
   };
 
+  if (pageLoading) {
+    return (
+      <div className="flex items-center justify-center p-24">
+        <Loader size={80} />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full mx-auto pb-20 pt-4 px-4 h-full overflow-auto">
-      {loading && <Loader size={128} />}
+      {/* {loading && <Loader size={128} fullPage={true} />} */}
       <div className="flex items-center gap-4 mb-8">
         <button
           onClick={() => navigate(-1)}
@@ -387,215 +301,135 @@ function AddQuiz() {
           </div>
         </div>
 
-        {/* Questions Manager */}
+        {/* Content Manager */}
         <div
-          className="p-8 rounded border shadow-sm space-y-6"
+          className="p-8 rounded-2xl border shadow-sm space-y-6"
           style={{
             backgroundColor: colors.sidebar || colors.background,
             borderColor: colors.accent + "20",
           }}
         >
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div
+            className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b"
+            style={{ borderColor: colors.accent + "10" }}
+          >
             <div style={{ color: colors.text }}>
-              <h3 className="text-sm font-bold uppercase tracking-wider opacity-60">
-                Questions ({formData.questions.length})
+              <h3 className="text-sm font-black uppercase tracking-wider opacity-60">
+                Quiz Content
               </h3>
-              <p className="text-[10px] opacity-40">
-                Questions are added unlimited
+              <p className="text-[10px] opacity-40 uppercase tracking-widest font-black mt-1">
+                Select a topic to link all its questions
               </p>
             </div>
 
-            {/* Excel Upload & Download */}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={downloadSampleExcel}
-                className="px-4 py-2 rounded border-2 border-green-500 text-green-600 text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:bg-green-50 transition-colors"
-                style={{ borderColor: colors.primary + "40" }}
-              >
-                <Download size={16} /> Sample Excel
-              </button>
-              <div className="relative">
-                <input
-                  type="file"
-                  accept=".xlsx, .xls"
-                  onChange={handleFileUpload}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                />
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded bg-green-500 text-white text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:bg-green-600 transition-colors"
-                >
-                  <FileSpreadsheet size={16} /> Upload Excel
-                </button>
-              </div>
+            <div className="w-full md:w-96">
+              <label style={{ ...labelStyle, fontSize: "10px", opacity: 0.6 }}>
+                Question Topic
+              </label>
+              <ModernSelect
+                options={topics.map((t) => ({
+                  label: `${t.topicName} (${t.questions?.length || 0} Questions)`,
+                  value: t._id,
+                }))}
+                value={formData.questionTopicId}
+                onChange={handleTopicChange}
+                placeholder="Choose a topic"
+              />
             </div>
           </div>
 
-          {/* Added Questions List */}
-          {formData.questions.length > 0 && (
-            <div className="space-y-3">
-              {formData.questions.map((q, idx) => (
-                <div
-                  key={q.id}
-                  className="p-4 rounded border bg-black/5 flex items-start gap-3 relative group"
-                  style={{ borderColor: colors.accent + "10" }}
+          {/* Questions Preview */}
+          {questions.length > 0 ? (
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center justify-between px-2">
+                <h4
+                  className="text-[10px] font-black uppercase tracking-widest opacity-40"
+                  style={{ color: colors.text }}
                 >
-                  <span className="text-xs font-black opacity-40 mt-1">
-                    Q{idx + 1}.
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold mb-2">{q.question}</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {q.options.map((opt, oid) => (
-                        <div
-                          key={oid}
-                          className={`text-xs px-2 py-1 rounded border ${oid === q.correctOption ? "bg-green-100 border-green-200 text-green-800" : "bg-white/50 border-black/5 opacity-60"}`}
-                        >
-                          {opt}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeQuestion(idx)}
-                    className="absolute top-2 right-2 p-1.5 rounded hover:bg-red-100 text-red-500 transition-all cursor-pointer"
+                  Preview: {questions.length} Questions linked from topic
+                </h4>
+              </div>
+              <div className="grid grid-cols-1 gap-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-none">
+                {questions.map((q, idx) => (
+                  <div
+                    key={q.id}
+                    className="p-5 rounded-2xl border bg-black/5 flex items-start gap-4 transition-all hover:bg-black/[0.07]"
+                    style={{ borderColor: colors.accent + "10" }}
                   >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Add New Question Form */}
-          <div
-            className="p-4 rounded border-2 border-dashed"
-            style={{
-              borderColor: colors.accent + "30",
-              backgroundColor: colors.background,
-            }}
-          >
-            <h4 className="text-xs font-bold uppercase tracking-widest mb-4 opacity-60">
-              Add Question manually
-            </h4>
-            <div className="space-y-4">
-              <input
-                type="text"
-                value={currentQuestion.question}
-                onChange={(e) =>
-                  setCurrentQuestion({
-                    ...currentQuestion,
-                    question: e.target.value,
-                  })
-                }
-                placeholder="Enter question text here..."
-                className="w-full px-4 py-2.5 rounded border outline-none text-sm font-semibold"
-                style={{
-                  borderColor: colors.accent + "30",
-                  color: colors.text,
-                  backgroundColor: "transparent",
-                }}
-              />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {currentQuestion.options.map((opt, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold cursor-pointer border ${currentQuestion.correctOption === idx ? "bg-green-500 text-white border-green-500" : "border-gray-300 opacity-40"}`}
-                      onClick={() =>
-                        setCurrentQuestion({
-                          ...currentQuestion,
-                          correctOption: idx,
-                        })
-                      }
-                    >
-                      {["A", "B", "C", "D"][idx]}
+                    <span className="w-8 h-8 rounded-xl bg-white/50 flex items-center justify-center text-xs font-black opacity-40 shrink-0 shadow-sm">
+                      {idx + 1}
+                    </span>
+                    <div className="flex-1">
+                      <p
+                        className="text-sm font-bold mb-4 leading-relaxed"
+                        style={{ color: colors.text }}
+                      >
+                        {q.question}
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {q.options.map((opt, oid) => (
+                          <div
+                            key={oid}
+                            className={`text-[11px] px-4 py-2.5 rounded-xl border font-bold transition-all flex items-center gap-3 ${oid === q.correctOption ? "bg-green-500/10 border-green-500/30 text-green-700" : "bg-white/40 border-black/5 opacity-60"}`}
+                          >
+                            <span
+                              className={`w-5 h-5 rounded-lg flex items-center justify-center text-[10px] ${oid === q.correctOption ? "bg-green-500 text-white" : "bg-black/10 opacity-40"}`}
+                            >
+                              {["A", "B", "C", "D"][oid]}
+                            </span>
+                            {opt}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <input
-                      type="text"
-                      value={opt}
-                      onChange={(e) => {
-                        const newOpts = [...currentQuestion.options];
-                        newOpts[idx] = e.target.value;
-                        setCurrentQuestion({
-                          ...currentQuestion,
-                          options: newOpts,
-                        });
-                      }}
-                      placeholder={`Option ${["A", "B", "C", "D"][idx]}`}
-                      className="flex-1 px-3 py-2 rounded border outline-none text-xs font-semibold"
-                      style={{
-                        borderColor: colors.accent + "20",
-                        color: colors.text,
-                        backgroundColor: "transparent",
-                      }}
-                    />
                   </div>
                 ))}
               </div>
-
-              <div className="flex flex-col gap-2">
-                <label style={labelStyle}>Choose Correct Answer</label>
-                <div className="flex gap-4">
-                  {["A", "B", "C", "D"].map((opt, idx) => (
-                    <label
-                      key={opt}
-                      className="flex items-center gap-2 cursor-pointer group"
-                    >
-                      <input
-                        type="radio"
-                        name="correctAnswer"
-                        checked={currentQuestion.correctOption === idx}
-                        onChange={() =>
-                          setCurrentQuestion({
-                            ...currentQuestion,
-                            correctOption: idx,
-                          })
-                        }
-                        className="w-4 h-4 cursor-pointer accent-green-600"
-                      />
-                      <span
-                        className={`text-sm font-bold `}
-                        style={{
-                          color:
-                            currentQuestion.correctOption === idx
-                              ? "green"
-                              : colors.text,
-                        }}
-                      >
-                        Option {opt}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-2">
-                <button
-                  type="button"
-                  onClick={handleAddQuestion}
-                  className="px-4 py-2 rounded bg-black/5 hover:bg-black/10 text-xs font-bold uppercase tracking-widest cursor-pointer flex items-center gap-2"
+            </div>
+          ) : (
+            <div
+              className="py-20 text-center border-2 border-dashed rounded-3xl flex flex-col items-center gap-4 transition-all"
+              style={{
+                borderColor: colors.accent + "20",
+                backgroundColor: colors.accent + "05",
+              }}
+            >
+              <div className="w-16 h-16 rounded-2xl bg-white/50 flex items-center justify-center shadow-inner">
+                <BookOpen
+                  size={32}
+                  className="opacity-20"
                   style={{ color: colors.text }}
-                >
-                  <Plus size={14} /> Add Question
-                </button>
+                />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-black opacity-30 uppercase tracking-widest">
+                  No Topic Selected
+                </p>
+                <p className="text-[10px] font-bold opacity-20 uppercase tracking-widest">
+                  Select a topic above to link questions to this quiz
+                </p>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 pt-4">
           <button
             type="submit"
-            className="flex-1 py-4 rounded font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3 cursor-pointer"
+            disabled={loading}
+            className="flex-1 py-4 rounded font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-70"
             style={{
               backgroundColor: colors.primary,
               color: colors.background,
             }}
           >
-            <Save size={18} /> Publish Quiz
+            {loading ? (
+              <Loader size={18} variant="button" />
+            ) : (
+              <>
+                <Save size={18} /> Publish Quiz
+              </>
+            )}
           </button>
           <button
             type="button"

@@ -93,7 +93,7 @@ function EditShort() {
 
   return (
     <div className="w-full mx-auto pb-20 pt-4 px-4 h-full overflow-auto">
-      {actionLoading && <Loader size={128} fullPage={true} />}
+      {/* {actionLoading && <Loader size={128} fullPage={true} />} */}
       <div className="flex items-center gap-4 mb-8">
         <button
           onClick={() => navigate(-1)}
@@ -230,13 +230,20 @@ function EditShort() {
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <button
               type="submit"
-              className="flex-1 py-4 rounded font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3 cursor-pointer"
+              disabled={actionLoading}
+              className="flex-1 py-4 rounded font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-70"
               style={{
                 backgroundColor: colors.primary,
                 color: colors.background,
               }}
             >
-              <Save size={18} /> Update Short
+              {actionLoading ? (
+                <Loader size={18} variant="button" />
+              ) : (
+                <>
+                  <Save size={18} /> Update Short
+                </>
+              )}
             </button>
             <button
               type="button"

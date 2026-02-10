@@ -39,7 +39,7 @@ function EBooks() {
   const [ebookCategories, setEbookCategories] = useState([]);
   const [ebooks, setEbooks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(null);
 
   // Category specific states
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
@@ -92,7 +92,7 @@ function EBooks() {
   const handleAddCategory = async () => {
     if (newCatName.trim()) {
       try {
-        setActionLoading(true);
+        setActionLoading("adding");
         const res = await createEbookCategory({
           name: newCatName,
           status: newCatStatus,
@@ -109,7 +109,7 @@ function EBooks() {
       } catch (err) {
         toast.error(err.response?.data?.message || "Error adding category");
       } finally {
-        setActionLoading(false);
+        setActionLoading(null);
       }
     } else {
       toast.error("Please enter a category name");
@@ -124,7 +124,7 @@ function EBooks() {
   const saveEditCat = async (id) => {
     if (editingCatName.trim()) {
       try {
-        setActionLoading(true);
+        setActionLoading(id);
         const res = await updateEbookCategory(id, { name: editingCatName });
         if (res.success) {
           setEbookCategories((prev) =>
@@ -138,7 +138,7 @@ function EBooks() {
       } catch (err) {
         toast.error("Failed to update category");
       } finally {
-        setActionLoading(false);
+        setActionLoading(null);
       }
     } else {
       toast.error("Category name cannot be empty");
@@ -157,7 +157,7 @@ function EBooks() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          setActionLoading(true);
+          setActionLoading(id);
           const res = await deleteEbookCategory(id);
           if (res.success) {
             setEbookCategories((prev) => prev.filter((c) => c._id !== id));
@@ -166,7 +166,7 @@ function EBooks() {
         } catch (err) {
           toast.error("Failed to delete category");
         } finally {
-          setActionLoading(false);
+          setActionLoading(null);
         }
       }
     });
@@ -184,7 +184,7 @@ function EBooks() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          setActionLoading(true);
+          setActionLoading(id);
           const res = await deleteEbook(id);
           if (res.success) {
             setEbooks((prev) => prev.filter((b) => b._id !== id));
@@ -193,7 +193,7 @@ function EBooks() {
         } catch (err) {
           toast.error("Failed to delete ebook");
         } finally {
-          setActionLoading(false);
+          setActionLoading(null);
         }
       }
     });
@@ -202,7 +202,7 @@ function EBooks() {
   const toggleCatStatus = async (id, currentStatus) => {
     const newStatus = currentStatus === "Active" ? "Disabled" : "Active";
     try {
-      setActionLoading(true);
+      setActionLoading(id);
       const res = await updateEbookCategory(id, { status: newStatus });
       if (res.success) {
         setEbookCategories((prev) =>
@@ -213,14 +213,14 @@ function EBooks() {
     } catch (err) {
       toast.error("Failed to update status");
     } finally {
-      setActionLoading(false);
+      setActionLoading(null);
     }
   };
 
   const toggleEbookStatus = async (id, currentIsActive) => {
     const newIsActive = !currentIsActive;
     try {
-      setActionLoading(true);
+      setActionLoading(id);
       const res = await updateEbook(id, { isActive: newIsActive });
       if (res.success) {
         setEbooks((prev) =>
@@ -231,7 +231,7 @@ function EBooks() {
     } catch (err) {
       toast.error("Failed to update status");
     } finally {
-      setActionLoading(false);
+      setActionLoading(null);
     }
   };
 
@@ -240,7 +240,7 @@ function EBooks() {
       className="h-full w-full flex flex-col overflow-hidden"
       style={{ backgroundColor: colors.background }}
     >
-      {actionLoading && <Loader size={128} fullPage={true} />}
+      {/* {actionLoading === "global" && <Loader size={128} fullPage={true} />} */}
       {/* Header Section */}
       <div className="shrink-0 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -403,7 +403,11 @@ function EBooks() {
                             onClick={() => saveEditCat(cat._id)}
                             className="p-1.5 rounded-lg text-green-500 hover:bg-green-500/10 cursor-pointer"
                           >
-                            <Check size={18} />
+                            {actionLoading === cat._id ? (
+                              <Loader size={18} />
+                            ) : (
+                              <Check size={18} />
+                            )}
                           </button>
                           <button
                             onClick={() => setEditingCatId(null)}
@@ -462,7 +466,11 @@ function EBooks() {
                                 backgroundColor: "#ef444415",
                               }}
                             >
-                              <Trash2 size={16} />
+                              {actionLoading === cat._id ? (
+                                <Loader size={16} />
+                              ) : (
+                                <Trash2 size={16} />
+                              )}
                             </button>
                           </>
                         )}
@@ -649,7 +657,11 @@ function EBooks() {
                             backgroundColor: "#ef444415",
                           }}
                         >
-                          <Trash2 size={16} />
+                          {actionLoading === book._id ? (
+                            <Loader size={16} />
+                          ) : (
+                            <Trash2 size={16} />
+                          )}
                         </button>
                       </div>
                     </td>
@@ -766,7 +778,11 @@ function EBooks() {
                     color: colors.background,
                   }}
                 >
-                  Confirm
+                  {actionLoading === "adding" ? (
+                    <Loader size={18} variant="button" />
+                  ) : (
+                    "Confirm"
+                  )}
                 </button>
                 <button
                   onClick={() => setIsCatModalOpen(false)}

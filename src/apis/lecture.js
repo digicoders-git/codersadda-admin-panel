@@ -8,8 +8,9 @@ export const createLecture = async (data) => {
 };
 
 export const updateLecture = async (id, data) => {
-  const response = await http.put(`/lecture/update/${id}`, data, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+  const isFormData = data instanceof FormData;
+  const response = await http.patch(`/lecture/update/${id}`, data, {
+    headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : { 'Content-Type': 'application/json' },
   });
   return response.data;
 };

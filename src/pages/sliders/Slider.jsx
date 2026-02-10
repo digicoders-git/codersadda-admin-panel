@@ -12,6 +12,7 @@ import {
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import Toggle from "../../components/ui/Toggle";
+import Loader from "../../components/Loader";
 
 function Slider() {
   const { colors } = useTheme();
@@ -42,6 +43,7 @@ function Slider() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedImagePreview, setSelectedImagePreview] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null);
 
   const filteredSliders = sliders;
 
@@ -68,6 +70,7 @@ function Slider() {
     }
 
     try {
+      setActionLoading("adding");
       const formData = new FormData();
       formData.append("image", selectedFile);
 
@@ -81,6 +84,8 @@ function Slider() {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Error adding slider");
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -111,6 +116,7 @@ function Slider() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
+          setActionLoading(id);
           const res = await apiDeleteSlider(id);
           if (res.success) {
             setSliders((prev) => prev.filter((s) => s._id !== id));
@@ -118,6 +124,8 @@ function Slider() {
           }
         } catch (error) {
           toast.error(error.response?.data?.message || "Error deleting slider");
+        } finally {
+          setActionLoading(null);
         }
       }
     });
@@ -185,9 +193,9 @@ function Slider() {
 
             <div className="p-4">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-bold opacity-60">
+                {/* <span className="text-sm font-bold opacity-60">
                   Slider Image
-                </span>
+                </span> */}
                 <Toggle
                   active={slider.isActive}
                   onClick={() =>
@@ -211,10 +219,17 @@ function Slider() {
                 </button>
                 <button
                   onClick={() => handleDelete(slider._id)}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded border text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                  disabled={actionLoading === slider._id}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded border text-xs font-bold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50"
                   style={{ borderColor: "#EF444420", color: "#EF4444" }}
                 >
-                  <Trash2 size={14} /> Delete
+                  {actionLoading === slider._id ? (
+                    <Loader size={14} variant="button" />
+                  ) : (
+                    <>
+                      <Trash2 size={14} /> Delete
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -304,13 +319,18 @@ function Slider() {
             <div className="flex gap-3">
               <button
                 onClick={handleAddSlider}
-                className="flex-1 py-3 rounded font-bold text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all cursor-pointer"
+                disabled={actionLoading === "adding"}
+                className="flex-1 py-3 rounded font-bold text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70"
                 style={{
                   backgroundColor: colors.primary,
                   color: colors.background,
                 }}
               >
-                Add Slider
+                {actionLoading === "adding" ? (
+                  <Loader size={18} variant="button" />
+                ) : (
+                  "Add Slider"
+                )}
               </button>
               <button
                 onClick={() => {

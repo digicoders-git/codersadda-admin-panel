@@ -4,6 +4,7 @@ import { ArrowLeft, Save, Upload, X } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import { getSliders, updateSlider as apiUpdateSlider } from "../../apis/slider";
 import { toast } from "react-toastify";
+import Loader from "../../components/Loader";
 
 function EditSlider() {
   const { colors } = useTheme();
@@ -12,6 +13,7 @@ function EditSlider() {
   const { id } = useParams();
   const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const [formData, setFormData] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -70,6 +72,7 @@ function EditSlider() {
     }
 
     try {
+      setActionLoading(true);
       const res = await apiUpdateSlider(id, data);
       if (res.success) {
         toast.success("Slider updated successfully!");
@@ -77,6 +80,8 @@ function EditSlider() {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Error updating slider");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -150,13 +155,20 @@ function EditSlider() {
         <div className="flex flex-col sm:flex-row gap-3 pt-4">
           <button
             type="submit"
-            className="flex-1 py-4 rounded font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3 cursor-pointer"
+            disabled={actionLoading}
+            className="flex-1 py-4 rounded font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-70"
             style={{
               backgroundColor: colors.primary,
               color: colors.background,
             }}
           >
-            <Save size={18} /> Update Slider
+            {actionLoading ? (
+              <Loader size={18} variant="button" />
+            ) : (
+              <>
+                <Save size={18} /> Update Slider
+              </>
+            )}
           </button>
           <button
             type="button"

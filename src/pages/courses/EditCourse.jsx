@@ -25,6 +25,7 @@ import {
 } from "../../apis/course";
 import { getCourseCategories } from "../../apis/courseCategory";
 import { getInstructors } from "../../apis/instructor";
+import { getAllCertificateTemplates } from "../../apis/certificate";
 import { toast } from "react-toastify";
 import Loader from "../../components/Loader";
 
@@ -39,20 +40,23 @@ function EditCourse() {
   const [formData, setFormData] = useState(null);
   const [categories, setCategories] = useState([]);
   const [instructors, setInstructors] = useState([]);
+  const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [courseRes, catsRes, insRes] = await Promise.all([
+        const [courseRes, catsRes, insRes, templatesRes] = await Promise.all([
           getCourseById(id),
           getCourseCategories(),
           getInstructors(),
+          getAllCertificateTemplates(),
         ]);
 
         if (catsRes.success) setCategories(catsRes.data);
         if (insRes.success) setInstructors(insRes.data);
+        if (templatesRes.success) setTemplates(templatesRes.data);
 
         if (courseRes.success) {
           const course = courseRes.data;
@@ -67,6 +71,13 @@ function EditCourse() {
             promoVideoFile: null,
             promoVideoUrl: course.promoVideo?.url || course.promoVideoUrl || "",
             badge: (course.badge || "normal").toLowerCase(),
+            status: course.isActive ? "Active" : "Disabled",
+            priceForInstructor: course.priceForInstructor || 0,
+            reviews: (course.reviews || []).map((r) => ({
+              studentName: r.studentName || r.user || "",
+              rating: r.rating || 5,
+              comment: r.comment || "",
+            })),
           });
         }
       } catch (error) {
@@ -141,10 +152,16 @@ function EditCourse() {
       payload.append("priceForInstructor", formData.priceForInstructor || "0");
       payload.append("priceType", formData.priceType);
       payload.append("badge", formData.badge);
+
       payload.append(
         "price",
         formData.priceType === "paid" ? formData.price : 0,
       );
+      payload.append("isActive", formData.status === "Active");
+
+      if (formData.reviews) {
+        payload.append("reviews", JSON.stringify(formData.reviews));
+      }
 
       if (formData.whatYouWillLearn) {
         payload.append(
@@ -209,12 +226,9 @@ function EditCourse() {
           <Loader size={80} />
         </div>
       ) : formData ? (
-        <form
-          onSubmit={handleSubmit}
-          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-        >
+        <form onSubmit={handleSubmit} className="w-full space-y-6">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6">
             {/* General Information */}
             <div
               className="p-6 rounded-lg border shadow-sm"
@@ -253,29 +267,52 @@ function EditCourse() {
                     }}
                   />
                 </div>
-                <div className="space-y-1">
-                  <label style={labelStyle}>Instructor Name</label>
-                  <select
-                    required
-                    value={formData.instructor}
-                    onChange={(e) =>
-                      setFormData({ ...formData, instructor: e.target.value })
-                    }
-                    className="w-full px-4 py-2 rounded-md border outline-none cursor-pointer text-sm"
-                    style={{
-                      backgroundColor: colors.background,
-                      borderColor: colors.accent + "30",
-                      color: colors.text,
-                    }}
-                  >
-                    <option value="">Select Instructor</option>
-                    {(instructors || []).map((ins) => (
-                      <option key={ins._id} value={ins._id}>
-                        {ins.fullName || ins.name}
-                      </option>
-                    ))}
-                  </select>
+
+                <div className="flex gap-4">
+                  <div className="space-y-1 w-full">
+                    <label style={labelStyle}>Instructor Name</label>
+                    <select
+                      required
+                      value={formData.instructor}
+                      onChange={(e) =>
+                        setFormData({ ...formData, instructor: e.target.value })
+                      }
+                      className="w-full px-4 py-2 rounded-md border outline-none cursor-pointer text-sm"
+                      style={{
+                        backgroundColor: colors.background,
+                        borderColor: colors.accent + "30",
+                        color: colors.text,
+                      }}
+                    >
+                      <option value="">Select Instructor</option>
+                      {(instructors || []).map((ins) => (
+                        <option key={ins._id} value={ins._id}>
+                          {ins.fullName || ins.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1 w-full">
+                    <label style={labelStyle}>Price (%) for Instructor</label>
+                    <input
+                      type="number"
+                      value={formData.priceForInstructor}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          priceForInstructor: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2 rounded-md border outline-none text-sm"
+                      style={{
+                        backgroundColor: colors.background,
+                        borderColor: colors.accent + "30",
+                        color: colors.text,
+                      }}
+                    />
+                  </div>
                 </div>
+
                 <div className="space-y-1">
                   <label style={labelStyle}>Category</label>
                   <select
@@ -314,41 +351,7 @@ function EditCourse() {
                     }}
                   />
                 </div>
-                <div className="space-y-1">
-                  <label style={labelStyle}>Duration</label>
-                  <input
-                    type="text"
-                    value={formData.duration}
-                    onChange={(e) =>
-                      setFormData({ ...formData, duration: e.target.value })
-                    }
-                    className="w-full px-4 py-2 rounded-md border outline-none text-sm"
-                    style={{
-                      backgroundColor: colors.background,
-                      borderColor: colors.accent + "30",
-                      color: colors.text,
-                    }}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label style={labelStyle}>Lecture Number</label>
-                  <input
-                    type="number"
-                    value={formData.LectureNumber}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        LectureNumber: e.target.value,
-                      })
-                    }
-                    className="w-full px-4 py-2 rounded-md border outline-none text-sm"
-                    style={{
-                      backgroundColor: colors.background,
-                      borderColor: colors.accent + "30",
-                      color: colors.text,
-                    }}
-                  />
-                </div>
+
                 <div className="space-y-1">
                   <label style={labelStyle}>Price Type</label>
                   <div className="flex gap-2">
@@ -384,7 +387,7 @@ function EditCourse() {
                     ))}
                   </div>
                 </div>
-                {formData.priceType === "paid" && (
+                {formData.priceType === "paid" ? (
                   <div className="space-y-1">
                     <label style={labelStyle}>Price (₹)</label>
                     <input
@@ -402,7 +405,10 @@ function EditCourse() {
                       }}
                     />
                   </div>
+                ) : (
+                  <div className="hidden md:block"></div>
                 )}
+
                 <div className="space-y-1">
                   <label style={labelStyle}>Course Badge</label>
                   <select
@@ -507,11 +513,8 @@ function EditCourse() {
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Sidebar Controls */}
-          <div className="space-y-6">
-            {/* Media */}
+            {/* Media Assets - Thumb & Promo in a row */}
             <div
               className="p-6 rounded-lg border shadow-sm"
               style={{
@@ -519,19 +522,24 @@ function EditCourse() {
                 borderColor: colors.accent + "20",
               }}
             >
-              <h3
-                className="text-sm font-bold mb-4"
+              <h2
+                className="text-lg font-bold mb-6 flex items-center gap-2"
                 style={{ color: colors.text }}
               >
+                <ImageIcon
+                  size={18}
+                  className="text-primary"
+                  style={{ color: colors.primary }}
+                />{" "}
                 Course Assets
-              </h3>
+              </h2>
 
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label style={labelStyle}>Thumbnail Image</label>
                   <div
                     onClick={() => imageInputRef.current.click()}
-                    className="relative h-40 rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all hover:bg-black/5"
+                    className="relative h-44 rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all hover:bg-black/5"
                     style={{
                       borderColor: colors.accent + "30",
                       backgroundColor: colors.background,
@@ -562,51 +570,69 @@ function EditCourse() {
                 <div>
                   <label style={labelStyle}>Promo Video</label>
                   <div
-                    className="h-32 rounded-lg border-2 border-dashed flex flex-col items-center justify-center relative transition-all"
+                    className="h-44 rounded-lg border-2 border-dashed flex flex-col items-center justify-center relative transition-all overflow-hidden"
                     style={{
                       borderColor: colors.accent + "30",
                       backgroundColor: colors.background,
                     }}
                   >
-                    {formData.promoVideoFile || formData.promoVideo?.url ? (
-                      <div className="flex flex-col items-center p-2 text-center">
-                        <Video size={24} className="text-green-500 mb-1" />
-                        <p className="text-[10px] font-bold truncate max-w-[150px]">
-                          {formData.promoVideoFile
-                            ? formData.promoVideoFile.name
-                            : formData.promoVideo?.public_id
-                                ?.split("/")
-                                .pop() || "Current Video"}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={removeVideo}
-                          className="mt-2 text-[10px] font-bold text-red-500 hover:underline cursor-pointer"
-                        >
-                          Remove
-                        </button>
+                    {formData.promoVideoFile || formData.promoVideoUrl ? (
+                      <div className="relative w-full h-full group">
+                        {formData.promoVideoUrl && (
+                          <video
+                            src={formData.promoVideoUrl}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                        <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Video size={24} className="text-white mb-1" />
+                          <p className="text-[10px] text-white font-bold px-4 truncate w-full text-center">
+                            {formData.promoVideoFile
+                              ? formData.promoVideoFile.name
+                              : "Current Video"}
+                          </p>
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              type="button"
+                              onClick={() => videoInputRef.current.click()}
+                              className="px-3 py-1 rounded bg-white text-black text-[10px] font-bold"
+                            >
+                              Change
+                            </button>
+                            <button
+                              type="button"
+                              onClick={removeVideo}
+                              className="px-3 py-1 rounded bg-red-500 text-white text-[10px] font-bold"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <div
                         onClick={() => videoInputRef.current.click()}
-                        className="text-center opacity-40 cursor-pointer"
+                        className="text-center opacity-40 cursor-pointer w-full h-full flex flex-col items-center justify-center"
                       >
                         <Video size={32} className="mx-auto mb-2" />
                         <p className="text-xs font-bold">Upload Video</p>
-                        <input
-                          type="file"
-                          ref={videoInputRef}
-                          onChange={handleVideoChange}
-                          accept="video/*"
-                          className="hidden"
-                        />
                       </div>
                     )}
+                    <input
+                      type="file"
+                      ref={videoInputRef}
+                      onChange={handleVideoChange}
+                      accept="video/*"
+                      className="hidden"
+                    />
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
+          {/* Sidebar Controls - Now part of single column */}
+          <div className="space-y-6">
             {/* Course Status */}
             {/* FAQs Section */}
             <div
@@ -708,7 +734,7 @@ function EditCourse() {
                       ...prev,
                       reviews: [
                         ...(prev.reviews || []),
-                        { user: "", rating: 5, comment: "" },
+                        { studentName: "", rating: 5, comment: "" },
                       ],
                     }))
                   }
@@ -728,10 +754,10 @@ function EditCourse() {
                       <div className="flex gap-4">
                         <input
                           type="text"
-                          value={review.user}
+                          value={review.studentName}
                           onChange={(e) => {
                             const newReviews = [...(formData.reviews || [])];
-                            newReviews[index].user = e.target.value;
+                            newReviews[index].studentName = e.target.value;
                             setFormData({ ...formData, reviews: newReviews });
                           }}
                           placeholder="Student Name"
@@ -859,9 +885,7 @@ function EditCourse() {
                 disabled={actionLoading}
               >
                 {actionLoading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader size={16} /> Updating...
-                  </div>
+                  <Loader size={18} variant="button" />
                 ) : (
                   "Update Course"
                 )}

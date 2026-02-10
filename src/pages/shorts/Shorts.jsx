@@ -27,7 +27,7 @@ function Shorts() {
   const { colors } = useTheme();
   const [shorts, setShorts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(null);
   const navigate = useNavigate();
 
   const fetchShorts = async () => {
@@ -67,7 +67,7 @@ function Shorts() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          setActionLoading(true);
+          setActionLoading(id);
           const res = await apiDeleteShort(id);
           if (res.success) {
             setShorts((prev) => prev.filter((s) => s._id !== id));
@@ -76,7 +76,7 @@ function Shorts() {
         } catch (error) {
           toast.error(error.response?.data?.message || "Error deleting short");
         } finally {
-          setActionLoading(false);
+          setActionLoading(null);
         }
       }
     });
@@ -84,7 +84,7 @@ function Shorts() {
 
   const handleToggleStatus = async (id, currentStatus) => {
     try {
-      setActionLoading(true);
+      setActionLoading(id);
       const res = await apiToggleShortStatus(id);
       if (res.success) {
         setShorts((prev) =>
@@ -95,13 +95,13 @@ function Shorts() {
     } catch (error) {
       toast.error(error.response?.data?.message || "Error updating status");
     } finally {
-      setActionLoading(false);
+      setActionLoading(null);
     }
   };
 
   return (
     <div className="w-full mx-auto pb-20 pt-4 px-4 h-full overflow-auto">
-      {actionLoading && <Loader size={128} fullPage={true} />}
+      {/* {actionLoading && <Loader size={128} fullPage={true} />} */}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
@@ -246,10 +246,15 @@ function Shorts() {
                   </button>
                   <button
                     onClick={() => handleDelete(short._id)}
-                    className="p-2 cursor-pointer rounded border text-xs font-bold uppercase tracking-wider transition-all hover:bg-red-50"
+                    disabled={actionLoading === short._id}
+                    className="p-2 cursor-pointer rounded border text-xs font-bold uppercase tracking-wider transition-all hover:bg-red-50 disabled:opacity-50"
                     style={{ borderColor: "#EF444430", color: "#EF4444" }}
                   >
-                    <Trash2 size={14} />
+                    {actionLoading === short._id ? (
+                      <Loader size={14} variant="button" />
+                    ) : (
+                      <Trash2 size={14} />
+                    )}
                   </button>
                 </div>
               </div>

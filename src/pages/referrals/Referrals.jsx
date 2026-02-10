@@ -124,7 +124,7 @@ function Referrals() {
                 style={{ borderColor: colors.accent + "15" }}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-slate-50 shadow-sm shrink-0 bg-slate-50 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded overflow-hidden border-2 border-slate-50 shadow-sm shrink-0 bg-slate-50 flex items-center justify-center">
                     {student.profilePicture?.url ? (
                       <img
                         src={student.profilePicture.url}
@@ -189,7 +189,7 @@ function Referrals() {
         className="p-4 border-t"
         style={{ borderColor: colors.accent + "10" }}
       >
-        <div className="p-4 rounded-xl bg-indigo-600 text-white flex items-center justify-between shadow-lg shadow-indigo-200">
+        <div className="p-4 rounded bg-indigo-600 text-white flex items-center justify-between shadow-lg shadow-indigo-200">
           <div>
             <p className="text-[9px] font-black opacity-70 uppercase tracking-widest mb-0.5">
               Total Rewards
@@ -198,7 +198,7 @@ function Referrals() {
               ₹{students.length * (config?.value || 0)}
             </p>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
+          <div className="w-10 h-10 rounded bg-white/20 flex items-center justify-center">
             <DollarSign size={20} />
           </div>
         </div>
@@ -368,14 +368,6 @@ function Referrals() {
       app.collegeName.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <Loader size={128} />
-      </div>
-    );
-  }
-
   return (
     <div className="p-6 space-y-8">
       {/* Header */}
@@ -393,13 +385,13 @@ function Referrals() {
         </div>
 
         <div
-          className="p-4 rounded-xl border flex items-center gap-4 bg-opacity-50"
+          className="p-4 rounded border flex items-center gap-4 bg-opacity-50"
           style={{
             backgroundColor: colors.sidebar,
             borderColor: colors.accent + "20",
           }}
         >
-          <div className="p-2 rounded-lg bg-green-500/10 text-green-500">
+          <div className="p-2 rounded bg-green-500/10 text-green-500">
             <DollarSign size={24} />
           </div>
           <div>
@@ -413,7 +405,7 @@ function Referrals() {
           </div>
           <button
             onClick={handleUpdateConfig}
-            className="ml-4 p-2 rounded-lg hover:bg-black/5 transition-colors cursor-pointer"
+            className="ml-4 p-2 rounded hover:bg-black/5 transition-colors cursor-pointer"
             style={{ color: colors.primary }}
           >
             <Settings size={20} />
@@ -423,7 +415,7 @@ function Referrals() {
 
       {/* Tabs & Search */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex bg-black/5 p-1 rounded-xl w-fit">
+        <div className="flex bg-black/5 p-1 rounded w-fit">
           {[
             { id: "pending", label: "Pending", icon: Clock },
             { id: "approved", label: "Approved", icon: CheckCircle },
@@ -432,7 +424,7 @@ function Referrals() {
             <button
               key={tab.id}
               onClick={() => setStatusFilter(tab.id)}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-6 py-2.5 rounded text-sm font-bold transition-all cursor-pointer ${
                 statusFilter === tab.id
                   ? "shadow-md bg-white"
                   : "opacity-40 hover:opacity-100"
@@ -460,7 +452,7 @@ function Referrals() {
             placeholder="Search applicants..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none font-medium"
+            className="w-full pl-10 pr-4 py-2.5 rounded border outline-none font-medium"
             style={{
               backgroundColor: colors.sidebar,
               borderColor: colors.accent + "20",
@@ -472,7 +464,7 @@ function Referrals() {
 
       {/* Applications List */}
       <div
-        className="rounded-2xl border overflow-hidden shadow-sm relative min-h-[400px]"
+        className="rounded border overflow-hidden shadow-sm relative min-h-[400px]"
         style={{
           backgroundColor: colors.sidebar,
           borderColor: colors.accent + "20",
@@ -546,7 +538,7 @@ function Referrals() {
                       </td>
                       <td className="p-4">
                         {app.status === "approved" ? (
-                          <span className="px-3 py-1 rounded-lg bg-green-500/10 text-green-600 font-mono font-bold border border-green-500/20">
+                          <span className="px-3 py-1 rounded bg-green-500/10 text-green-600 font-mono font-bold border border-green-500/20">
                             {app.user?.referralCode || "PENDING"}
                           </span>
                         ) : (
@@ -580,7 +572,7 @@ function Referrals() {
                                 onClick={() =>
                                   handleApprove(app._id, app.fullName)
                                 }
-                                className="px-4 py-2 rounded-lg bg-green-500 text-white text-xs font-black uppercase hover:bg-green-600 transition-colors cursor-pointer"
+                                className="px-4 py-2 rounded bg-green-500 text-white text-xs font-black uppercase hover:bg-green-600 transition-colors cursor-pointer"
                               >
                                 Approve
                               </button>
@@ -588,7 +580,7 @@ function Referrals() {
                                 onClick={() =>
                                   handleReject(app._id, app.fullName)
                                 }
-                                className="px-4 py-2 rounded-lg border text-red-500 text-xs font-black uppercase hover:bg-red-50 transition-colors cursor-pointer"
+                                className="px-4 py-2 rounded border text-red-500 text-xs font-black uppercase hover:bg-red-50 transition-colors cursor-pointer"
                                 style={{ borderColor: colors.accent + "30" }}
                               >
                                 Reject

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { useParams, useLocation, useNavigate, useNavigation } from "react-router-dom";
 import { useTheme } from "../../context/ThemeContext";
 import {
   Users,
@@ -27,6 +27,7 @@ import {
   Mail,
   History,
   X,
+  ArrowLeft,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -291,6 +292,7 @@ function EnrolledStudents() {
         return <Users size={24} />;
     }
   };
+  
 
   return (
     <div className="w-full mx-auto pb-20 pt-4 px-4 h-full overflow-auto scrollbar-hide">
@@ -298,13 +300,17 @@ function EnrolledStudents() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <div
-            className="p-3 rounded-xl shadow-sm"
+          onClick={()=>navigate(-1)}
+            className="p-3 cursor-pointer rounded-xl shadow-sm"
             style={{
               backgroundColor: colors.primary + "15",
               color: colors.primary,
             }}
           >
-            {getServiceIcon()}
+            {/* {getServiceIcon()} */}
+            
+              <ArrowLeft />
+            
           </div>
           <div>
             <h1
@@ -326,7 +332,7 @@ function EnrolledStudents() {
         <button
           onClick={exportToCSV}
           className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all active:scale-95 shadow-lg shadow-black/5"
-          style={{ backgroundColor: colors.primary, color: "#fff" }}
+          style={{ backgroundColor: colors.text, color: colors.background }}
         >
           <Download size={18} />
           Export to CSV
@@ -339,84 +345,63 @@ function EnrolledStudents() {
           {
             label: "Total Students",
             value: stats?.totalEnrolled || 0,
-            icon: <Users />,
+            // icon: <Users size={20} />,
             color: colors.primary,
           },
           {
             label: "Active Plans",
             value: stats?.activeCount || 0,
-            icon: <CheckCircle2 />,
+            // icon: <CheckCircle2 size={20} />,
             color: "#22c55e",
           },
           {
             label: "Expired Plans",
             value: stats?.expiredCount || 0,
-            icon: <XCircle />,
+            // icon: <XCircle size={20} />,
             color: "#ef4444",
           },
           {
             label: "Total Revenue",
             value: `₹${(stats?.totalRevenue || 0).toLocaleString()}`,
-            icon: <TrendingUp />,
+            // icon: <TrendingUp size={20} />,
             color: "#8b5cf6",
           },
         ].map((item, i) => (
-          <motion.div
+          <div
             key={i}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="p-5 rounded-2xl border shadow-sm relative overflow-hidden group"
+            className="p-5 rounded border shadow-sm flex flex-col justify-between relative overflow-hidden"
             style={{
               backgroundColor: colors.sidebar,
               borderColor: colors.accent + "15",
             }}
           >
+            <div>
+              <p
+                className="text-xs font-bold uppercase tracking-widest opacity-60 mb-1"
+                style={{ color: colors.textSecondary }}
+              >
+                {item.label}
+              </p>
+              <h3 className="text-2xl font-bold" style={{ color: colors.text }}>
+                {item.value}
+              </h3>
+            </div>
             <div
-              className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-110 transition-transform duration-500"
+              className="absolute right-4 top-1/2 -translate-y-1/2 opacity-10"
               style={{ color: item.color }}
             >
-              {React.cloneElement(item.icon, { size: 100 })}
-            </div>
-            <div className="flex items-center gap-4 relative z-10">
-              <div
-                className="p-3 rounded-xl"
-                style={{
-                  backgroundColor: item.color + "15",
-                  color: item.color,
-                }}
-              >
-                {React.cloneElement(item.icon, { size: 24 })}
-              </div>
-              <div>
-                <p
-                  className="text-[10px] font-black uppercase tracking-widest opacity-50"
-                  style={{ color: colors.textSecondary }}
-                >
-                  {item.label}
-                </p>
-                <p
-                  className="text-2xl font-black mt-0.5"
-                  style={{ color: colors.text }}
-                >
-                  {item.value}
-                </p>
-              </div>
+              {/* {React.cloneElement(item.icon, { size: 48 })} */}
             </div>
             {i === 3 && stats?.topPlan && (
               <div
-                className="mt-4 pt-4 border-t flex items-center justify-between relative z-10"
-                style={{ borderColor: colors.accent + "10" }}
+                className="mt-3 text-[10px] font-bold opacity-60 flex items-center gap-1"
+                style={{ color: colors.textSecondary }}
               >
-                <span className="text-[10px] font-bold opacity-40 uppercase">
-                  Top Plan
-                </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-700 uppercase tracking-wider">
-                  {stats.topPlan}
-                </span>
+                <span>Top Plan:</span>
+                <span style={{ color: colors.primary }}>{stats.topPlan}</span>
               </div>
             )}
-          </motion.div>
+          </div>
         ))}
       </div>
 
@@ -437,7 +422,7 @@ function EnrolledStudents() {
               placeholder="Search by name, email or mobile..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-xl border text-sm transition-all focus:ring-2"
+              className="w-full pl-12 pr-4 py-3 rounded border text-sm transition-all focus:ring-1 outline-none"
               style={{
                 backgroundColor: colors.sidebar,
                 borderColor: colors.accent + "20",
@@ -450,7 +435,7 @@ function EnrolledStudents() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-bold transition-all ${showFilters ? "ring-2" : ""}`}
+              className={`flex cursor-pointer items-center gap-2 px-4 py-3 rounded border text-sm font-bold transition-all ${showFilters ? "ring-1" : ""}`}
               style={{
                 backgroundColor: colors.sidebar,
                 borderColor: colors.accent + "20",
@@ -473,7 +458,7 @@ function EnrolledStudents() {
               className="overflow-hidden"
             >
               <div
-                className="p-6 rounded-2xl border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6"
+                className="p-6 rounded border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6"
                 style={{
                   backgroundColor: colors.sidebar,
                   borderColor: colors.accent + "20",
@@ -487,18 +472,36 @@ function EnrolledStudents() {
                     Plan Status
                   </label>
                   <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full p-2.5 rounded-lg border text-sm bg-transparent"
+                    className="w-full p-2.5 rounded border text-sm bg-transparent outline-none cursor-pointer"
                     style={{
                       borderColor: colors.accent + "20",
                       color: colors.text,
                     }}
                   >
-                    <option value="all">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="expired">Expired</option>
-                    <option value="cancelled">Cancelled</option>
+                    <option
+                      value="all"
+                      className="bg-white text-black dark:bg-slate-800 dark:text-white"
+                    >
+                      All Status
+                    </option>
+                    <option
+                      value="active"
+                      className="bg-white text-black dark:bg-slate-800 dark:text-white"
+                    >
+                      Active
+                    </option>
+                    <option
+                      value="expired"
+                      className="bg-white text-black dark:bg-slate-800 dark:text-white"
+                    >
+                      Expired
+                    </option>
+                    <option
+                      value="cancelled"
+                      className="bg-white text-black dark:bg-slate-800 dark:text-white"
+                    >
+                      Cancelled
+                    </option>
                   </select>
                 </div>
 
@@ -558,7 +561,7 @@ function EnrolledStudents() {
                       setPaymentFilter("all");
                       setPage(1);
                     }}
-                    className="w-full py-2.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all hover:bg-red-50 hover:text-red-500 hover:border-red-200"
+                    className="w-full cursor-pointer py-2.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all hover:text-red-500"
                     style={{
                       borderColor: colors.accent + "20",
                       color: colors.textSecondary,
@@ -575,7 +578,7 @@ function EnrolledStudents() {
 
       {/* Main Table */}
       <div
-        className="rounded-3xl border shadow-xl shadow-black/2 overflow-hidden"
+        className="rounded border shadow-sm overflow-hidden"
         style={{
           backgroundColor: colors.sidebar,
           borderColor: colors.accent + "15",
@@ -592,37 +595,37 @@ function EnrolledStudents() {
                 }}
               >
                 <th
-                  className="px-6 py-5 text-[10px] font-black uppercase tracking-widest opacity-40"
+                  className="px-6 py-5 text-[10px] uppercase tracking-widest opacity-60"
                   style={{ color: colors.text }}
                 >
                   Student
                 </th>
                 <th
-                  className="px-6 py-5 text-[10px] font-black uppercase tracking-widest opacity-40"
+                  className="px-6 py-5 text-[10px] uppercase tracking-widest opacity-60"
                   style={{ color: colors.text }}
                 >
                   Plan Info
                 </th>
                 <th
-                  className="px-6 py-5 text-[10px] font-black uppercase tracking-widest opacity-40"
+                  className="px-6 py-5 text-[10px] uppercase tracking-widest opacity-60"
                   style={{ color: colors.text }}
                 >
                   Validity Period
                 </th>
                 <th
-                  className="px-6 py-5 text-[10px] font-black uppercase tracking-widest opacity-40"
+                  className="px-6 py-5 text-[10px] uppercase tracking-widest opacity-60"
                   style={{ color: colors.text }}
                 >
                   Revenue
                 </th>
                 <th
-                  className="px-6 py-5 text-[10px] font-black uppercase tracking-widest opacity-40"
+                  className="px-6 py-5 text-[10px] uppercase tracking-widest opacity-60"
                   style={{ color: colors.text }}
                 >
                   Status
                 </th>
                 <th
-                  className="px-6 py-5 text-[10px] font-black uppercase tracking-widest opacity-40 text-center"
+                  className="px-6 py-5 text-[10px] uppercase tracking-widest opacity-60 text-center"
                   style={{ color: colors.text }}
                 >
                   Actions
@@ -713,7 +716,7 @@ function EnrolledStudents() {
                     </td>
                     <td className="px-6 py-5 text-[11px] font-bold">
                       <div className="flex flex-col gap-0.5">
-                        <span className="opacity-40 uppercase text-[9px]">
+                        <span className="opacity-40 uppercase text-[9px]" style={{color: colors.text}}>
                           Valid From
                         </span>
                         <span style={{ color: colors.text }}>

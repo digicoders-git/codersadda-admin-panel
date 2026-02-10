@@ -618,8 +618,13 @@ function EditLecture() {
                 color: colors.background,
               }}
             >
-              {actionLoading ? <Loader size={18} /> : <Save size={18} />} Update
-              Lecture
+              {actionLoading ? (
+                <Loader size={18} variant="button" />
+              ) : (
+                <>
+                  <Save size={18} /> Update Lecture
+                </>
+              )}
             </button>
             <button
               type="button"

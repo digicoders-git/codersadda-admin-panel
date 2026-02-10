@@ -26,6 +26,8 @@ import {
   Gift,
   Briefcase,
   Trash2,
+  X,
+  Eye,
 } from "lucide-react";
 import Loader from "../../components/Loader";
 import { useTheme } from "../../context/ThemeContext";
@@ -37,6 +39,7 @@ import {
 } from "../../apis/user";
 import { getAllCourses } from "../../apis/course";
 import { getSubscriptions } from "../../apis/subscription";
+import { getUserCertificatesByUserId } from "../../apis/certificate";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 
@@ -58,30 +61,40 @@ function ViewUser() {
   const [subSubscriptionTab, setSubSubscriptionTab] = useState("active");
   const [transactions, setTransactions] = useState([]);
   const [txnLoading, setTxnLoading] = useState(false);
+  const [courseCertificates, setCourseCertificates] = useState([]);
+  const [quizCertificates, setQuizCertificates] = useState([]);
+  const [selectedCert, setSelectedCert] = useState(null);
+  const [showCertModal, setShowCertModal] = useState(false);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [usersRes, coursesRes, subsRes] = await Promise.all([
-        getUsers(),
+      const [userRes, coursesRes, subsRes, certRes] = await Promise.all([
+        apiGetUserById(id),
         getAllCourses(),
         getSubscriptions(),
+        getUserCertificatesByUserId(id),
       ]);
 
-      if (usersRes.success) {
-        setUsers(usersRes.data);
-        const found = usersRes.data.find((u) => u._id === id);
-        if (found) {
-          setUser(found);
-        } else {
-          toast.error("User not found");
-          navigate("/dashboard/users");
+      if (userRes.success) {
+        setUser(userRes.data);
+        if (userRes.data.quizCertificates) {
+          setQuizCertificates(userRes.data.quizCertificates);
         }
+      } else {
+        toast.error("User not found");
+        navigate("/dashboard/users");
       }
+
       if (coursesRes.success) setCourses(coursesRes.data);
       if (subsRes.success) setSubscriptions(subsRes.data);
+
+      if (certRes.success) {
+        setCourseCertificates(certRes.certificates);
+      }
     } catch (error) {
       toast.error("Failed to fetch initial data");
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -198,7 +211,7 @@ function ViewUser() {
               >
                 {user.name}
               </h2>
-              <div className="flex flex-wrap justify-center md:justify-start gap-4 text-xs font-bold opacity-60 uppercase tracking-wider mb-3">
+              <div className="flex flex-wrap justify-center md:justify-start gap-4 text-xs font-bold opacity-60 tracking-wider mb-3">
                 <span
                   className="flex items-center gap-1"
                   style={{ color: colors.text }}
@@ -209,7 +222,7 @@ function ViewUser() {
                   className="flex items-center gap-1"
                   style={{ color: colors.text }}
                 >
-                  <Phone size={12} /> {user.phone}
+                  <Phone size={12} /> {user.mobile}
                 </span>
               </div>
               <div className="flex justify-center md:justify-start gap-3">
@@ -223,7 +236,7 @@ function ViewUser() {
                       border: `1px solid ${colors.textSecondary}`,
                     }}
                   >
-                    <Github size={16} />
+                    <Github size={16} /> 
                   </a>
                 )}
                 {user.social?.linkedin && (
@@ -256,16 +269,16 @@ function ViewUser() {
             </div>
             <div className="flex flex-col gap-2 min-w-[150px]">
               <div className="p-3 rounded bg-black/5 border border-black/5 text-center">
-                <span
+                {/* <span
                   className="block text-xs font-bold opacity-50 uppercase tracking-wider"
                   style={{ color: colors.textSecondary }}
                 >
                   Status
-                </span>
+                </span> */}
                 <span
-                  className={`text-sm font-black uppercase tracking-widest ${user.status === "Active" ? "text-green-600" : "text-red-500"}`}
+                  className={`text-sm font-black uppercase tracking-widest ${user.isActive === true ? "text-green-600" : "text-red-500"}`}
                 >
-                  {user.status}
+                  {user.isActive ? "Active" : "Inactive"}
                 </span>
               </div>
             </div>
@@ -602,11 +615,59 @@ function ViewUser() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {/* Filtered Certificates */}
+                    {/* Real Course Certificates */}
+                    {certTab === "course" &&
+                      courseCertificates.map((cert) => (
+                        <div
+                          key={cert._id}
+                          className="group relative rounded-xl border border-slate-200 bg-white p-3 shadow-xs transition-all hover:shadow-md cursor-pointer"
+                          onClick={() => {
+                            setSelectedCert(cert);
+                            setShowCertModal(true);
+                          }}
+                        >
+                          {/* Certificate Preview Image */}
+                          <div className="aspect-[4/3] w-full rounded-lg overflow-hidden bg-slate-100 mb-4 border border-slate-100 relative">
+                            <img
+                              src={cert.certificateUrl}
+                              alt={cert.course?.title}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <div className="bg-white/90 p-2 rounded-full shadow-lg">
+                                <Eye size={20} className="text-slate-900" />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="px-1 pb-1">
+                            <h3 className="font-bold text-slate-900 text-sm mb-1 truncate">
+                              {cert.course?.title}
+                            </h3>
+                            <div className="flex items-center justify-between mt-2">
+                              <span className="text-[10px] font-bold text-slate-400">
+                                {new Date(cert.issuedAt).toLocaleDateString(
+                                  "en-IN",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  },
+                                )}
+                              </span>
+                              <div className="flex items-center gap-1 text-[10px] font-black text-primary uppercase tracking-widest">
+                                <Award size={12} /> Earned
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                    {/* Filtered Achievements (Mock/Static) */}
                     {(user.achievements || [])
                       .filter((ach) =>
                         certTab === "course"
-                          ? ach.type === "Certificate" || !ach.type
+                          ? false // Skip static course certificates since we show real ones now
                           : ach.type === "QuizCertificate",
                       )
                       .map((ach, i) => (
@@ -649,35 +710,6 @@ function ViewUser() {
                               {ach.description}
                             </p>
 
-                            {ach.type === "Certificate" && (
-                              <div
-                                className="flex items-center justify-between pt-4 border-t mt-auto"
-                                style={{ borderColor: colors.accent + "10" }}
-                              >
-                                <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">
-                                  {ach.date}
-                                </span>
-                                <button
-                                  className="text-[10px] font-black uppercase text-primary hover:underline underline-offset-4 flex items-center gap-1 transition-all cursor-pointer"
-                                  onClick={() => {
-                                    navigate(
-                                      "/dashboard/courses/generate-certificate",
-                                      {
-                                        state: {
-                                          studentName: user.name,
-                                          courseName: ach.courseName,
-                                          completedOn: ach.date,
-                                          existingConfig: ach.config,
-                                        },
-                                      },
-                                    );
-                                  }}
-                                >
-                                  View Design <ArrowUpRight size={12} />
-                                </button>
-                              </div>
-                            )}
-
                             {ach.type === "QuizCertificate" && (
                               <div
                                 className="flex items-center justify-between pt-4 border-t mt-auto"
@@ -695,19 +727,84 @@ function ViewUser() {
                         </div>
                       ))}
 
-                    {(user.achievements || []).filter((ach) =>
-                      certTab === "course"
-                        ? ach.type === "Certificate" || !ach.type
-                        : ach.type === "QuizCertificate",
-                    ).length === 0 && (
+                    {certTab === "course" &&
+                      courseCertificates.length === 0 && (
+                        <div
+                          className="col-span-full text-center py-20 opacity-40 border rounded-lg border-dashed"
+                          style={{ borderColor: colors.accent + "30" }}
+                        >
+                          <Trophy size={48} className="mx-auto mb-4" />
+                          <p className="font-bold">
+                            No course certificates found.
+                          </p>
+                        </div>
+                      )}
+
+                    {/* Quiz Certificates */}
+                    {certTab === "quiz" &&
+                      quizCertificates.map((cert) => (
+                        <div
+                          key={cert._id}
+                          className="group relative rounded-xl border border-slate-200 bg-white p-3 shadow-xs transition-all hover:shadow-md cursor-pointer"
+                          onClick={() => {
+                            // Show modal with certificate image
+                            Swal.fire({
+                              imageUrl: cert.certificateUrl,
+                              imageAlt: "Certificate",
+                              width: 800,
+                              showConfirmButton: false,
+                              showCloseButton: true,
+                              background: "#fff",
+                            });
+                          }}
+                        >
+                          {/* Certificate Preview Image */}
+                          <div className="aspect-[4/3] w-full rounded-lg overflow-hidden bg-slate-100 mb-4 border border-slate-100 relative">
+                            <img
+                              src={cert.certificateUrl}
+                              alt={cert.quiz?.title}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <div className="bg-white/90 p-2 rounded-full shadow-lg">
+                                <Eye size={20} className="text-slate-900" />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="px-1 pb-1">
+                            <h3 className="font-bold text-slate-900 text-sm mb-1 truncate">
+                              {cert.quiz?.title || "Unknown Quiz"}
+                            </h3>
+                            <div className="flex items-center justify-between mt-2">
+                              <span className="text-[10px] font-bold text-slate-400">
+                                {new Date(cert.issuedAt).toLocaleDateString(
+                                  "en-IN",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  },
+                                )}
+                              </span>
+                              <div className="flex items-center gap-1 text-[10px] font-black text-green-600 uppercase tracking-widest">
+                                <Award size={12} /> Certified
+                              </div>
+                            </div>
+                            <div className="mt-2 text-[10px] font-bold text-slate-400 bg-slate-50 p-1 rounded text-center">
+                              Code: {cert.certificateId}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                    {certTab === "quiz" && quizCertificates.length === 0 && (
                       <div
                         className="col-span-full text-center py-20 opacity-40 border rounded-lg border-dashed"
                         style={{ borderColor: colors.accent + "30" }}
                       >
                         <Trophy size={48} className="mx-auto mb-4" />
-                        <p className="font-bold">
-                          No {certTab} certificates found.
-                        </p>
+                        <p className="font-bold">No quiz certificates found.</p>
                       </div>
                     )}
                   </div>
@@ -1576,6 +1673,86 @@ function ViewUser() {
       ) : (
         <div className="text-center p-20 opacity-40">User not found</div>
       )}
+      {/* Certificate Preview Modal */}
+      <AnimatePresence>
+        {showCertModal && selectedCert && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 md:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowCertModal(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-[2px]"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-6xl h-fit max-h-[95vh] flex flex-col bg-white rounded-2xl overflow-hidden shadow-2xl"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-4 border-b bg-white z-10">
+                <div className="flex items-center gap-3">
+                  <div className="hidden sm:flex w-10 h-10 rounded-full bg-primary/10 items-center justify-center text-primary">
+                    <Award size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm md:text-lg text-slate-900 leading-none mb-1">
+                      {selectedCert.course?.title}
+                    </h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                      ID: {selectedCert.certificateId}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={selectedCert.certificateUrl}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 md:px-4 py-2 bg-emerald-600 text-white rounded-lg text-[10px] md:text-xs font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-600/20"
+                  >
+                    <Download size={14} />{" "}
+                    <span className="hidden xs:inline">Download</span>
+                  </a>
+                  <button
+                    onClick={() => setShowCertModal(false)}
+                    className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Responsive Certificate Image Container */}
+              <div className="flex-1 overflow-hidden bg-slate-100/50 p-2 md:p-6 flex items-center justify-center min-h-0">
+                <img
+                  src={selectedCert.certificateUrl}
+                  alt="Certificate"
+                  className="max-w-full max-h-[70vh] w-auto h-auto object-contain shadow-xl rounded border border-white"
+                />
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-3 md:p-4 bg-white border-t flex items-center justify-between text-slate-500">
+                <div className="text-[10px] md:text-xs font-medium">
+                  Issued:{" "}
+                  {new Date(selectedCert.issuedAt).toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </div>
+                <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest opacity-40">
+                  CodersAdda Verification Site
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

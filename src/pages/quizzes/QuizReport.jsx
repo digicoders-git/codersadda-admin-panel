@@ -11,13 +11,18 @@ import {
   Clock,
   Award,
   Star,
+  Loader2,
+  CheckCircle,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
-import { getQuizById } from "../../apis/quiz";
+import {
+  getQuizById,
+  getAttemptsByQuiz,
+  exportReportExcel,
+} from "../../apis/quiz";
 import { getUsers } from "../../apis/user";
 import { toast } from "react-toastify";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
+import Loader from "../../components/Loader";
 
 function QuizReport() {
   const { colors } = useTheme();
@@ -25,16 +30,19 @@ function QuizReport() {
   const navigate = useNavigate();
   const [quiz, setQuiz] = useState(null);
   const [users, setUsers] = useState([]);
+  const [attempts, setAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [quizRes, usersRes] = await Promise.all([
+        const [quizRes, usersRes, attemptsRes] = await Promise.all([
           getQuizById(id),
           getUsers(),
+          getAttemptsByQuiz(id),
         ]);
 
         if (quizRes.success) {
@@ -48,6 +56,10 @@ function QuizReport() {
         if (usersRes.success) {
           setUsers(usersRes.data);
         }
+
+        if (attemptsRes.success) {
+          setAttempts(attemptsRes.data);
+        }
       } catch (err) {
         console.error(err);
         toast.error("Failed to load report data");
@@ -60,18 +72,19 @@ function QuizReport() {
   }, [id, navigate]);
 
   const processedAttempts = useMemo(() => {
-    if (!quiz || !quiz.attempts) return [];
+    if (!quiz || !attempts) return [];
 
     // Map attempts to include extra data
-    const attemptsWithData = quiz.attempts.map((attempt) => {
-      const student = users.find((u) => u._id === attempt.studentId); // Assuming _id
+    const attemptsWithData = attempts.map((attempt) => {
+      // studentId is populated object from backend
+      const student = attempt.studentId;
       return {
         ...attempt,
         studentName: student?.fullName || student?.name || "Unknown Student",
-        mobile: student?.phone || "N/A",
+        mobile: student?.mobile || student?.phone || "N/A",
         quizCode: quiz.quizCode || "N/A",
         // Default duration if missing for dummy data
-        duration: attempt.duration || Math.floor(Math.random() * 20) + 5,
+        duration: attempt.duration || 0,
       };
     });
 
@@ -88,7 +101,7 @@ function QuizReport() {
       ...attempt,
       rank: index + 1,
     }));
-  }, [quiz, users]);
+  }, [quiz, attempts]);
 
   const filteredAttempts = processedAttempts.filter(
     (attempt) =>
@@ -96,70 +109,36 @@ function QuizReport() {
       attempt.mobile.includes(searchQuery),
   );
 
-  if (loading) return <div className="p-10 text-center">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-20">
+        <Loader size={80} />
+      </div>
+    );
+  }
   if (!quiz) return null;
 
-  const handleExportReport = () => {
-    const doc = new jsPDF();
-
-    // Header
-    doc.setFontSize(18);
-    doc.text("Quiz Performance Report", 14, 20);
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Quiz Title: ${quiz.title}`, 14, 30);
-    doc.text(`Quiz Code: ${quiz.quizCode || "N/A"}`, 14, 36);
-    doc.text(`Generated On: ${new Date().toLocaleString()}`, 14, 42);
-    doc.text(`Total Attempts: ${quiz.attempts?.length || 0}`, 14, 48);
-
-    if (filteredAttempts.length === 0) {
-      toast.info("No attempts data available to export.");
-      return;
+  const handleExportReport = async () => {
+    try {
+      setIsExporting(true);
+      const response = await exportReportExcel(id);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `Quiz_Report_${quiz.title.replace(/\s+/g, "_")}.xlsx`,
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success("Excel report downloaded!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export Excel report");
+    } finally {
+      setIsExporting(false);
     }
-
-    // Table
-    const tableColumn = [
-      "Rank",
-      "Student Name",
-      "Mobile",
-      "Quiz Code",
-      "Marks",
-      "Duration",
-    ];
-    const tableRows = filteredAttempts.map((attempt) => [
-      `#${attempt.rank}`,
-      attempt.studentName,
-      attempt.mobile,
-      attempt.quizCode,
-      `${attempt.marks}/${attempt.totalMarks}`,
-      `${attempt.duration}m`,
-    ]);
-
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 55,
-      theme: "grid",
-      styles: { fontSize: 9, cellPadding: 3 },
-      headStyles: {
-        fillColor: [66, 133, 244],
-        textColor: 255,
-        fontStyle: "bold",
-        halign: "center",
-      },
-      columnStyles: {
-        0: { halign: "center", fontStyle: "bold" },
-        4: { halign: "center" },
-        5: { halign: "center" },
-      },
-      alternateRowStyles: { fillColor: [240, 240, 240] },
-    });
-
-    doc.save(
-      `Quiz_Report_${quiz.title.substring(0, 15).replace(/\s+/g, "_")}_${Date.now()}.pdf`,
-    );
-    toast.success("Report downloaded successfully!");
   };
 
   return (
@@ -189,88 +168,79 @@ function QuizReport() {
         </div>
         <button
           onClick={handleExportReport}
-          className="flex items-center gap-2 px-6 py-3 rounded font-bold text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95 cursor-pointer"
-          style={{ backgroundColor: colors.primary, color: colors.background }}
+          disabled={isExporting}
+          className="flex items-center gap-2 px-6 py-3 rounded font-bold text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+          style={{ backgroundColor: colors.text, color: colors.background }}
         >
-          <Download size={18} /> Export Full Report
+          {isExporting ? (
+            <Loader2 size={18} className="animate-spin" />
+          ) : (
+            <Download size={18} />
+          )}
+          {isExporting ? "Exporting..." : "Export Full Report"}
         </button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div
-          className="p-4 rounded border bg-black/5 flex flex-col items-center justify-center text-center gap-1"
-          style={{ borderColor: colors.accent + "10" }}
-        >
-          <Star className="text-yellow-500 mb-1" size={20} />
-          <span
-            className="text-[10px] font-bold opacity-60 uppercase"
-            style={{ color: colors.text }}
+        {[
+          {
+            label: "Total Attempts",
+            value: processedAttempts.length,
+            icon: <Star size={20} className="text-yellow-500" />,
+          },
+          {
+            label: "Average Score",
+            value:
+              processedAttempts.length > 0
+                ? Math.round(
+                    processedAttempts.reduce(
+                      (acc, curr) => acc + curr.marks,
+                      0,
+                    ) / processedAttempts.length,
+                  )
+                : 0,
+            icon: <Award size={20} className="text-green-500" />,
+          },
+          {
+            label: "Avg. Duration",
+            value:
+              (processedAttempts.length > 0
+                ? Math.round(
+                    processedAttempts.reduce(
+                      (acc, curr) => acc + (curr.duration || 0),
+                      0,
+                    ) / processedAttempts.length,
+                  )
+                : 0) + "m",
+            icon: <Clock size={20} className="text-blue-500" />,
+          },
+          {
+            label: "Quiz Code",
+            value: quiz.quizCode || "N/A",
+            icon: <Hash size={20} className="text-purple-500" />,
+          },
+        ].map((item, i) => (
+          <div
+            key={i}
+            className="p-4 rounded border flex flex-col items-center justify-center text-center gap-1"
+            style={{
+              backgroundColor: colors.sidebar || colors.background,
+              borderColor: colors.accent + "15",
+            }}
           >
-            Total Attempts
-          </span>
-          <span className="font-bold text-lg" style={{ color: colors.text }}>
-            {processedAttempts.length}
-          </span>
-        </div>
-        <div
-          className="p-4 rounded border bg-black/5 flex flex-col items-center justify-center text-center gap-1"
-          style={{ borderColor: colors.accent + "10" }}
-        >
-          <Award className="text-green-500 mb-1" size={20} />
-          <span
-            className="text-[10px] font-bold opacity-60 uppercase"
-            style={{ color: colors.text }}
-          >
-            Average Score
-          </span>
-          <span className="font-bold text-lg" style={{ color: colors.text }}>
-            {processedAttempts.length > 0
-              ? Math.round(
-                  processedAttempts.reduce((acc, curr) => acc + curr.marks, 0) /
-                    processedAttempts.length,
-                )
-              : 0}
-          </span>
-        </div>
-        <div
-          className="p-4 rounded border bg-black/5 flex flex-col items-center justify-center text-center gap-1"
-          style={{ borderColor: colors.accent + "10" }}
-        >
-          <Clock className="text-blue-500 mb-1" size={20} />
-          <span
-            className="text-[10px] font-bold opacity-60 uppercase"
-            style={{ color: colors.text }}
-          >
-            Avg. Duration
-          </span>
-          <span className="font-bold text-lg" style={{ color: colors.text }}>
-            {processedAttempts.length > 0
-              ? Math.round(
-                  processedAttempts.reduce(
-                    (acc, curr) => acc + (curr.duration || 0),
-                    0,
-                  ) / processedAttempts.length,
-                )
-              : 0}
-            m
-          </span>
-        </div>
-        <div
-          className="p-4 rounded border bg-black/5 flex flex-col items-center justify-center text-center gap-1"
-          style={{ borderColor: colors.accent + "10" }}
-        >
-          <Hash className="text-purple-500 mb-1" size={20} />
-          <span
-            className="text-[10px] font-bold opacity-60 uppercase"
-            style={{ color: colors.text }}
-          >
-            Quiz Code
-          </span>
-          <span className="font-bold text-lg" style={{ color: colors.text }}>
-            {quiz.quizCode || "N/A"}
-          </span>
-        </div>
+            {item.icon}
+            <span
+              className="text-[10px] font-bold opacity-60 uppercase mt-1"
+              style={{ color: colors.textSecondary }}
+            >
+              {item.label}
+            </span>
+            <span className="font-bold text-lg" style={{ color: colors.text }}>
+              {item.value}
+            </span>
+          </div>
+        ))}
       </div>
 
       {/* Search */}
@@ -312,19 +282,34 @@ function QuizReport() {
                   borderBottom: `1px solid ${colors.accent}15`,
                 }}
               >
-                <th className="p-4 text-[10px] font-black uppercase tracking-widest opacity-60">
+                <th
+                  className="p-4 text-[10px] font-black uppercase tracking-widest opacity-60"
+                  style={{ color: colors.text }}
+                >
                   Rank
                 </th>
-                <th className="p-4 text-[10px] font-black uppercase tracking-widest opacity-60">
+                <th
+                  className="p-4 text-[10px] font-black uppercase tracking-widest opacity-60"
+                  style={{ color: colors.text }}
+                >
                   Student Name
                 </th>
-                <th className="p-4 text-[10px] font-black uppercase tracking-widest opacity-60">
+                <th
+                  className="p-4 text-[10px] font-black uppercase tracking-widest opacity-60"
+                  style={{ color: colors.text }}
+                >
                   Details
                 </th>
-                <th className="p-4 text-[10px] font-black uppercase tracking-widest opacity-60">
+                <th
+                  className="p-4 text-[10px] font-black uppercase tracking-widest opacity-60"
+                  style={{ color: colors.text }}
+                >
                   Performance
                 </th>
-                <th className="p-4 text-[10px] font-black uppercase tracking-widest opacity-60 text-right">
+                <th
+                  className="p-4 text-[10px] font-black uppercase tracking-widest opacity-60 text-right"
+                  style={{ color: colors.text }}
+                >
                   Actions
                 </th>
               </tr>
@@ -337,19 +322,30 @@ function QuizReport() {
                 filteredAttempts.map((attempt) => (
                   <tr
                     key={`${attempt.studentId}-${attempt.rank}`}
-                    className="hover:bg-black/[0.01] transition-colors"
+                    className="transition-colors hover:bg-white/5"
+                    style={{ borderBottom: `1px solid ${colors.accent}10` }}
                   >
                     <td className="p-4">
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${
-                          attempt.rank === 1
-                            ? "bg-yellow-100 text-yellow-700"
-                            : attempt.rank === 2
-                              ? "bg-gray-100 text-gray-700"
-                              : attempt.rank === 3
-                                ? "bg-orange-100 text-orange-700"
-                                : "bg-black/5 text-black/40"
-                        }`}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all`}
+                        style={{
+                          backgroundColor:
+                            attempt.rank === 1
+                              ? "#fef3c7"
+                              : attempt.rank === 2
+                                ? "#f3f4f6"
+                                : attempt.rank === 3
+                                  ? "#ffedd5"
+                                  : colors.accent + "10",
+                          color:
+                            attempt.rank === 1
+                              ? "#b45309"
+                              : attempt.rank === 2
+                                ? "#374151"
+                                : attempt.rank === 3
+                                  ? "#c2410c"
+                                  : colors.textSecondary,
+                        }}
                       >
                         {attempt.rank}
                       </div>
@@ -389,16 +385,31 @@ function QuizReport() {
                     <td className="p-4">
                       <div className="flex flex-col gap-1">
                         <span
-                          className={`w-fit px-2 py-1 rounded text-[10px] font-black uppercase ${attempt.marks >= attempt.totalMarks * 0.5 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                          className={`w-fit px-2 py-1 rounded text-[10px] font-black uppercase`}
+                          style={{
+                            backgroundColor:
+                              attempt.marks >= attempt.totalMarks * 0.5
+                                ? "rgba(34, 197, 94, 0.1)"
+                                : "rgba(239, 68, 68, 0.1)",
+                            color:
+                              attempt.marks >= attempt.totalMarks * 0.5
+                                ? "#22c55e"
+                                : "#ef4444",
+                          }}
                         >
                           {attempt.marks} / {attempt.totalMarks}
                         </span>
                         <span className="text-[9px] opacity-40 font-bold">
-                          {Math.round(
-                            (attempt.marks / attempt.totalMarks) * 100,
-                          )}
                           % Accuracy
                         </span>
+                        {attempt.certificateGenerated && (
+                          <div className="flex items-center gap-1 mt-1 text-green-600 bg-green-50 px-2 py-0.5 rounded-full w-fit">
+                            <CheckCircle size={10} />
+                            <span className="text-[9px] font-bold uppercase tracking-wide">
+                              Certificate Generated
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="p-4 text-right">
@@ -408,7 +419,7 @@ function QuizReport() {
                             `/dashboard/quizzes/report/${quiz._id}/result/${attempt.studentId}`,
                           )
                         }
-                        className="p-2 rounded hover:bg-black/5 transition-all cursor-pointer text-blue-500"
+                        className="p-2 rounded bg-blue-500/10 hover:bg-blue-500/20 transition-all cursor-pointer text-blue-500"
                         title="View Detailed Result"
                       >
                         <Eye size={18} />

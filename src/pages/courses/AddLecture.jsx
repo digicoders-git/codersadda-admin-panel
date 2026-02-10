@@ -219,7 +219,7 @@ function AddLecture() {
           <Loader size={80} />
         </div>
       ) : course ? (
-        <form onSubmit={handleSubmit} className="max-w-4xl space-y-6">
+        <form onSubmit={handleSubmit} className="max-w-full space-y-6">
           {/* Lecture Details */}
           <div className="space-y-6">
             <div
@@ -620,7 +620,11 @@ function AddLecture() {
                 color: colors.background,
               }}
             >
-              {actionLoading ? <Loader size={18} /> : <Save size={18} />}{" "}
+              {actionLoading ? (
+                <Loader size={18} variant="button" />
+              ) : (
+                <Save size={18} />
+              )}{" "}
               Publish Lecture
             </button>
             <button
