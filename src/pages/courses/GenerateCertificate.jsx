@@ -284,20 +284,20 @@ export default function GenerateCertificate() {
   };
 
   const fontFamilies = [
-    { name: "Inter", value: "Inter, sans-serif" },
-    { name: "Roboto", value: "Roboto, sans-serif" },
-    { name: "Playfair Display", value: "Playfair Display, serif" },
-    { name: "Montserrat", value: "Montserrat, sans-serif" },
-    { name: "Dancing Script", value: "Dancing Script, cursive" },
-    { name: "Courier New", value: "Courier New, monospace" },
-    { name: "Lobster", value: "Lobster, cursive" },
-    { name: "Pacifico", value: "Pacifico, cursive" },
-    { name: "Great Vibes", value: "Great Vibes, cursive" },
-    { name: "Satisfy", value: "Satisfy, cursive" },
-    { name: "Kaushan Script", value: "Kaushan Script, cursive" },
-    { name: "Crimson Text", value: "Crimson Text, serif" },
-    { name: "Libre Baskerville", value: "Libre Baskerville, serif" },
-    { name: "Cormorant Garamond", value: "Cormorant Garamond, serif" },
+    { name: "Inter", value: "Inter" },
+    { name: "Roboto", value: "Roboto" },
+    { name: "Montserrat", value: "Montserrat" },
+    { name: "Playfair Display", value: "Playfair Display" },
+    { name: "Crimson Text", value: "Crimson Text" },
+    { name: "Libre Baskerville", value: "Libre Baskerville" },
+    { name: "Cormorant Garamond", value: "Cormorant Garamond" },
+    { name: "Dancing Script", value: "Dancing Script" },
+    { name: "Lobster", value: "Lobster" },
+    { name: "Pacifico", value: "Pacifico" },
+    { name: "Great Vibes", value: "Great Vibes" },
+    { name: "Satisfy", value: "Satisfy" },
+    { name: "Kaushan Script", value: "Kaushan Script" },
+    { name: "Courier New", value: "Courier New" },
   ];
 
   // Canvas drawing effect
