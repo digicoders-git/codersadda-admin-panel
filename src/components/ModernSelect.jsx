@@ -142,12 +142,13 @@ const ModernSelect = ({
                     }}
                     onMouseEnter={(e) => {
                       if (!isSelected) {
-                        e.target.style.backgroundColor = colors.accent + "10";
+                        e.currentTarget.style.backgroundColor =
+                          colors.accent + "10";
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!isSelected) {
-                        e.target.style.backgroundColor = "transparent";
+                        e.currentTarget.style.backgroundColor = "transparent";
                       }
                     }}
                     onClick={() => handleSelect(option)}

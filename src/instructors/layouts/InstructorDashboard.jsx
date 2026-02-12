@@ -138,10 +138,12 @@ const InstructorDashboard = () => {
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive)
-                    e.target.style.backgroundColor = colors.primary + "20";
+                    e.currentTarget.style.backgroundColor =
+                      colors.primary + "20";
                 }}
                 onMouseLeave={(e) => {
-                  if (!isActive) e.target.style.backgroundColor = "transparent";
+                  if (!isActive)
+                    e.currentTarget.style.backgroundColor = "transparent";
                 }}
                 title={!sidebarOpen ? link.name : ""}
               >
@@ -166,10 +168,10 @@ const InstructorDashboard = () => {
             className={`flex cursor-pointer items-center px-4 py-3 w-full rounded transition-all duration-200 font-semibold ${!sidebarOpen ? "justify-center" : ""}`}
             style={{ color: "#DC2626" }}
             onMouseEnter={(e) => {
-              e.target.style.backgroundColor = "#DC262620";
+              e.currentTarget.style.backgroundColor = "#DC262620";
             }}
             onMouseLeave={(e) => {
-              e.target.style.backgroundColor = "transparent";
+              e.currentTarget.style.backgroundColor = "transparent";
             }}
             title={!sidebarOpen ? "Logout" : ""}
           >

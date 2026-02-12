@@ -364,11 +364,12 @@ function Courses() {
                         className="p-2 cursor-pointer rounded transition-all"
                         style={{ color: colors.primary }}
                         onMouseEnter={(e) =>
-                          (e.target.style.backgroundColor =
+                          (e.currentTarget.style.backgroundColor =
                             colors.primary + "15")
                         }
                         onMouseLeave={(e) =>
-                          (e.target.style.backgroundColor = "transparent")
+                          (e.currentTarget.style.backgroundColor =
+                            "transparent")
                         }
                       >
                         <Eye size={18} />
@@ -380,11 +381,12 @@ function Courses() {
                         className="p-2 cursor-pointer rounded transition-all"
                         style={{ color: colors.primary }}
                         onMouseEnter={(e) =>
-                          (e.target.style.backgroundColor =
+                          (e.currentTarget.style.backgroundColor =
                             colors.primary + "15")
                         }
                         onMouseLeave={(e) =>
-                          (e.target.style.backgroundColor = "transparent")
+                          (e.currentTarget.style.backgroundColor =
+                            "transparent")
                         }
                       >
                         <Edit2 size={18} />
@@ -395,10 +397,11 @@ function Courses() {
                         className="p-2 cursor-pointer rounded transition-all disabled:opacity-50"
                         style={{ color: "#ef4444" }}
                         onMouseEnter={(e) =>
-                          (e.target.style.backgroundColor = "#ef444415")
+                          (e.currentTarget.style.backgroundColor = "#ef444415")
                         }
                         onMouseLeave={(e) =>
-                          (e.target.style.backgroundColor = "transparent")
+                          (e.currentTarget.style.backgroundColor =
+                            "transparent")
                         }
                       >
                         {actionLoading === course._id ? (
@@ -512,10 +515,11 @@ function Courses() {
                     className="p-2.5 cursor-pointer rounded text-primary transition-all"
                     style={{ color: colors.primary }}
                     onMouseEnter={(e) =>
-                      (e.target.style.backgroundColor = colors.primary + "15")
+                      (e.currentTarget.style.backgroundColor =
+                        colors.primary + "15")
                     }
                     onMouseLeave={(e) =>
-                      (e.target.style.backgroundColor = "transparent")
+                      (e.currentTarget.style.backgroundColor = "transparent")
                     }
                   >
                     <Eye size={20} />
@@ -527,10 +531,11 @@ function Courses() {
                     className="p-2.5 cursor-pointer rounded text-primary transition-all"
                     style={{ color: colors.primary }}
                     onMouseEnter={(e) =>
-                      (e.target.style.backgroundColor = colors.primary + "15")
+                      (e.currentTarget.style.backgroundColor =
+                        colors.primary + "15")
                     }
                     onMouseLeave={(e) =>
-                      (e.target.style.backgroundColor = "transparent")
+                      (e.currentTarget.style.backgroundColor = "transparent")
                     }
                   >
                     <Edit2 size={20} />
@@ -541,10 +546,10 @@ function Courses() {
                     className="p-2.5 cursor-pointer rounded text-red-500 transition-all disabled:opacity-50"
                     style={{ color: "#ef4444" }}
                     onMouseEnter={(e) =>
-                      (e.target.style.backgroundColor = "#ef444415")
+                      (e.currentTarget.style.backgroundColor = "#ef444415")
                     }
                     onMouseLeave={(e) =>
-                      (e.target.style.backgroundColor = "transparent")
+                      (e.currentTarget.style.backgroundColor = "transparent")
                     }
                   >
                     {actionLoading === course._id ? (

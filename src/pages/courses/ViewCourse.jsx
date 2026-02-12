@@ -127,6 +127,14 @@ function ViewCourse() {
       showCancelButton: true,
       confirmButtonText: "Create",
       confirmButtonColor: colors.primary,
+      didOpen: () => {
+        const input = Swal.getInput();
+        if (input) {
+          input.addEventListener("input", (e) => {
+            e.target.value = e.target.value.replace(/[0-9]/g, "");
+          });
+        }
+      },
     }).then(async (result) => {
       if (result.isConfirmed && result.value) {
         try {
@@ -156,6 +164,14 @@ function ViewCourse() {
       showCancelButton: true,
       confirmButtonText: "Update",
       confirmButtonColor: colors.primary,
+      didOpen: () => {
+        const input = Swal.getInput();
+        if (input) {
+          input.addEventListener("input", (e) => {
+            e.target.value = e.target.value.replace(/[0-9]/g, "");
+          });
+        }
+      },
     }).then(async (result) => {
       if (result.isConfirmed && result.value) {
         try {

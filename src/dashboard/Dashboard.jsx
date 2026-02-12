@@ -275,12 +275,13 @@ const Dashboard = () => {
                     }}
                     onMouseEnter={(e) => {
                       if (!isAnySubmenuActive) {
-                        e.target.style.backgroundColor = colors.primary + "20";
+                        e.currentTarget.style.backgroundColor =
+                          colors.primary + "20";
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!isAnySubmenuActive) {
-                        e.target.style.backgroundColor = "transparent";
+                        e.currentTarget.style.backgroundColor = "transparent";
                       }
                     }}
                     title={!sidebarOpen ? link.name : ""}
@@ -332,13 +333,14 @@ const Dashboard = () => {
                             }}
                             onMouseEnter={(e) => {
                               if (!isSubActive) {
-                                e.target.style.backgroundColor =
+                                e.currentTarget.style.backgroundColor =
                                   colors.primary + "10";
                               }
                             }}
                             onMouseLeave={(e) => {
                               if (!isSubActive) {
-                                e.target.style.backgroundColor = "transparent";
+                                e.currentTarget.style.backgroundColor =
+                                  "transparent";
                               }
                             }}
                           >
@@ -378,12 +380,13 @@ const Dashboard = () => {
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
-                    e.target.style.backgroundColor = colors.primary + "20";
+                    e.currentTarget.style.backgroundColor =
+                      colors.primary + "20";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive) {
-                    e.target.style.backgroundColor = "transparent";
+                    e.currentTarget.style.backgroundColor = "transparent";
                   }
                 }}
                 title={!sidebarOpen ? link.name : ""}
@@ -413,12 +416,12 @@ const Dashboard = () => {
             className={`flex cursor-pointer items-center px-4 py-3 w-full rounded transition-all duration-200 font-semibold ${!sidebarOpen ? "justify-center" : ""}`}
             style={{ color: "#DC2626" }}
             onMouseEnter={(e) => {
-              e.target.style.backgroundColor = "#DC262620";
-              e.target.style.color = "#B91C1C";
+              e.currentTarget.style.backgroundColor = "#DC262620";
+              e.currentTarget.style.color = "#B91C1C";
             }}
             onMouseLeave={(e) => {
-              e.target.style.backgroundColor = "transparent";
-              e.target.style.color = "#DC2626";
+              e.currentTarget.style.backgroundColor = "transparent";
+              e.currentTarget.style.color = "#DC2626";
             }}
             title={!sidebarOpen ? "Logout" : ""}
           >
@@ -464,10 +467,10 @@ const Dashboard = () => {
                 position: "relative",
               }}
               onMouseEnter={(e) =>
-                (e.target.style.backgroundColor = colors.primary + "20")
+                (e.currentTarget.style.backgroundColor = colors.primary + "20")
               }
               onMouseLeave={(e) =>
-                (e.target.style.backgroundColor = "transparent")
+                (e.currentTarget.style.backgroundColor = "transparent")
               }
             >
               <Menu className="w-6 h-6" style={{ pointerEvents: "none" }} />
@@ -483,10 +486,10 @@ const Dashboard = () => {
                 position: "relative",
               }}
               onMouseEnter={(e) =>
-                (e.target.style.backgroundColor = colors.primary + "20")
+                (e.currentTarget.style.backgroundColor = colors.primary + "20")
               }
               onMouseLeave={(e) =>
-                (e.target.style.backgroundColor = "transparent")
+                (e.currentTarget.style.backgroundColor = "transparent")
               }
             >
               <Menu className="w-6 h-6" style={{ pointerEvents: "none" }} />
@@ -521,10 +524,10 @@ const Dashboard = () => {
               onClick={() => setSettingsOpen(true)}
               className="p-2 cursor-pointer rounded-lg transition-colors"
               onMouseEnter={(e) =>
-                (e.target.style.backgroundColor = colors.primary + "20")
+                (e.currentTarget.style.backgroundColor = colors.primary + "20")
               }
               onMouseLeave={(e) =>
-                (e.target.style.backgroundColor = "transparent")
+                (e.currentTarget.style.backgroundColor = "transparent")
               }
             >
               {/* <Settings className='w-5 h-5 md:w-6 md:h-6' /> */}
@@ -588,10 +591,10 @@ const Dashboard = () => {
               className="p-2 rounded-lg hover:bg-opacity-20 transition-colors"
               style={{ color: colors.textSecondary }}
               onMouseEnter={(e) =>
-                (e.target.style.backgroundColor = colors.accent + "20")
+                (e.currentTarget.style.backgroundColor = colors.accent + "20")
               }
               onMouseLeave={(e) =>
-                (e.target.style.backgroundColor = "transparent")
+                (e.currentTarget.style.backgroundColor = "transparent")
               }
             >
               <X className="w-6 h-6 cursor-pointer" />
@@ -660,11 +663,13 @@ const Dashboard = () => {
                   }}
                   onMouseEnter={(e) => {
                     if (currentTheme !== theme.key) {
-                      e.target.style.backgroundColor = colors.accent + "20";
+                      e.currentTarget.style.backgroundColor =
+                        colors.accent + "20";
                     }
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = colors.accent + "10";
+                    e.currentTarget.style.backgroundColor =
+                      colors.accent + "10";
                   }}
                 >
                   <div className="flex items-center space-x-3">

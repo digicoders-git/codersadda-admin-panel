@@ -24,15 +24,19 @@ function AddInstructor() {
   const navigate = useNavigate();
   const { id } = useParams();
 
+  const today = new Date().toISOString().split("T")[0];
+
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     password: "",
     role: "",
     isActive: true,
+    createdAt: today, // Default joining date to today
   });
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (id) {
@@ -48,6 +52,9 @@ function AddInstructor() {
               password: "", // Password usually blank on edit
               role: data.role || "",
               isActive: data.isActive !== undefined ? data.isActive : true,
+              createdAt: data.createdAt
+                ? new Date(data.createdAt).toISOString().split("T")[0]
+                : today,
             });
           } else {
             toast.error("Failed to load instructor data");
@@ -62,20 +69,56 @@ function AddInstructor() {
       };
       fetchData();
     }
-  }, [id, navigate]);
+  }, [id, navigate, today]);
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Full Name: No numbers
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Full Name is required";
+    } else if (/[0-9]/.test(formData.fullName)) {
+      newErrors.fullName = "Full Name should not contain numbers";
+    }
+
+    // Email Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Invalid email format";
+    }
+
+    // Password Validation: Min length 6
+    if (!id && !formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password && formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+
+    // Role/Designation: No numbers
+    if (!formData.role.trim()) {
+      newErrors.role = "Role/Designation is required";
+    } else if (/[0-9]/.test(formData.role)) {
+      newErrors.role = "Role should not contain numbers";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.fullName || !formData.email || (!id && !formData.password)) {
-      toast.error("Please fill all required fields");
+
+    if (!validateForm()) {
+      const firstError = Object.values(errors)[0];
+      if (firstError) toast.error(firstError);
       return;
     }
 
     try {
       setActionLoading(true);
       if (id) {
-        // Remove password if empty to avoid overwriting it with empty string if API handles it
-        // Or send it as is if API expects it. Assuming optional update logic in backend.
         const payload = { ...formData };
         if (!payload.password) delete payload.password;
 
@@ -153,19 +196,39 @@ function AddInstructor() {
               <input
                 type="text"
                 value={formData.fullName}
-                onChange={(e) =>
-                  setFormData({ ...formData, fullName: e.target.value })
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData({ ...formData, fullName: val });
+                  if (/[0-9]/.test(val)) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      fullName: "Numbers are not allowed in Name",
+                    }));
+                  } else {
+                    setErrors((prev) => {
+                      const { fullName, ...rest } = prev;
+                      return rest;
+                    });
+                  }
+                }}
                 placeholder="e.g. Abhay Vishwakarma"
                 className="w-full px-4 py-2.5 rounded border outline-none transition-all focus:ring-2"
                 style={{
                   backgroundColor: colors.background,
-                  borderColor: colors.accent + "30",
+                  borderColor: errors.fullName
+                    ? "#ef4444"
+                    : colors.accent + "30",
                   color: colors.text,
-                  "--tw-ring-color": colors.primary + "40",
+                  "--tw-ring-color": errors.fullName
+                    ? "#ef444440"
+                    : colors.primary + "40",
                 }}
-                required
               />
+              {errors.fullName && (
+                <p className="text-[10px] font-bold text-red-500 uppercase tracking-tight">
+                  {errors.fullName}
+                </p>
+              )}
             </div>
 
             {/* Email */}
@@ -179,19 +242,38 @@ function AddInstructor() {
               <input
                 type="email"
                 value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData({ ...formData, email: val });
+                  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                  if (val && !emailRegex.test(val)) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      email: "Invalid email format",
+                    }));
+                  } else {
+                    setErrors((prev) => {
+                      const { email, ...rest } = prev;
+                      return rest;
+                    });
+                  }
+                }}
                 placeholder="instructor@codersadda.com"
                 className="w-full px-4 py-2.5 rounded border outline-none transition-all focus:ring-2"
                 style={{
                   backgroundColor: colors.background,
-                  borderColor: colors.accent + "30",
+                  borderColor: errors.email ? "#ef4444" : colors.accent + "30",
                   color: colors.text,
-                  "--tw-ring-color": colors.primary + "40",
+                  "--tw-ring-color": errors.email
+                    ? "#ef444440"
+                    : colors.primary + "40",
                 }}
-                required
               />
+              {errors.email && (
+                <p className="text-[10px] font-bold text-red-500 uppercase tracking-tight">
+                  {errors.email}
+                </p>
+              )}
             </div>
 
             {/* Password */}
@@ -206,19 +288,39 @@ function AddInstructor() {
               <input
                 type="password"
                 value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData({ ...formData, password: val });
+                  if (val && val.length < 6) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      password: "Password must be at least 6 characters",
+                    }));
+                  } else {
+                    setErrors((prev) => {
+                      const { password, ...rest } = prev;
+                      return rest;
+                    });
+                  }
+                }}
                 placeholder="••••••••"
                 className="w-full px-4 py-2.5 rounded border outline-none transition-all focus:ring-2"
                 style={{
                   backgroundColor: colors.background,
-                  borderColor: colors.accent + "30",
+                  borderColor: errors.password
+                    ? "#ef4444"
+                    : colors.accent + "30",
                   color: colors.text,
-                  "--tw-ring-color": colors.primary + "40",
+                  "--tw-ring-color": errors.password
+                    ? "#ef444440"
+                    : colors.primary + "40",
                 }}
-                required={!id}
               />
+              {errors.password && (
+                <p className="text-[10px] font-bold text-red-500 uppercase tracking-tight">
+                  {errors.password}
+                </p>
+              )}
             </div>
 
             {/* Role */}
@@ -232,19 +334,37 @@ function AddInstructor() {
               <input
                 type="text"
                 value={formData.role}
-                onChange={(e) =>
-                  setFormData({ ...formData, role: e.target.value })
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData({ ...formData, role: val });
+                  if (/[0-9]/.test(val)) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      role: "Numbers are not allowed in Role",
+                    }));
+                  } else {
+                    setErrors((prev) => {
+                      const { role, ...rest } = prev;
+                      return rest;
+                    });
+                  }
+                }}
                 placeholder="e.g. Senior React Developer"
                 className="w-full px-4 py-2.5 rounded border outline-none transition-all focus:ring-2"
                 style={{
                   backgroundColor: colors.background,
-                  borderColor: colors.accent + "30",
+                  borderColor: errors.role ? "#ef4444" : colors.accent + "30",
                   color: colors.text,
-                  "--tw-ring-color": colors.primary + "40",
+                  "--tw-ring-color": errors.role
+                    ? "#ef444440"
+                    : colors.primary + "40",
                 }}
-                required
               />
+              {errors.role && (
+                <p className="text-[10px] font-bold text-red-500 uppercase tracking-tight">
+                  {errors.role}
+                </p>
+              )}
             </div>
 
             {/* Created At */}

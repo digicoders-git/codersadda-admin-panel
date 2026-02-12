@@ -280,7 +280,10 @@ function AddCourse() {
                   required
                   value={formData.title}
                   onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
+                    setFormData({
+                      ...formData,
+                      title: e.target.value.replace(/[0-9]/g, ""),
+                    })
                   }
                   placeholder="Enter course title"
                   className="w-full px-4 py-2 rounded-md border outline-none transition-all text-sm"
@@ -310,14 +313,27 @@ function AddCourse() {
                 <div className="space-y-1 w-full">
                   <label style={labelStyle}>Price(%) for Instructor</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     value={formData.priceForInstructor}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9.]/g, "");
+                      // Ensure only one decimal point
+                      const parts = val.split(".");
+                      const cleanVal =
+                        parts.length > 2
+                          ? parts[0] + "." + parts.slice(1).join("")
+                          : val;
                       setFormData({
                         ...formData,
-                        priceForInstructor: e.target.value,
-                      })
-                    }
+                        priceForInstructor: cleanVal,
+                      });
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "-" || e.key === "+" || e.key === "e") {
+                        e.preventDefault();
+                      }
+                    }}
                     placeholder="15 (without % sign)"
                     className="w-full px-4 py-2 rounded-md border outline-none transition-all text-sm"
                     style={{
@@ -349,7 +365,10 @@ function AddCourse() {
                   type="text"
                   value={formData.technology}
                   onChange={(e) =>
-                    setFormData({ ...formData, technology: e.target.value })
+                    setFormData({
+                      ...formData,
+                      technology: e.target.value.replace(/[0-9]/g, ""),
+                    })
                   }
                   placeholder="Ex: React, Flutter"
                   className="w-full px-4 py-2 rounded-md border outline-none text-sm"
@@ -402,12 +421,24 @@ function AddCourse() {
                 <div className="space-y-1">
                   <label style={labelStyle}>Course Price (₹)</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     required
                     value={formData.price}
-                    onChange={(e) =>
-                      setFormData({ ...formData, price: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9.]/g, "");
+                      const parts = val.split(".");
+                      const cleanVal =
+                        parts.length > 2
+                          ? parts[0] + "." + parts.slice(1).join("")
+                          : val;
+                      setFormData({ ...formData, price: cleanVal });
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "-" || e.key === "+" || e.key === "e") {
+                        e.preventDefault();
+                      }
+                    }}
                     placeholder="Enter course price"
                     className="w-full px-4 py-2 rounded-md border outline-none text-sm"
                     style={{
@@ -486,7 +517,10 @@ function AddCourse() {
                         type="text"
                         value={point}
                         onChange={(e) =>
-                          handleWhatYoullLearnChange(index, e.target.value)
+                          handleWhatYoullLearnChange(
+                            index,
+                            e.target.value.replace(/[0-9]/g, ""),
+                          )
                         }
                         placeholder={`Point ${index + 1}`}
                         className="flex-1 px-4 py-2 rounded-md border outline-none text-sm"
@@ -668,7 +702,10 @@ function AddCourse() {
                       value={faq.question}
                       onChange={(e) => {
                         const newFaqs = [...(formData.faqs || [])];
-                        newFaqs[index].question = e.target.value;
+                        newFaqs[index].question = e.target.value.replace(
+                          /[0-9]/g,
+                          "",
+                        );
                         setFormData({ ...formData, faqs: newFaqs });
                       }}
                       placeholder="Question"
@@ -758,7 +795,8 @@ function AddCourse() {
                         value={review.studentName}
                         onChange={(e) => {
                           const newReviews = [...(formData.reviews || [])];
-                          newReviews[index].studentName = e.target.value;
+                          newReviews[index].studentName =
+                            e.target.value.replace(/[0-9]/g, "");
                           setFormData({ ...formData, reviews: newReviews });
                         }}
                         placeholder="Student Name"

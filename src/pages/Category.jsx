@@ -327,7 +327,11 @@ function Category() {
                           <input
                             type="text"
                             value={editingName}
-                            onChange={(e) => setEditingName(e.target.value)}
+                            onChange={(e) =>
+                              setEditingName(
+                                e.target.value.replace(/[0-9]/g, ""),
+                              )
+                            }
                             className="px-3 py-1.5 rounded border outline-none text-sm font-semibold w-full max-w-xs"
                             style={{
                               backgroundColor: colors.background,
@@ -515,7 +519,9 @@ function Category() {
                 <input
                   type="text"
                   value={categoryName}
-                  onChange={(e) => setCategoryName(e.target.value)}
+                  onChange={(e) =>
+                    setCategoryName(e.target.value.replace(/[0-9]/g, ""))
+                  }
                   placeholder="e.g. Python"
                   className="w-full px-6 py-4 rounded outline-none border-2 transition-all font-bold text-lg shadow-inner"
                   style={{
