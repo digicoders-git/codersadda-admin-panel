@@ -1,47 +1,43 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Plus,
   Search,
   Trash2,
   Edit,
-  MoreVertical,
   ChevronLeft,
   ChevronRight,
-  FileQuestion,
-  ToggleLeft,
-  ToggleRight,
+  BookOpen,
 } from "lucide-react";
-import Toggle from "../../components/ui/Toggle";
 import { useTheme } from "../../context/ThemeContext";
 import {
   getAllTopics,
   createTopic,
   updateTopic,
   deleteTopic,
-  toggleTopicStatus,
-} from "../../apis/questionTopic";
+} from "../../apis/curriculum";
+import { getAllCourses } from "../../apis/course";
 import { toast } from "react-toastify";
 import Loader from "../../components/Loader";
 import ModernSelect from "../../components/ModernSelect";
+import Swal from "sweetalert2";
 
-function Topics() {
+function AllTopics() {
   const { colors } = useTheme();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [topics, setTopics] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [courseFilter, setCourseFilter] = useState("");
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({});
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingTopic, setEditingTopic] = useState(null);
-  const [newTopicName, setNewTopicName] = useState("");
+  const [newTopic, setNewTopic] = useState({ topic: "", course: "" });
 
   const fetchTopics = async () => {
     try {
       setLoading(true);
-      const res = await getAllTopics(search, page, 10, statusFilter);
+      const res = await getAllTopics(search, page, 10, courseFilter);
       if (res.success) {
         setTopics(res.data);
         setPagination(res.pagination);
@@ -53,38 +49,48 @@ function Topics() {
     }
   };
 
+  const fetchCourses = async () => {
+    try {
+      const res = await getAllCourses({ limit: 1000, isActive: true });
+      if (res.success) {
+        setCourses(res.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch courses");
+    }
+  };
+
   useEffect(() => {
     fetchTopics();
-  }, [search, page, statusFilter]);
+  }, [search, page, courseFilter]);
 
-  const handleAddTopic = async (e) => {
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  const handleAddOrUpdateTopic = async (e) => {
     e.preventDefault();
-    if (!newTopicName.trim()) return toast.warning("Topic name is required");
+    if (!newTopic.topic.trim()) return toast.warning("Topic name is required");
+    if (!newTopic.course) return toast.warning("Course selection is required");
 
     try {
       setLoading(true);
       let res;
       if (editingTopic) {
-        res = await updateTopic(editingTopic._id, { topicName: newTopicName });
+        res = await updateTopic(editingTopic._id, newTopic);
       } else {
-        res = await createTopic({ topicName: newTopicName });
+        res = await createTopic(newTopic);
       }
 
       if (res.success) {
-        toast.success(
-          editingTopic
-            ? "Topic updated successfully"
-            : "Topic added successfully",
-        );
-        setNewTopicName("");
+        toast.success(res.message || "Operation successful");
+        setNewTopic({ topic: "", course: "" });
         setShowAddModal(false);
         setEditingTopic(null);
         fetchTopics();
       }
     } catch (err) {
-      toast.error(
-        editingTopic ? "Failed to update topic" : "Failed to add topic",
-      );
+      toast.error(err.response?.data?.message || "Operation failed");
     } finally {
       setLoading(false);
     }
@@ -92,39 +98,41 @@ function Topics() {
 
   const handleEdit = (topic) => {
     setEditingTopic(topic);
-    setNewTopicName(topic.topicName);
+    setNewTopic({
+      topic: topic.topic,
+      course: topic.course?._id || topic.course,
+    });
     setShowAddModal(true);
+  };
+
+  const handleDelete = (id) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "This will delete the topic and all its lectures!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: colors.primary,
+      cancelButtonColor: "#ef4444",
+      confirmButtonText: "Yes, delete it!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await deleteTopic(id);
+          if (res.success) {
+            toast.success("Topic deleted");
+            fetchTopics();
+          }
+        } catch (err) {
+          toast.error("Delete failed");
+        }
+      }
+    });
   };
 
   const closeModal = () => {
     setShowAddModal(false);
     setEditingTopic(null);
-    setNewTopicName("");
-  };
-
-  const handleToggleStatus = async (id) => {
-    try {
-      const res = await toggleTopicStatus(id);
-      if (res.success) {
-        toast.success(res.message);
-        fetchTopics();
-      }
-    } catch (err) {
-      toast.error("Status update failed");
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this topic?")) return;
-    try {
-      const res = await deleteTopic(id);
-      if (res.success) {
-        toast.success("Topic deleted");
-        fetchTopics();
-      }
-    } catch (err) {
-      toast.error("Delete failed");
-    }
+    setNewTopic({ topic: "", course: "" });
   };
 
   return (
@@ -133,10 +141,10 @@ function Topics() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 px-4">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: colors.text }}>
-            Question Topics
+            Course Topics
           </h1>
           <p className="text-xs font-bold opacity-40 uppercase tracking-widest">
-            Manage quiz question categories
+            Manage curriculum sections for all courses
           </p>
         </div>
 
@@ -170,16 +178,15 @@ function Topics() {
             }}
           />
         </div>
-        <div className="md:col-span-1">
+        <div className="md:col-span-2">
           <ModernSelect
             options={[
-              { label: "All Status", value: "" },
-              { label: "Active Only", value: "true" },
-              { label: "Disabled Only", value: "false" },
+              { label: "All Courses", value: "" },
+              ...courses.map((c) => ({ label: c.title, value: c._id })),
             ]}
-            value={statusFilter}
-            onChange={(val) => setStatusFilter(val)}
-            placeholder="Filter Status"
+            value={courseFilter}
+            onChange={(val) => setCourseFilter(val)}
+            placeholder="Filter by Course"
           />
         </div>
       </div>
@@ -223,13 +230,7 @@ function Topics() {
                   className="px-6 py-4 text-[10px] font-black uppercase tracking-widest opacity-60"
                   style={{ color: colors.text }}
                 >
-                  Questions
-                </th>
-                <th
-                  className="px-6 py-4 text-[10px] font-black uppercase tracking-widest opacity-60"
-                  style={{ color: colors.text }}
-                >
-                  Status
+                  Course
                 </th>
                 <th
                   className="px-6 py-4 text-[10px] font-black uppercase tracking-widest opacity-60"
@@ -256,56 +257,23 @@ function Topics() {
                     className="px-6 py-4 text-sm font-bold opacity-60"
                     style={{ color: colors.text }}
                   >
-                    {(page - 1) * 10 + index + 1}
+                    {(page - 1) * pagination.limit + index + 1}
                   </td>
                   <td className="px-6 py-4">
                     <span
                       className="text-sm font-bold"
                       style={{ color: colors.text }}
                     >
-                      {topic.topicName}
+                      {topic.topic}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm">
-                    <button
-                      onClick={() =>
-                        navigate(
-                          `/dashboard/quizzes/topic/${topic._id}/questions`,
-                        )
-                      }
-                      className="px-3 py-1.5 rounded bg-transparent text-[10px] font-bold uppercase tracking-wider cursor-pointer flex items-center gap-2 transition-all active:scale-95 border"
-                      style={{
-                        color: colors.text,
-                        borderColor: colors.accent + "20",
-                      }}
-                    >
-                      <FileQuestion size={14} className="opacity-60" />
-                      {topic.questions?.length || 0} Questions
-                    </button>
-                  </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <Toggle
-                        active={topic.status}
-                        onClick={() => handleToggleStatus(topic._id)}
-                      />
-                      <span
-                        className="text-[10px] font-bold uppercase tracking-widest ml-1 flex items-center gap-1.5"
-                        style={{
-                          color: topic.status
-                            ? colors.primary
-                            : colors.text + "40",
-                        }}
-                      >
-                        {topic.status && (
-                          <div
-                          // className="w-1.5 h-1.5 rounded-full"
-                          // style={{ backgroundColor: colors.primary }}
-                          ></div>
-                        )}
-                        {topic.status ? "Active" : "Disabled"}
-                      </span>
-                    </div>
+                    <span
+                      className="text-xs font-semibold px-2 py-1 rounded-full bg-primary/10"
+                      style={{ color: colors.primary }}
+                    >
+                      {topic.course?.title || "N/A"}
+                    </span>
                   </td>
                   <td
                     className="px-6 py-4 text-xs font-bold opacity-40"
@@ -333,8 +301,9 @@ function Topics() {
               ))}
             </tbody>
           </table>
-          {topics.length === 0 && (
-            <div className="p-10 text-center opacity-40 font-bold uppercase tracking-widest text-sm">
+          {topics.length === 0 && !loading && (
+            <div className="p-10 text-center opacity-40 font-bold uppercase tracking-widest text-sm flex flex-col items-center gap-3">
+              <BookOpen size={40} />
               No topics found
             </div>
           )}
@@ -377,7 +346,7 @@ function Topics() {
         )}
       </div>
 
-      {/* Add Modal */}
+      {/* Add/Edit Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div
@@ -391,10 +360,25 @@ function Topics() {
               {editingTopic ? "Edit Topic" : "Add New Topic"}
             </h2>
             <p className="text-xs opacity-60 mb-6 uppercase tracking-widest font-bold">
-              Define a category for questions
+              Define a category for course lectures
             </p>
 
-            <form onSubmit={handleAddTopic}>
+            <form onSubmit={handleAddOrUpdateTopic}>
+              <div className="mb-6">
+                <label className="block text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">
+                  Select Course
+                </label>
+                <ModernSelect
+                  options={courses.map((c) => ({
+                    label: c.title,
+                    value: c._id,
+                  }))}
+                  value={newTopic.course}
+                  onChange={(val) => setNewTopic({ ...newTopic, course: val })}
+                  placeholder="Choose a course"
+                />
+              </div>
+
               <div className="mb-6">
                 <label className="block text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">
                   Topic Name
@@ -402,11 +386,14 @@ function Topics() {
                 <input
                   autoFocus
                   type="text"
-                  value={newTopicName}
+                  value={newTopic.topic}
                   onChange={(e) =>
-                    setNewTopicName(e.target.value.replace(/[^a-zA-Z\s]/g, ""))
+                    setNewTopic({
+                      ...newTopic,
+                      topic: e.target.value.replace(/[0-9]/g, ""),
+                    })
                   }
-                  placeholder="e.g. JavaScript, Python, Logical Reasoning"
+                  placeholder="e.g. Introduction, Advanced Setup"
                   className="w-full px-4 py-3 rounded border outline-none text-sm font-semibold transition-all"
                   style={{
                     backgroundColor: colors.background,
@@ -419,7 +406,7 @@ function Topics() {
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={closeModal}
                   className="flex-1 px-6 py-3 rounded font-bold text-xs uppercase tracking-widest border opacity-60 hover:opacity-100 transition-all cursor-pointer"
                   style={{ borderColor: colors.accent + "30" }}
                 >
@@ -437,9 +424,9 @@ function Topics() {
                   {loading ? (
                     <Loader size={20} variant="button" />
                   ) : editingTopic ? (
-                    "Update Topic"
+                    "Update"
                   ) : (
-                    "Create Topic"
+                    "Create"
                   )}
                 </button>
               </div>
@@ -451,4 +438,4 @@ function Topics() {
   );
 }
 
-export default Topics;
+export default AllTopics;

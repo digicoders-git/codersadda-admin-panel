@@ -76,7 +76,12 @@ const ModernSelect = ({
         }}
         onClick={() => !disabled && setIsOpen(!isOpen)}
       >
-        <span className="truncate">{displayText}</span>
+        <span
+          className="whitespace-nowrap overflow-hidden text-ellipsis"
+          title={displayText}
+        >
+          {displayText}
+        </span>
         <ChevronDown
           size={16}
           className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
@@ -86,7 +91,7 @@ const ModernSelect = ({
 
       {isOpen && (
         <div
-          className="absolute z-999 w-full mt-1 rounded-xl border shadow-2xl overflow-hidden"
+          className="absolute z-999 min-w-full w-max max-w-[300px] mt-1 rounded-xl border shadow-2xl overflow-hidden"
           style={{
             backgroundColor: colors.background,
             borderColor: colors.accent + "30",
@@ -153,7 +158,7 @@ const ModernSelect = ({
                     }}
                     onClick={() => handleSelect(option)}
                   >
-                    <span className="truncate">{optionLabel}</span>
+                    <span className="whitespace-nowrap">{optionLabel}</span>
                     {isSelected && (
                       <Check size={16} style={{ color: colors.primary }} />
                     )}

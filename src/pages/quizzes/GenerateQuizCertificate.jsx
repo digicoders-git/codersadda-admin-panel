@@ -56,7 +56,7 @@ export default function GenerateQuizCertificate() {
 
   const fetchQuizzes = async () => {
     try {
-      const response = await getQuizzes({ isActive: true, limit: 1000 });
+      const response = await getQuizzes({ status: "true", limit: 1000 });
       if (response.success) {
         const fetchedQuizzes = response.data || [];
         setQuizzes(fetchedQuizzes);

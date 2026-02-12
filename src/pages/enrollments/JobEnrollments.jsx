@@ -392,10 +392,9 @@ const JobEnrollments = () => {
                     onChange={(val) => setJobType(val)}
                     options={[
                       { value: "all", label: "All Types" },
-                      { value: "Full-time", label: "Full Time" },
-                      { value: "Part-time", label: "Part Time" },
-                      { value: "Contract", label: "Contract" },
-                      { value: "Internship", label: "Internship" },
+                      { value: "Work From Office", label: "Work From Office" },
+                      { value: "Work From Home", label: "Work From Home" },
+                      { value: "Hybrid", label: "Hybrid" },
                     ]}
                   />
                 </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../context/ThemeContext";
 import { createEbook } from "../../apis/ebook";
-import { getCourseCategories } from "../../apis/courseCategory";
+import { getEbookCategories } from "../../apis/ebookCategory";
 import { ChevronLeft, Upload, Check } from "lucide-react";
 import { toast } from "react-toastify";
 import Loader from "../../components/Loader";
@@ -31,7 +31,7 @@ function AddEBook() {
     const fetchCats = async () => {
       try {
         setLoading(true);
-        const res = await getCourseCategories();
+        const res = await getEbookCategories();
         if (res.success) {
           setEbookCategories(res.data.filter((cat) => cat.isActive));
         }
@@ -64,6 +64,13 @@ function AddEBook() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.title) return toast.warning("E-Book Title is required");
+    if (!formData.authorName) return toast.warning("Author Name is required");
+    if (!formData.category) return toast.warning("Category is required");
+    if (!formData.description) return toast.warning("Description is required");
+    if (!file) return toast.warning("Please upload a PDF file");
+    if (!image) return toast.warning("Please upload a Cover Image");
+
     if (formData.title && formData.category) {
       const data = new FormData();
       Object.keys(formData).forEach((key) => {
@@ -168,7 +175,10 @@ function AddEBook() {
                   required
                   value={formData.authorName}
                   onChange={(e) =>
-                    setFormData({ ...formData, authorName: e.target.value })
+                    setFormData({
+                      ...formData,
+                      authorName: e.target.value.replace(/[0-9]/g, ""),
+                    })
                   }
                   placeholder="Ex: Dr. Angela Yu"
                   className="w-full px-4 py-3 rounded border outline-none font-semibold text-sm transition-all"
@@ -257,11 +267,12 @@ function AddEBook() {
                   <label style={labelStyle}>Price (₹)</label>
                   <input
                     type="number"
-                    required
+                    min="0"
                     value={formData.price}
-                    onChange={(e) =>
-                      setFormData({ ...formData, price: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/^0+/, "");
+                      setFormData({ ...formData, price: val });
+                    }}
                     placeholder="Ex: 499"
                     className="w-full px-4 py-3 rounded border outline-none font-semibold text-sm transition-all"
                     style={inputStyle}
@@ -335,7 +346,7 @@ function AddEBook() {
           </div>
 
           <div className="space-y-2">
-            <label style={labelStyle}>Description (Optional)</label>
+            <label style={labelStyle}>Description</label>
             <textarea
               rows="4"
               value={formData.description}

@@ -299,7 +299,11 @@ function EbookCategory() {
                           <input
                             type="text"
                             value={editingName}
-                            onChange={(e) => setEditingName(e.target.value)}
+                            onChange={(e) =>
+                              setEditingName(
+                                e.target.value.replace(/[0-9]/g, ""),
+                              )
+                            }
                             className="px-3 py-1.5 rounded border outline-none text-sm font-semibold w-full max-w-xs"
                             style={{
                               backgroundColor: colors.background,
@@ -363,7 +367,7 @@ function EbookCategory() {
                           <>
                             <button
                               onClick={() => handleEditStart(category)}
-                              className="p-2 cursor-pointer rounded-xl transition-all hover:bg-opacity-20"
+                              className="w-9 h-9 flex items-center justify-center cursor-pointer rounded-xl transition-all hover:bg-opacity-20"
                               style={{
                                 color: colors.primary,
                                 backgroundColor: colors.primary + "10",
@@ -373,7 +377,7 @@ function EbookCategory() {
                             </button>
                             <button
                               onClick={() => handleDeleteCategory(category._id)}
-                              className="p-2 cursor-pointer rounded-xl transition-all hover:bg-opacity-20 disabled:opacity-50"
+                              className="w-9 h-9 flex items-center justify-center cursor-pointer rounded-xl transition-all hover:bg-opacity-20 disabled:opacity-50"
                               style={{
                                 color: "#ef4444",
                                 backgroundColor: "#ef444415",
@@ -439,7 +443,9 @@ function EbookCategory() {
               <input
                 type="text"
                 value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
+                onChange={(e) =>
+                  setCategoryName(e.target.value.replace(/[0-9]/g, ""))
+                }
                 placeholder="e.g. Programming"
                 className="w-full px-6 py-4 rounded outline-none border-2 transition-all font-bold text-lg"
                 style={{

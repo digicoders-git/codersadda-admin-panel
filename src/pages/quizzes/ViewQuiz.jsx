@@ -54,8 +54,25 @@ function ViewQuiz() {
   }, [id, navigate]);
 
   const questions = useMemo(() => {
-    if (!quiz?.questionTopicId?.questions) return [];
-    return quiz.questionTopicId.questions.map((q) => {
+    if (!quiz) return [];
+
+    // 1. Get selected questions from the topic
+    const topicQuestions = (quiz.questionTopicId?.questions || [])
+      .filter((q) => (quiz.selectedQuestions || []).includes(q._id))
+      .map((q) => {
+        const optionsArr = [q.options.a, q.options.b, q.options.c, q.options.d];
+        const correctIdx = ["a", "b", "c", "d"].indexOf(
+          q.correctAnswer.toLowerCase(),
+        );
+        return {
+          ...q,
+          options: optionsArr,
+          correctOption: correctIdx !== -1 ? correctIdx : 0,
+        };
+      });
+
+    // 2. Get custom questions
+    const customQuestions = (quiz.customQuestions || []).map((q) => {
       const optionsArr = [q.options.a, q.options.b, q.options.c, q.options.d];
       const correctIdx = ["a", "b", "c", "d"].indexOf(
         q.correctAnswer.toLowerCase(),
@@ -66,6 +83,8 @@ function ViewQuiz() {
         correctOption: correctIdx !== -1 ? correctIdx : 0,
       };
     });
+
+    return [...topicQuestions, ...customQuestions];
   }, [quiz]);
 
   if (loading) {

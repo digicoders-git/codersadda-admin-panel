@@ -19,6 +19,7 @@ import AddLecture from "../pages/courses/AddLecture";
 import ViewLecture from "../pages/courses/ViewLecture";
 import EditLecture from "../pages/courses/EditLecture";
 import AllLectures from "../pages/courses/AllLectures";
+import AllTopics from "../pages/courses/AllTopics";
 import CreateLecture from "../pages/courses/CreateLecture";
 import Subscriptions from "../pages/subscriptions/Subscriptions";
 import AddSubscription from "../pages/subscriptions/AddSubscription";
@@ -91,6 +92,7 @@ export const AppRoute = [
   { path: "sales/subscriptions", component: SubscriptionSales },
   { path: "category", component: Category },
   { path: "courses", component: Courses },
+  { path: "courses/topics", component: AllTopics },
   { path: "courses/add", component: AddCourse },
   { path: "courses/enrolled", component: CourseEnrollments },
   { path: "courses/edit/:id", component: EditCourse },

@@ -10,10 +10,10 @@ import {
   Eye,
   LayoutGrid,
   List,
-  BookOpen,
   Monitor as MonitorIcon,
-  Hash,
   Lock,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import {
@@ -24,42 +24,60 @@ import { getAllCourses } from "../../apis/course";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import Loader from "../../components/Loader";
+import ModernSelect from "../../components/ModernSelect";
 
 function AllLectures() {
-  const { colors, isDarkMode } = useTheme();
+  const { colors } = useTheme();
   const [lectures, setLectures] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCourse, setSelectedCourse] = useState("All");
+  const [selectedCourse, setSelectedCourse] = useState("");
   const [viewMode, setViewMode] = useState("list");
   const [isAnimating, setIsAnimating] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({});
   const navigate = useNavigate();
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [lecturesRes, coursesRes] = await Promise.all([
-        getAllLectures(),
-        getAllCourses(),
-      ]);
+      const res = await getAllLectures(
+        searchQuery,
+        page,
+        12,
+        selectedCourse === "All" ? "" : selectedCourse,
+      );
 
-      if (lecturesRes.success) {
-        setLectures(lecturesRes.data);
-      }
-      if (coursesRes.success) {
-        setCourses(coursesRes.data);
+      if (res.success) {
+        setLectures(res.data);
+        setPagination(res.pagination);
       }
     } catch (error) {
-      toast.error("Failed to fetch data");
+      toast.error("Failed to fetch lectures");
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchCourses = async () => {
+    try {
+      const res = await getAllCourses({ limit: 1000 });
+      if (res.success) {
+        setCourses(res.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch courses");
+    }
+  };
+
   useEffect(() => {
     fetchData();
+  }, [searchQuery, page, selectedCourse]);
+
+  useEffect(() => {
+    fetchCourses();
   }, []);
 
   const handleDelete = (id) => {
@@ -79,6 +97,7 @@ function AllLectures() {
           if (res.success) {
             setLectures((prev) => prev.filter((l) => l._id !== id));
             toast.success("Lecture deleted successfully!");
+            fetchData();
           }
         } catch (error) {
           toast.error(
@@ -100,17 +119,6 @@ function AllLectures() {
     }, 200);
   };
 
-  const filteredLectures = lectures.filter((lecture) => {
-    const matchesSearch = lecture.title
-      ?.toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesCourse =
-      selectedCourse === "All" ||
-      lecture.course?._id === selectedCourse ||
-      lecture.course === selectedCourse;
-    return matchesSearch && matchesCourse;
-  });
-
   const cardStyle = {
     backgroundColor: colors.sidebar || colors.background,
     borderColor: colors.accent + "30",
@@ -118,14 +126,11 @@ function AllLectures() {
 
   return (
     <div
-      className="h-full w-full flex flex-col overflow-hidden"
+      className="h-full w-full flex flex-col overflow-hidden pt-4"
       style={{ backgroundColor: colors.background }}
     >
       {/* Header */}
-      <div
-        className="shrink-0 p-2 md:p-6 mb-2 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
-        style={{ backgroundColor: colors.background }}
-      >
+      <div className="shrink-0 px-4 md:px-6 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="min-w-0">
           <h1
             className="text-xl md:text-2xl font-bold truncate"
@@ -134,10 +139,10 @@ function AllLectures() {
             All Lectures
           </h1>
           <p
-            className="text-xs md:text-sm font-medium opacity-60 truncate"
+            className="text-xs font-bold opacity-40 uppercase tracking-widest mt-1"
             style={{ color: colors.textSecondary }}
           >
-            Manage all course lectures in one place.
+            Design and organize your learning content
           </p>
         </div>
 
@@ -175,35 +180,34 @@ function AllLectures() {
 
           <button
             onClick={() => navigate("/dashboard/lectures/create")}
-            className="flex items-center cursor-pointer gap-2 px-4 md:px-6 py-2 rounded font-semibold transition-all shadow-md active:scale-95"
+            className="flex items-center cursor-pointer gap-2 px-4 md:px-6 py-2 rounded font-bold text-xs uppercase tracking-widest transition-all shadow-md active:scale-95"
             style={{
               backgroundColor: colors.primary,
               color: colors.background,
             }}
           >
-            <Plus size={18} />{" "}
-            <span className="text-sm md:text-base">Add Lecture</span>
+            <Plus size={18} /> <span>Add Lecture</span>
           </button>
         </div>
       </div>
 
       {/* Search & Filter */}
-      <div
-        className="shrink-0 px-2 md:px-6 flex flex-col sm:flex-row gap-4 mb-6 sticky top-0 z-30 pb-4"
-        style={{ backgroundColor: colors.background }}
-      >
-        <div className="flex-1 relative">
+      <div className="shrink-0 px-4 md:px-6 grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="md:col-span-2 relative">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 opacity-30"
-            size={16}
+            size={18}
             style={{ color: colors.text }}
           />
           <input
             type="text"
             placeholder="Search lectures..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-1 py-2.5 rounded border outline-none transition-all text-sm"
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
+            className="w-full pl-10 pr-4 py-3 rounded border outline-none transition-all text-sm font-semibold"
             style={{
               backgroundColor: colors.sidebar || colors.background,
               borderColor: colors.accent + "20",
@@ -211,27 +215,24 @@ function AllLectures() {
             }}
           />
         </div>
-        <select
-          value={selectedCourse}
-          onChange={(e) => setSelectedCourse(e.target.value)}
-          className="px-4 py-2.5 rounded border outline-none cursor-pointer text-sm font-semibold sm:min-w-[200px]"
-          style={{
-            backgroundColor: colors.sidebar || colors.background,
-            borderColor: colors.accent + "20",
-            color: colors.text,
-          }}
-        >
-          <option value="All">All Courses</option>
-          {courses.map((course) => (
-            <option key={course._id} value={course._id}>
-              {course.title}
-            </option>
-          ))}
-        </select>
+        <div className="md:col-span-2">
+          <ModernSelect
+            options={[
+              { label: "All Courses", value: "" },
+              ...courses.map((c) => ({ label: c.title, value: c._id })),
+            ]}
+            value={selectedCourse}
+            onChange={(val) => {
+              setSelectedCourse(val);
+              setPage(1);
+            }}
+            placeholder="Filter by Course"
+          />
+        </div>
       </div>
 
       <div
-        className={`flex-1 overflow-auto p-2 md:px-6 pb-6 transition-all duration-300 ${isAnimating ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}
+        className={`flex-1 overflow-auto px-4 md:px-6 pb-6 mt-2 transition-all duration-300 ${isAnimating ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}
       >
         {loading ? (
           <div className="flex items-center justify-center p-20">
@@ -239,7 +240,7 @@ function AllLectures() {
           </div>
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredLectures.map((lecture) => (
+            {lectures.map((lecture) => (
               <div
                 key={lecture._id}
                 className="rounded border overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md flex flex-col"
@@ -295,7 +296,7 @@ function AllLectures() {
 
                 <div className="p-4 flex-1 flex flex-col">
                   <h3
-                    className="font-semibold text-sm mb-1 line-clamp-2"
+                    className="font-bold text-sm mb-1 line-clamp-2"
                     style={{ color: colors.text }}
                   >
                     {lecture.title}
@@ -362,8 +363,8 @@ function AllLectures() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {filteredLectures.map((lecture) => (
+          <div className="flex flex-col gap-3 pb-4">
+            {lectures.map((lecture) => (
               <div
                 key={lecture._id}
                 className="flex items-center gap-4 p-4 rounded border hover:shadow-sm transition-all duration-200"
@@ -399,7 +400,7 @@ function AllLectures() {
                     </span>
                   </div>
                   <h3
-                    className="font-semibold text-sm truncate"
+                    className="font-bold text-sm truncate"
                     style={{ color: colors.text }}
                   >
                     {lecture.title}
@@ -408,9 +409,9 @@ function AllLectures() {
 
                 <div className="hidden md:flex items-center gap-6 text-[10px] font-bold uppercase tracking-widest opacity-40">
                   <span className="flex items-center gap-1.5">
-                    <Clock size={14} /> {lecture.duration}
+                    <Clock size={16} /> {lecture.duration}
                   </span>
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-1.5 min-w-[80px]">
                     {lecture.privacy === "locked" ? (
                       <Lock size={14} className="text-amber-500" />
                     ) : (
@@ -430,7 +431,7 @@ function AllLectures() {
                         `/dashboard/courses/view/${lecture.course?._id}/lecture/${lecture._id}`,
                       )
                     }
-                    className="p-2 cursor-pointer text-primary"
+                    className="p-2 cursor-pointer text-primary transition-all hover:bg-black/5 rounded"
                   >
                     <Eye size={18} />
                   </button>
@@ -440,13 +441,13 @@ function AllLectures() {
                         `/dashboard/courses/view/${lecture.course?._id}/lecture/edit/${lecture._id}`,
                       )
                     }
-                    className="p-2 cursor-pointer text-primary"
+                    className="p-2 cursor-pointer text-primary transition-all hover:bg-black/5 rounded"
                   >
                     <Edit2 size={18} />
                   </button>
                   <button
                     onClick={() => handleDelete(lecture._id)}
-                    className="p-2 cursor-pointer text-red-500"
+                    className="p-2 cursor-pointer text-red-500 transition-all hover:bg-red-50 rounded"
                   >
                     <Trash2 size={18} />
                   </button>
@@ -456,13 +457,59 @@ function AllLectures() {
           </div>
         )}
 
-        {filteredLectures.length === 0 && (
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
           <div
-            className="text-center py-20 border-2 border-dashed rounded opacity-30"
+            className="mt-6 flex items-center justify-between p-4 rounded border"
+            style={{
+              borderColor: colors.accent + "20",
+              backgroundColor: colors.sidebar || colors.background,
+            }}
+          >
+            <span className="text-xs font-bold opacity-60 uppercase tracking-widest">
+              Page {page} of {pagination.totalPages}
+            </span>
+            <div className="flex gap-2">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+                className="p-2 rounded border disabled:opacity-20 cursor-pointer transition-all hover:bg-black/5"
+                style={{
+                  borderColor: colors.accent + "30",
+                  color: colors.text,
+                }}
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                disabled={page === pagination.totalPages}
+                onClick={() => setPage(page + 1)}
+                className="p-2 rounded border disabled:opacity-20 cursor-pointer transition-all hover:bg-black/5"
+                style={{
+                  borderColor: colors.accent + "30",
+                  color: colors.text,
+                }}
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {lectures.length === 0 && !loading && (
+          <div
+            className="text-center py-20 border-2 border-dashed rounded opacity-30 flex flex-col items-center gap-4"
             style={{ borderColor: colors.accent + "30" }}
           >
-            <MonitorIcon size={48} className="mx-auto mb-4" />
-            <p className="text-lg font-semibold">No Lectures Found</p>
+            <MonitorIcon size={64} className="opacity-20" />
+            <div>
+              <p className="text-lg font-bold uppercase tracking-widest">
+                No Lectures Found
+              </p>
+              <p className="text-xs font-bold opacity-60">
+                Try a different search or filter
+              </p>
+            </div>
           </div>
         )}
       </div>

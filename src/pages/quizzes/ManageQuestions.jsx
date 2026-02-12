@@ -13,7 +13,13 @@ import {
   Edit,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
-import { getTopicById, updateTopic } from "../../apis/questionTopic";
+import {
+  getTopicById,
+  updateTopic,
+  addQuestionToTopic,
+  updateQuestionInTopic,
+  deleteQuestionFromTopic,
+} from "../../apis/questionTopic";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 import Loader from "../../components/Loader";
@@ -32,6 +38,8 @@ function ManageQuestions() {
     options: { a: "", b: "", c: "", d: "" },
     correctAnswer: "a",
   });
+
+  const [inlineEditData, setInlineEditData] = useState(null);
 
   const fetchTopicDetails = async () => {
     try {
@@ -53,7 +61,7 @@ function ManageQuestions() {
     fetchTopicDetails();
   }, [id]);
 
-  const handleAddManual = () => {
+  const handleAddManual = async () => {
     if (
       !currentQuestion.question.trim() ||
       !currentQuestion.options.a.trim() ||
@@ -64,41 +72,98 @@ function ManageQuestions() {
       return toast.warning("Please fill question and all 4 options");
     }
 
-    if (editingIndex !== null) {
-      const updated = [...questions];
-      updated[editingIndex] = {
-        ...currentQuestion,
-        tempId: questions[editingIndex].tempId,
-      };
-      setQuestions(updated);
-      setEditingIndex(null);
-      toast.success("Question updated in list");
-    } else {
-      const newQuestion = {
-        ...currentQuestion,
-        tempId: Date.now() + Math.random(),
-      };
-      setQuestions([...questions, newQuestion]);
-      toast.success("Question added to list");
+    try {
+      setLoading(true);
+      const res = await addQuestionToTopic(id, currentQuestion);
+      if (res.success) {
+        setQuestions([...questions, res.data]);
+        toast.success("Question added successfully!");
+        // Reset form
+        setCurrentQuestion({
+          question: "",
+          options: { a: "", b: "", c: "", d: "" },
+          correctAnswer: "a",
+        });
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to add question");
+    } finally {
+      setLoading(false);
     }
-
-    // Reset form
-    setCurrentQuestion({
-      question: "",
-      options: { a: "", b: "", c: "", d: "" },
-      correctAnswer: "a",
-    });
   };
 
   const handleEditQuestion = (idx) => {
     setEditingIndex(idx);
-    setCurrentQuestion({ ...questions[idx] });
-    // Scroll to top to see the edit form
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setInlineEditData({ ...questions[idx] });
   };
 
-  const removeQuestion = (idx) => {
-    setQuestions(questions.filter((_, i) => i !== idx));
+  const handleSaveInline = async () => {
+    if (
+      !inlineEditData.question.trim() ||
+      !inlineEditData.options.a.trim() ||
+      !inlineEditData.options.b.trim() ||
+      !inlineEditData.options.c.trim() ||
+      !inlineEditData.options.d.trim()
+    ) {
+      return toast.warning("Please fill all fields");
+    }
+
+    try {
+      if (!inlineEditData._id) {
+        const updated = [...questions];
+        updated[editingIndex] = inlineEditData;
+        setQuestions(updated);
+        setEditingIndex(null);
+        setInlineEditData(null);
+        toast.info(
+          "Question updated locally! Click 'Final Submit' to save shifts.",
+        );
+        return;
+      }
+
+      setLoading(true);
+      const res = await updateQuestionInTopic(
+        id,
+        inlineEditData._id,
+        inlineEditData,
+      );
+      if (res.success) {
+        const updated = [...questions];
+        updated[editingIndex] = res.data;
+        setQuestions(updated);
+        setEditingIndex(null);
+        setInlineEditData(null);
+        toast.success("Question updated successfully!");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update question");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeQuestion = async (idx) => {
+    const q = questions[idx];
+    if (!q._id) {
+      // Just removal for non-synced items (unlikely here but safe)
+      setQuestions(questions.filter((_, i) => i !== idx));
+      return;
+    }
+
+    if (!window.confirm("Delete this question?")) return;
+
+    try {
+      setLoading(true);
+      const res = await deleteQuestionFromTopic(id, q._id);
+      if (res.success) {
+        setQuestions(questions.filter((_, i) => i !== idx));
+        toast.success("Question deleted");
+      }
+    } catch (err) {
+      toast.error("Failed to delete question");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const downloadSampleExcel = () => {
@@ -162,21 +227,23 @@ function ManageQuestions() {
 
     try {
       setLoading(true);
-      // Remove tempId before sending to backend
-      const cleanQuestions = questions.map(({ tempId, ...rest }) => ({
-        ...rest,
-        // Ensure options are strings
-        options: {
-          a: String(rest.options.a),
-          b: String(rest.options.b),
-          c: String(rest.options.c),
-          d: String(rest.options.d),
-        },
-      }));
+
+      const cleanQuestions = questions.map((q) => {
+        const { tempId, ...rest } = q;
+        return {
+          ...rest,
+          options: {
+            a: String(rest.options.a),
+            b: String(rest.options.b),
+            c: String(rest.options.c),
+            d: String(rest.options.d),
+          },
+        };
+      });
 
       const res = await updateTopic(id, { questions: cleanQuestions });
       if (res.success) {
-        toast.success("All questions saved successfully!");
+        toast.success("All changes persisted successfully!");
         navigate("/dashboard/quizzes/topics");
       }
     } catch (err) {
@@ -274,7 +341,10 @@ function ManageQuestions() {
                   <button
                     type="button"
                     className="px-4 py-2 rounded text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-colors cursor-pointer"
-                    style={{ backgroundColor: colors.primary, color: colors.background }}
+                    style={{
+                      backgroundColor: colors.primary,
+                      color: colors.background,
+                    }}
                   >
                     <FileSpreadsheet size={16} /> Upload Excel
                   </button>
@@ -405,27 +475,6 @@ function ManageQuestions() {
                   </div>
 
                   <div className="flex justify-end pt-2 gap-2">
-                    {editingIndex !== null && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingIndex(null);
-                          setCurrentQuestion({
-                            question: "",
-                            options: { a: "", b: "", c: "", d: "" },
-                            correctAnswer: "a",
-                          });
-                        }}
-                        className="px-6 py-2.5 rounded text-[10px] font-bold uppercase tracking-widest cursor-pointer border transition-all"
-                        style={{
-                          color: colors.text,
-                          backgroundColor: colors.accent + "10",
-                          borderColor: colors.accent + "10",
-                        }}
-                      >
-                        Cancel Edit
-                      </button>
-                    )}
                     <button
                       type="button"
                       onClick={handleAddManual}
@@ -436,10 +485,7 @@ function ManageQuestions() {
                         borderColor: colors.primary + "30",
                       }}
                     >
-                      <Plus size={14} />{" "}
-                      {editingIndex !== null
-                        ? "Update Question"
-                        : "Add Question"}
+                      <Plus size={14} /> Add Question
                     </button>
                   </div>
                 </div>
@@ -461,7 +507,10 @@ function ManageQuestions() {
                   onClick={handleSave}
                   disabled={loading}
                   className="flex items-center gap-2 px-6 py-2 rounded text-white text-[10px] font-black uppercase tracking-widest shadow-lg transition-all cursor-pointer"
-                  style={{ backgroundColor: colors.primary, color: colors.background }}
+                  style={{
+                    backgroundColor: colors.primary,
+                    color: colors.background,
+                  }}
                 >
                   {loading ? (
                     <Loader size={16} variant="button" />
@@ -477,66 +526,184 @@ function ManageQuestions() {
               {questions.map((q, idx) => (
                 <div
                   key={q.tempId || idx}
-                  className="p-6 rounded border flex items-start gap-4 relative group transition-all"
+                  className={`p-6 rounded border transition-all relative group ${editingIndex === idx ? "ring-2 ring-primary/20" : ""}`}
                   style={{
                     backgroundColor: colors.sidebar || colors.background,
-                    borderColor: colors.accent + "20",
+                    borderColor:
+                      editingIndex === idx
+                        ? colors.primary + "50"
+                        : colors.accent + "20",
                   }}
                 >
-                  <div
-                    className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-xs font-black shrink-0"
-                    style={{ color: colors.primary }}
-                  >
-                    Q{idx + 1}
-                  </div>
-                  <div className="flex-1">
-                    <p
-                      className="text-sm font-bold mb-4 pr-10"
-                      style={{ color: colors.text }}
-                    >
-                      {q.question}
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                      {Object.entries(q.options).map(([key, val]) => (
-                        <div
-                          key={key}
-                          className={`text-[11px] px-3 py-2 rounded border font-semibold flex items-center gap-2 transition-all`}
-                          style={{
-                            backgroundColor:
-                              key === q.correctAnswer
-                                ? "rgba(34, 197, 94, 0.1)"
-                                : colors.background,
-                            borderColor:
-                              key === q.correctAnswer
-                                ? "rgba(34, 197, 94, 0.3)"
-                                : colors.accent + "10",
-                            color:
-                              key === q.correctAnswer ? "#22c55e" : colors.text,
-                          }}
-                        >
-                          <span className="opacity-50 uppercase">{key}:</span>{" "}
-                          {val}
+                  {editingIndex === idx ? (
+                    /* Inline Edit Form */
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4 mb-2">
+                        <span className="text-xs font-black opacity-30">
+                          EDITING Q{idx + 1}
+                        </span>
+                      </div>
+                      <textarea
+                        rows={2}
+                        value={inlineEditData.question}
+                        onChange={(e) =>
+                          setInlineEditData({
+                            ...inlineEditData,
+                            question: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-3 rounded border outline-none text-sm font-semibold resize-none"
+                        style={{
+                          backgroundColor: colors.background,
+                          borderColor: colors.accent + "30",
+                          color: colors.text,
+                        }}
+                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {["a", "b", "c", "d"].map((key) => (
+                          <div key={key} className="space-y-1">
+                            <label className="text-[9px] font-black uppercase opacity-40 ml-1">
+                              Option {key.toUpperCase()}
+                            </label>
+                            <input
+                              type="text"
+                              value={inlineEditData.options[key]}
+                              onChange={(e) =>
+                                setInlineEditData({
+                                  ...inlineEditData,
+                                  options: {
+                                    ...inlineEditData.options,
+                                    [key]: e.target.value,
+                                  },
+                                })
+                              }
+                              className="w-full px-3 py-2 rounded border outline-none text-xs font-semibold"
+                              style={{
+                                backgroundColor: colors.background,
+                                borderColor: colors.accent + "20",
+                                color: colors.text,
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div
+                        className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-dashed"
+                        style={{ borderColor: colors.accent + "20" }}
+                      >
+                        <div className="flex items-center gap-4">
+                          <span className="text-[10px] font-black uppercase opacity-40">
+                            Correct Answer:
+                          </span>
+                          <div className="flex gap-4">
+                            {["a", "b", "c", "d"].map((key) => (
+                              <label
+                                key={key}
+                                className="flex items-center gap-2 cursor-pointer"
+                              >
+                                <input
+                                  type="radio"
+                                  checked={inlineEditData.correctAnswer === key}
+                                  onChange={() =>
+                                    setInlineEditData({
+                                      ...inlineEditData,
+                                      correctAnswer: key,
+                                    })
+                                  }
+                                  className="accent-green-600"
+                                />
+                                <span
+                                  className={`text-xs font-bold ${inlineEditData.correctAnswer === key ? "text-green-600" : "opacity-60"}`}
+                                >
+                                  {key.toUpperCase()}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
                         </div>
-                      ))}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setEditingIndex(null);
+                              setInlineEditData(null);
+                            }}
+                            className="px-4 py-2 rounded text-[10px] font-bold uppercase tracking-widest border opacity-60 hover:opacity-100 transition-all cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleSaveInline}
+                            className="px-4 py-2 rounded text-[10px] font-bold uppercase tracking-widest text-white shadow-lg cursor-pointer"
+                            style={{ backgroundColor: colors.primary }}
+                          >
+                            Save Update
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                    <button
-                      type="button"
-                      onClick={() => handleEditQuestion(idx)}
-                      className="p-2 rounded hover:bg-blue-50 text-blue-500 transition-all cursor-pointer"
-                      title="Edit Question"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeQuestion(idx)}
-                      className="p-2 rounded hover:bg-red-50 text-red-500 transition-all cursor-pointer"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
+                  ) : (
+                    /* Static View with standard Absolute positioning for buttons */
+                    <div className="flex items-start gap-4">
+                      <div
+                        className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-xs font-black shrink-0"
+                        style={{ color: colors.primary }}
+                      >
+                        Q{idx + 1}
+                      </div>
+                      <div className="flex-1">
+                        <p
+                          className="text-sm font-bold mb-4 pr-10"
+                          style={{ color: colors.text }}
+                        >
+                          {q.question}
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                          {Object.entries(q.options).map(([key, val]) => (
+                            <div
+                              key={key}
+                              className={`text-[11px] px-3 py-2 rounded border font-semibold flex items-center gap-2 transition-all`}
+                              style={{
+                                backgroundColor:
+                                  key === q.correctAnswer
+                                    ? "rgba(34, 197, 94, 0.1)"
+                                    : colors.background,
+                                borderColor:
+                                  key === q.correctAnswer
+                                    ? "rgba(34, 197, 94, 0.3)"
+                                    : colors.accent + "10",
+                                color:
+                                  key === q.correctAnswer
+                                    ? "#22c55e"
+                                    : colors.text,
+                              }}
+                            >
+                              <span className="opacity-50 uppercase">
+                                {key}:
+                              </span>{" "}
+                              {val}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                        <button
+                          type="button"
+                          onClick={() => handleEditQuestion(idx)}
+                          className="p-2 rounded hover:bg-blue-50 text-blue-500 transition-all cursor-pointer"
+                          title="Edit Question"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeQuestion(idx)}
+                          className="p-2 rounded hover:bg-red-50 text-red-500 transition-all cursor-pointer"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
 

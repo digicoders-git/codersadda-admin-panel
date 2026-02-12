@@ -122,7 +122,10 @@ function EditJob() {
                     required
                     value={formData.jobTitle || ""}
                     onChange={(e) =>
-                      setFormData({ ...formData, jobTitle: e.target.value })
+                      setFormData({
+                        ...formData,
+                        jobTitle: e.target.value.replace(/[^a-zA-Z\s]/g, ""),
+                      })
                     }
                     className="w-full px-4 py-2 rounded-md border outline-none text-sm"
                     style={inputStyle}
@@ -157,15 +160,19 @@ function EditJob() {
                 <div className="space-y-1">
                   <label style={labelStyle}>Salary / Package</label>
                   <input
-                    type="text"
+                    type="number"
                     required
+                    min="0"
                     value={formData.salaryPackage || ""}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const val = e.target.value
+                        ? Math.max(0, e.target.value)
+                        : "";
                       setFormData({
                         ...formData,
-                        salaryPackage: e.target.value,
-                      })
-                    }
+                        salaryPackage: val,
+                      });
+                    }}
                     className="w-full px-4 py-2 rounded-md border outline-none text-sm"
                     style={inputStyle}
                   />
@@ -209,13 +216,18 @@ function EditJob() {
                   <input
                     type="number"
                     required
+                    min="1"
+                    step="1"
                     value={formData.numberOfOpenings || ""}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const val = e.target.value
+                        ? Math.max(1, parseInt(e.target.value))
+                        : "";
                       setFormData({
                         ...formData,
-                        numberOfOpenings: e.target.value,
-                      })
-                    }
+                        numberOfOpenings: val,
+                      });
+                    }}
                     className="w-full px-4 py-2 rounded-md border outline-none text-sm"
                     style={inputStyle}
                   />
@@ -228,7 +240,10 @@ function EditJob() {
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        requiredSkills: e.target.value,
+                        requiredSkills: e.target.value.replace(
+                          /[^a-zA-Z\s,]/g,
+                          "",
+                        ),
                       })
                     }
                     className="w-full px-4 py-2 rounded-md border outline-none text-sm"
@@ -306,7 +321,9 @@ function EditJob() {
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        companyMobile: e.target.value,
+                        companyMobile: e.target.value
+                          .replace(/[^0-9]/g, "")
+                          .slice(0, 10),
                       })
                     }
                     className="w-full px-4 py-2 rounded-md border outline-none text-sm"
@@ -428,9 +445,12 @@ function EditJob() {
                   <input
                     type="number"
                     value={formData.price || 0}
-                    onChange={(e) =>
-                      setFormData({ ...formData, price: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const val = e.target.value
+                        ? Math.max(0, e.target.value)
+                        : "";
+                      setFormData({ ...formData, price: val });
+                    }}
                     className="w-full px-4 py-2 rounded-md border outline-none text-sm font-bold"
                     style={inputStyle}
                   />

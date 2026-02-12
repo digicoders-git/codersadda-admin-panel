@@ -15,8 +15,10 @@ export const updateLecture = async (id, data) => {
   return response.data;
 };
 
-export const getAllLectures = async () => {
-  const response = await http.get('/lecture/get');
+export const getAllLectures = async (search = "", page = 1, limit = 10, courseId = "") => {
+  const response = await http.get('/lecture/get', {
+    params: { search, page, limit, courseId }
+  });
   return response.data;
 };
 

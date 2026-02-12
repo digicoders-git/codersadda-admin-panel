@@ -326,20 +326,16 @@ function AddLecture() {
                         size={18}
                       />
                       <input
+                        readOnly
                         type="text"
                         value={formData.duration}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            duration: e.target.value,
-                          })
-                        }
-                        placeholder="00:00"
-                        className="w-full pl-10 pr-4 py-3 rounded border outline-none text-sm font-semibold transition-all"
+                        placeholder="Auto-calculating..."
+                        className="w-full pl-10 pr-4 py-3 rounded border outline-none text-sm font-semibold transition-all opacity-70"
                         style={{
                           backgroundColor: colors.background,
                           borderColor: colors.accent + "30",
                           color: colors.text,
+                          cursor: "not-allowed",
                         }}
                       />
                     </div>

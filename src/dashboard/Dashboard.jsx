@@ -135,6 +135,7 @@ const Dashboard = () => {
         { name: "Category", path: "/dashboard/category" },
         { name: "Add Course", path: "/dashboard/courses/add" },
         { name: "All Courses", path: "/dashboard/courses" },
+        { name: "All Topics", path: "/dashboard/courses/topics" },
         { name: "All Lectures", path: "/dashboard/lectures" },
         { name: "Add Lecture", path: "/dashboard/lectures/create" },
         {

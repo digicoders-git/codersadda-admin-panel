@@ -54,8 +54,10 @@ function AddSubscription() {
           getAllCourses(),
           getEbooks(),
         ]);
-        if (coursesRes.success) setCourses(coursesRes.data);
-        if (ebooksRes.success) setEbooks(ebooksRes.data);
+        if (coursesRes.success)
+          setCourses(coursesRes.data.filter((c) => c.isActive));
+        if (ebooksRes.success)
+          setEbooks(ebooksRes.data.filter((e) => e.isActive));
 
         if (isEdit) {
           const res = await getSubscriptionById(id);
@@ -216,7 +218,10 @@ function AddSubscription() {
                 required
                 value={formData.planType}
                 onChange={(e) =>
-                  setFormData({ ...formData, planType: e.target.value })
+                  setFormData({
+                    ...formData,
+                    planType: e.target.value.replace(/[^a-zA-Z\s]/g, ""),
+                  })
                 }
                 placeholder="e.g. Mobile, Premium"
                 className="w-full px-4 py-2.5 rounded border outline-none text-sm font-semibold"
@@ -254,9 +259,13 @@ function AddSubscription() {
                   value={
                     formData.planPricingType === "free" ? 0 : formData.price
                   }
-                  onChange={(e) =>
-                    setFormData({ ...formData, price: e.target.value })
-                  }
+                  min="0"
+                  onChange={(e) => {
+                    const val = e.target.value
+                      ? Math.max(0, e.target.value)
+                      : "";
+                    setFormData({ ...formData, price: val });
+                  }}
                   placeholder="e.g. 299"
                   className="w-full pl-10 pr-4 py-2.5 rounded border outline-none text-sm font-semibold"
                   style={{
@@ -289,9 +298,14 @@ function AddSubscription() {
                   type="number"
                   required
                   value={formData.freeJobs}
-                  onChange={(e) =>
-                    setFormData({ ...formData, freeJobs: e.target.value })
-                  }
+                  min="0"
+                  step="1"
+                  onChange={(e) => {
+                    const val = e.target.value
+                      ? Math.max(0, parseInt(e.target.value))
+                      : "";
+                    setFormData({ ...formData, freeJobs: val });
+                  }}
                   placeholder="e.g. 3"
                   className="w-full pl-5 pr-4 py-2.5 rounded border outline-none text-sm font-semibold"
                   style={inputStyle}

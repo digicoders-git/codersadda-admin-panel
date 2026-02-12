@@ -31,6 +31,14 @@ function EditQuiz() {
 
   const [formData, setFormData] = useState(null);
   const [questions, setQuestions] = useState([]);
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState([]);
+  const [manualQuestions, setManualQuestions] = useState([]);
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [newManualQ, setNewManualQ] = useState({
+    question: "",
+    options: { a: "", b: "", c: "", d: "" },
+    correctAnswer: "a",
+  });
 
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -39,6 +47,8 @@ function EditQuiz() {
         const res = await getQuizById(id);
         if (res.success && res.data) {
           setFormData(res.data);
+          setSelectedQuestionIds(res.data.selectedQuestions || []);
+          setManualQuestions(res.data.customQuestions || []);
         } else {
           toast.error("Quiz not found");
           navigate("/dashboard/quizzes");
@@ -111,11 +121,46 @@ function EditQuiz() {
         };
       });
       setQuestions(mappedQuestions);
+      setSelectedQuestionIds(mappedQuestions.map((q) => q.id));
       setFormData((prev) => ({ ...prev, questionTopicId: topicId }));
     } else {
       setQuestions([]);
+      setSelectedQuestionIds([]);
       setFormData((prev) => ({ ...prev, questionTopicId: "" }));
     }
+  };
+
+  const toggleQuestionSelection = (id) => {
+    setSelectedQuestionIds((prev) =>
+      prev.includes(id) ? prev.filter((qid) => qid !== id) : [...prev, id],
+    );
+  };
+
+  const addManualQuestion = () => {
+    if (
+      !newManualQ.question ||
+      !newManualQ.options.a ||
+      !newManualQ.options.b ||
+      !newManualQ.options.c ||
+      !newManualQ.options.d
+    ) {
+      return toast.warning("Complete all question fields");
+    }
+    setManualQuestions([
+      ...manualQuestions,
+      { ...newManualQ, id: `manual-${Date.now()}` },
+    ]);
+    setNewManualQ({
+      question: "",
+      options: { a: "", b: "", c: "", d: "" },
+      correctAnswer: "a",
+    });
+    setShowManualForm(false);
+    toast.success("Manual question added!");
+  };
+
+  const removeManualQuestion = (id) => {
+    setManualQuestions(manualQuestions.filter((q) => (q._id || q.id) !== id));
   };
 
   const handleSubmit = async (e) => {
@@ -137,6 +182,12 @@ function EditQuiz() {
         status: formData.status === "Active" || formData.status === true,
         questionTopicId:
           formData.questionTopicId?._id || formData.questionTopicId,
+        selectedQuestions: selectedQuestionIds,
+        customQuestions: manualQuestions.map((q) => ({
+          question: q.question,
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+        })),
       };
 
       const res = await apiUpdateQuiz(id, payload);
@@ -210,7 +261,10 @@ function EditQuiz() {
                     type="text"
                     value={formData.title}
                     onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
+                      setFormData({
+                        ...formData,
+                        title: e.target.value.replace(/[^a-zA-Z\s]/g, ""),
+                      })
                     }
                     placeholder="e.g. React.js Fundamentals"
                     className="w-full px-4 py-3 rounded border outline-none text-sm font-semibold transition-all"
@@ -269,7 +323,10 @@ function EditQuiz() {
                     type="number"
                     value={formData.duration}
                     onChange={(e) =>
-                      setFormData({ ...formData, duration: e.target.value })
+                      setFormData({
+                        ...formData,
+                        duration: Math.max(0, parseInt(e.target.value) || 0),
+                      })
                     }
                     placeholder="15"
                     className="w-full px-4 py-3 rounded border outline-none text-sm font-semibold"
@@ -301,7 +358,10 @@ function EditQuiz() {
                     type="number"
                     value={formData.points}
                     onChange={(e) =>
-                      setFormData({ ...formData, points: e.target.value })
+                      setFormData({
+                        ...formData,
+                        points: Math.max(0, parseInt(e.target.value) || 0),
+                      })
                     }
                     placeholder="5"
                     className="w-full px-4 py-3 rounded border outline-none text-sm font-semibold"
@@ -332,116 +392,378 @@ function EditQuiz() {
 
           {/* Content Manager */}
           <div
-            className="p-8 rounded-2xl border shadow-sm space-y-6"
+            className="p-8 rounded border shadow-sm space-y-6"
             style={{
               backgroundColor: colors.sidebar || colors.background,
               borderColor: colors.accent + "20",
             }}
           >
-            <div
-              className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b"
-              style={{ borderColor: colors.accent + "10" }}
+            <h3
+              className="text-sm font-bold uppercase tracking-wider opacity-60 mb-2"
+              style={{ color: colors.text }}
             >
-              <div style={{ color: colors.text }}>
-                <h3 className="text-sm font-black uppercase tracking-wider opacity-60">
-                  Quiz Content
+              Quiz Content
+            </h3>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label style={labelStyle}>Question Topic</label>
+                  <ModernSelect
+                    options={topics.map((t) => ({
+                      label: `${t.topicName} (${t.questions?.length || 0} Questions)`,
+                      value: t._id,
+                    }))}
+                    value={
+                      formData.questionTopicId?._id || formData.questionTopicId
+                    }
+                    onChange={handleTopicChange}
+                    placeholder="Choose a topic"
+                  />
+                  <p className="text-[10px] opacity-40 uppercase tracking-widest font-black mt-2">
+                    Select a topic to link all its questions
+                  </p>
+                </div>
+              </div>
+
+              {/* Questions Preview */}
+              {questions.length > 0 ? (
+                <div
+                  className="space-y-4 pt-6 border-t"
+                  style={{ borderColor: colors.accent + "10" }}
+                >
+                  <div className="flex items-center justify-between px-2">
+                    <h4
+                      className="text-[10px] font-black uppercase tracking-widest opacity-40"
+                      style={{ color: colors.text }}
+                    >
+                      Select Questions ({selectedQuestionIds.length} of{" "}
+                      {questions.length} selected)
+                    </h4>
+                    <div className="flex gap-4">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedQuestionIds(questions.map((q) => q.id))
+                        }
+                        className="text-[10px] font-bold text-primary hover:underline uppercase tracking-tighter cursor-pointer"
+                      >
+                        Select All
+                      </button>
+                      <span className="opacity-20 text-slate-300">|</span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedQuestionIds([])}
+                        className="text-[10px] font-bold text-red-500 hover:underline uppercase tracking-tighter cursor-pointer"
+                      >
+                        Deselect All
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-none">
+                    {questions.map((q, idx) => (
+                      <div
+                        key={q.id}
+                        onClick={() => toggleQuestionSelection(q.id)}
+                        className={`p-5 rounded border flex items-start gap-4 transition-all cursor-pointer ${
+                          selectedQuestionIds.includes(q.id)
+                            ? "bg-black/5"
+                            : "bg-transparent opacity-40 grayscale"
+                        }`}
+                        style={{
+                          borderColor: selectedQuestionIds.includes(q.id)
+                            ? colors.primary + "30"
+                            : colors.accent + "10",
+                        }}
+                      >
+                        <div className="flex flex-col items-center gap-2 shrink-0">
+                          <span className="w-8 h-8 rounded bg-white/50 flex items-center justify-center text-xs font-black opacity-40 shadow-sm">
+                            {idx + 1}
+                          </span>
+                          <div
+                            className={`w-6 h-6 rounded flex items-center justify-center border-2 transition-all ${
+                              selectedQuestionIds.includes(q.id)
+                                ? "bg-primary border-primary"
+                                : "border-black/10"
+                            }`}
+                            style={{
+                              backgroundColor: selectedQuestionIds.includes(
+                                q.id,
+                              )
+                                ? colors.primary
+                                : "transparent",
+                              borderColor: selectedQuestionIds.includes(q.id)
+                                ? colors.primary
+                                : colors.accent + "20",
+                            }}
+                          >
+                            {selectedQuestionIds.includes(q.id) && (
+                              <CheckCircle2 size={14} className="text-white" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <p
+                            className="text-sm font-bold mb-4 leading-relaxed"
+                            style={{ color: colors.text }}
+                          >
+                            {q.question}
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {q.options.map((opt, oid) => (
+                              <div
+                                key={oid}
+                                className={`text-[11px] px-4 py-2.5 rounded border font-bold transition-all flex items-center gap-3 ${
+                                  oid === q.correctOption &&
+                                  selectedQuestionIds.includes(q.id)
+                                    ? "bg-green-500/10 border-green-500/30 text-green-700"
+                                    : "bg-white/40 border-black/5 opacity-60"
+                                }`}
+                              >
+                                <span
+                                  className={`w-5 h-5 rounded flex items-center justify-center text-[10px] ${
+                                    oid === q.correctOption &&
+                                    selectedQuestionIds.includes(q.id)
+                                      ? "bg-green-500 text-white"
+                                      : "bg-black/10 opacity-40"
+                                  }`}
+                                >
+                                  {["A", "B", "C", "D"][oid]}
+                                </span>
+                                {opt}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="py-20 text-center border-2 border-dashed rounded flex flex-col items-center gap-4 transition-all"
+                  style={{
+                    borderColor: colors.accent + "20",
+                    backgroundColor: colors.accent + "05",
+                  }}
+                >
+                  <div className="w-16 h-16 rounded bg-white/50 flex items-center justify-center shadow-inner">
+                    <BookOpen
+                      size={32}
+                      className="opacity-20"
+                      style={{ color: colors.text }}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-black opacity-30 uppercase tracking-widest">
+                      No Topic Selected
+                    </p>
+                    <p className="text-[10px] font-bold opacity-20 uppercase tracking-widest">
+                      Select a topic above to link questions to this quiz
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Manual Questions Manager */}
+          <div
+            className="p-6 rounded border shadow-sm space-y-4"
+            style={{
+              backgroundColor: colors.sidebar || colors.background,
+              borderColor: colors.accent + "20",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-wider opacity-60 mb-2">
+                  Manual Questions (Ad-hoc)
                 </h3>
-                <p className="text-[10px] opacity-40 uppercase tracking-widest font-black mt-1">
-                  Select a topic to link all its questions
+                <p className="text-[10px] opacity-40 uppercase tracking-widest font-black">
+                  Add extra questions directly to this quiz
                 </p>
               </div>
-
-              <div className="w-full md:w-96">
-                <label
-                  style={{ ...labelStyle, fontSize: "10px", opacity: 0.6 }}
-                >
-                  Question Topic
-                </label>
-                <ModernSelect
-                  options={topics.map((t) => ({
-                    label: `${t.topicName} (${t.questions?.length || 0} Questions)`,
-                    value: t._id,
-                  }))}
-                  value={
-                    formData.questionTopicId?._id || formData.questionTopicId
-                  }
-                  onChange={handleTopicChange}
-                  placeholder="Choose a topic"
-                />
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowManualForm(!showManualForm)}
+                className="px-4 py-2 rounded font-bold text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 border"
+                style={{
+                  borderColor: colors.accent + "30",
+                  color: colors.primary,
+                }}
+              >
+                {showManualForm ? (
+                  <X size={14} />
+                ) : (
+                  <>
+                    <Plus size={14} /> Add Manual
+                  </>
+                )}
+              </button>
             </div>
 
-            {/* Questions Preview */}
-            {questions.length > 0 ? (
-              <div className="space-y-4 pt-2">
-                <div className="flex items-center justify-between px-2">
-                  <h4
-                    className="text-[10px] font-black uppercase tracking-widest opacity-40"
-                    style={{ color: colors.text }}
-                  >
-                    Preview: {questions.length} Questions linked from topic
-                  </h4>
-                </div>
-                <div className="grid grid-cols-1 gap-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-none">
-                  {questions.map((q, idx) => (
-                    <div
-                      key={q.id}
-                      className="p-5 rounded-2xl border bg-black/5 flex items-start gap-4 transition-all hover:bg-black/[0.07]"
-                      style={{ borderColor: colors.accent + "10" }}
+            {showManualForm && (
+              <div
+                className="p-5 rounded border space-y-4 shadow-inner"
+                style={{
+                  borderColor: colors.primary + "20",
+                  backgroundColor: colors.primary + "05",
+                }}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                  <div className="md:col-span-12">
+                    <label style={{ ...labelStyle, marginBottom: "4px" }}>
+                      Question Text
+                    </label>
+                    <input
+                      type="text"
+                      value={newManualQ.question}
+                      onChange={(e) =>
+                        setNewManualQ({
+                          ...newManualQ,
+                          question: e.target.value,
+                        })
+                      }
+                      placeholder="Enter your question here..."
+                      className="w-full px-4 py-2.5 rounded border outline-none text-sm font-semibold"
+                      style={{
+                        backgroundColor: colors.background,
+                        borderColor: colors.accent + "20",
+                        color: colors.text,
+                      }}
+                    />
+                  </div>
+
+                  <div className="md:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {["a", "b", "c", "d"].map((opt) => (
+                      <div key={opt}>
+                        <label
+                          style={{
+                            ...labelStyle,
+                            fontSize: "9px",
+                            marginBottom: "2px",
+                          }}
+                        >
+                          Option {opt.toUpperCase()}
+                        </label>
+                        <input
+                          type="text"
+                          value={newManualQ.options[opt]}
+                          onChange={(e) =>
+                            setNewManualQ({
+                              ...newManualQ,
+                              options: {
+                                ...newManualQ.options,
+                                [opt]: e.target.value,
+                              },
+                            })
+                          }
+                          placeholder={`Option ${opt.toUpperCase()}`}
+                          className="w-full px-3 py-2 rounded border outline-none text-[11px] font-semibold"
+                          style={{
+                            backgroundColor: colors.background,
+                            borderColor: colors.accent + "15",
+                            color: colors.text,
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="md:col-span-8">
+                    <label
+                      style={{
+                        ...labelStyle,
+                        fontSize: "9px",
+                        marginBottom: "2px",
+                      }}
                     >
-                      <span className="w-8 h-8 rounded-xl bg-white/50 flex items-center justify-center text-xs font-black opacity-40 shrink-0 shadow-sm">
-                        {idx + 1}
-                      </span>
-                      <div className="flex-1">
+                      Correct Answer
+                    </label>
+                    <ModernSelect
+                      options={[
+                        { label: "Option A", value: "a" },
+                        { label: "Option B", value: "b" },
+                        { label: "Option C", value: "c" },
+                        { label: "Option D", value: "d" },
+                      ]}
+                      value={newManualQ.correctAnswer}
+                      onChange={(val) =>
+                        setNewManualQ({ ...newManualQ, correctAnswer: val })
+                      }
+                    />
+                  </div>
+
+                  <div className="md:col-span-4">
+                    <button
+                      type="button"
+                      onClick={addManualQuestion}
+                      className="w-full py-3.5 rounded font-black text-[10px] uppercase tracking-widest text-white shadow-lg active:scale-95 transition-all"
+                      style={{ backgroundColor: colors.primary }}
+                    >
+                      Add to Quiz
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {manualQuestions.length > 0 && (
+              <div className="grid grid-cols-1 gap-3">
+                {manualQuestions.map((q, idx) => (
+                  <div
+                    key={q._id || q.id || idx}
+                    className="p-4 rounded border bg-black/5 flex items-start gap-3"
+                    style={{ borderColor: colors.accent + "10" }}
+                  >
+                    <span className="w-6 h-6 rounded bg-white/50 flex items-center justify-center text-[10px] font-black opacity-40 shrink-0 shadow-sm">
+                      {idx + 1}
+                    </span>
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between gap-3 mb-2">
                         <p
-                          className="text-sm font-bold mb-4 leading-relaxed"
+                          className="text-xs font-bold leading-relaxed"
                           style={{ color: colors.text }}
                         >
                           {q.question}
                         </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {q.options.map((opt, oid) => (
-                            <div
-                              key={oid}
-                              className={`text-[11px] px-4 py-2.5 rounded-xl border font-bold transition-all flex items-center gap-3 ${oid === q.correctOption ? "bg-green-500/10 border-green-500/30 text-green-700" : "bg-white/40 border-black/5 opacity-60"}`}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            removeManualQuestion(q._id || q.id || idx)
+                          }
+                          className="p-1.5 rounded hover:bg-red-50 text-red-500 transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {["a", "b", "c", "d"].map((optKey) => (
+                          <div
+                            key={optKey}
+                            className={`text-[10px] px-3 py-2 rounded border font-bold flex items-center gap-2 ${
+                              optKey === q.correctAnswer
+                                ? "bg-green-500/10 border-green-500/30 text-green-700"
+                                : "bg-white/40 border-black/5 opacity-60"
+                            }`}
+                          >
+                            <span
+                              className={`w-4 h-4 rounded flex items-center justify-center text-[8px] ${
+                                optKey === q.correctAnswer
+                                  ? "bg-green-500 text-white"
+                                  : "bg-black/10 opacity-40"
+                              }`}
                             >
-                              <span
-                                className={`w-5 h-5 rounded-lg flex items-center justify-center text-[10px] ${oid === q.correctOption ? "bg-green-500 text-white" : "bg-black/10 opacity-40"}`}
-                              >
-                                {["A", "B", "C", "D"][oid]}
-                              </span>
-                              {opt}
-                            </div>
-                          ))}
-                        </div>
+                              {optKey.toUpperCase()}
+                            </span>
+                            {q.options[optKey]}
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div
-                className="py-20 text-center border-2 border-dashed rounded-3xl flex flex-col items-center gap-4 transition-all"
-                style={{
-                  borderColor: colors.accent + "20",
-                  backgroundColor: colors.accent + "05",
-                }}
-              >
-                <div className="w-16 h-16 rounded-2xl bg-white/50 flex items-center justify-center shadow-inner">
-                  <BookOpen
-                    size={32}
-                    className="opacity-20"
-                    style={{ color: colors.text }}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-black opacity-30 uppercase tracking-widest">
-                    No Topic Selected
-                  </p>
-                  <p className="text-[10px] font-bold opacity-20 uppercase tracking-widest">
-                    Select a topic above to link questions to this quiz
-                  </p>
-                </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

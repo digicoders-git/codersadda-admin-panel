@@ -20,7 +20,9 @@ export const deleteTopic = async (id) => {
   return response.data;
 };
 
-export const getAllTopics = async () => {
-  const response = await http.get('/curriculum/get');
+export const getAllTopics = async (search = "", page = 1, limit = 10, courseId = "") => {
+  const response = await http.get('/curriculum/get', {
+    params: { search, page, limit, courseId }
+  });
   return response.data;
 };

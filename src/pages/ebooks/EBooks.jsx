@@ -450,7 +450,7 @@ function EBooks() {
                           <>
                             <button
                               onClick={() => startEditCat(cat)}
-                              className="p-2 rounded cursor-pointer transition-all hover:bg-opacity-20"
+                              className="w-9 h-9 flex items-center justify-center rounded cursor-pointer transition-all hover:bg-opacity-20"
                               style={{
                                 color: colors.primary,
                                 backgroundColor: colors.primary + "10",
@@ -460,7 +460,7 @@ function EBooks() {
                             </button>
                             <button
                               onClick={() => handleDeleteCategory(cat._id)}
-                              className="p-2 rounded cursor-pointer transition-all hover:bg-opacity-20"
+                              className="w-9 h-9 flex items-center justify-center rounded cursor-pointer transition-all hover:bg-opacity-20"
                               style={{
                                 color: "#ef4444",
                                 backgroundColor: "#ef444415",
@@ -629,7 +629,7 @@ function EBooks() {
                           onClick={() =>
                             navigate(`/dashboard/ebooks/view/${book._id}`)
                           }
-                          className="p-2 rounded cursor-pointer transition-all hover:bg-opacity-20"
+                          className="w-9 h-9 flex items-center justify-center rounded cursor-pointer transition-all hover:bg-opacity-20"
                           style={{
                             color: colors.primary,
                             backgroundColor: colors.primary + "15",
@@ -641,7 +641,7 @@ function EBooks() {
                           onClick={() =>
                             navigate(`/dashboard/ebooks/edit/${book._id}`)
                           }
-                          className="p-2 rounded cursor-pointer transition-all hover:bg-opacity-20"
+                          className="w-9 h-9 flex items-center justify-center rounded cursor-pointer transition-all hover:bg-opacity-20"
                           style={{
                             color: colors.accent,
                             backgroundColor: colors.accent + "15",
@@ -651,7 +651,7 @@ function EBooks() {
                         </button>
                         <button
                           onClick={() => handleDeleteEbook(book._id)}
-                          className="p-2 rounded cursor-pointer transition-all hover:bg-opacity-20"
+                          className="w-9 h-9 flex items-center justify-center rounded cursor-pointer transition-all hover:bg-opacity-20"
                           style={{
                             color: "#ef4444",
                             backgroundColor: "#ef444415",
