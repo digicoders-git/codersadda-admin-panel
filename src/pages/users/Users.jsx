@@ -22,6 +22,7 @@ import Swal from "sweetalert2";
 import Toggle from "../../components/ui/Toggle";
 import { useNavigate } from "react-router-dom";
 import Loader from "../../components/Loader";
+import ModernSelect from "../../components/ModernSelect";
 
 function Users() {
   const { colors, currentTheme, isDarkMode } = useTheme();
@@ -32,6 +33,7 @@ function Users() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [filterStatus, setFilterStatus] = useState("all"); // all, true, false
   const itemsPerPage = 10;
   const navigate = useNavigate();
 
@@ -40,6 +42,7 @@ function Users() {
     try {
       const res = await getUsers({
         search: searchTerm,
+        isActive: filterStatus === "all" ? undefined : filterStatus,
         page: currentPage,
         limit: itemsPerPage,
       });
@@ -57,7 +60,7 @@ function Users() {
 
   useEffect(() => {
     fetchUsers();
-  }, [currentPage, searchTerm]);
+  }, [currentPage, searchTerm, filterStatus]);
 
   // Toggle Status
   const toggleStatus = async (id) => {
@@ -113,6 +116,12 @@ function Users() {
     }
   };
 
+  const statusOptions = [
+    { label: "All Users", value: "all" },
+    { label: "Active Only", value: "true" },
+    { label: "Inactive Only", value: "false" },
+  ];
+
   return (
     <div
       className="h-full w-full flex flex-col overflow-hidden"
@@ -147,27 +156,42 @@ function Users() {
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative group w-full md:max-w-md">
-          <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40"
-            style={{ color: colors.text }}
-          />
-          <input
-            type="text"
-            placeholder="Search by name, email or number..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full pl-12 pr-4 py-3 rounded outline-none border transition-all text-sm font-semibold"
-            style={{
-              backgroundColor: colors.sidebar || colors.background,
-              borderColor: colors.accent + "20",
-              color: colors.text,
-            }}
-          />
+        <div className="flex flex-col md:flex-row items-center gap-4 w-full md:max-w-2xl">
+
+
+          {/* Search Bar */}
+          <div className="relative group w-full flex-1">
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40"
+              style={{ color: colors.text }}
+            />
+            <input
+              type="text"
+              placeholder="Search by name, email or number..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pl-12 pr-4 py-2 rounded outline-none border transition-all text-sm font-semibold"
+              style={{
+                backgroundColor: colors.sidebar || colors.background,
+                borderColor: colors.accent + "20",
+                color: colors.text,
+              }}
+            />
+          </div>
+          <div className="w-full md:w-52">
+            <ModernSelect
+              options={statusOptions}
+              value={filterStatus}
+              onChange={(val) => {
+                setFilterStatus(val);
+                setCurrentPage(1);
+              }}
+              placeholder="Filter by Status"
+            />
+          </div>
         </div>
       </div>
 

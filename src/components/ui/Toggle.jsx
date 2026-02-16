@@ -1,21 +1,19 @@
 import React from "react";
 import { useTheme } from "../../context/ThemeContext";
 
-const Toggle = ({ active, onClick }) => {
-  const { colors, currentTheme, isDarkMode } = useTheme();
+const Toggle = ({ active, onClick, disabled = false }) => {
+  const { colors, isDarkMode } = useTheme();
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={(e) => {
         e.stopPropagation();
-        onClick();
+        if (!disabled) onClick();
       }}
-      className={`w-10 h-5 cursor-pointer rounded-full transition-all duration-300 relative ${
-        active ? "bg-opacity-100" : "bg-opacity-20"
-      }`}
-      // style={{
-      //   backgroundColor:  active ? colors.primary : (colors.accent || '#888888'),
-      // }}>
+      className={`w-10 h-5 rounded-full transition-all duration-300 relative ${
+        disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+      } ${active ? "bg-opacity-100" : "bg-opacity-20"}`}
       style={{
         backgroundColor: active
           ? colors.primary

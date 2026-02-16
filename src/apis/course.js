@@ -38,3 +38,8 @@ export const toggleCourseStatus = async (id) => {
   const response = await http.patch(`/course/toggle-status/${id}`);
   return response.data;
 };
+
+export const getCategoriesWithCount = async () => {
+  const response = await http.get('/course/categories-with-count');
+  return response.data;
+};

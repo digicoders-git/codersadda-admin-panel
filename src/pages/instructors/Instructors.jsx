@@ -20,6 +20,7 @@ import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import Toggle from "../../components/ui/Toggle";
 import Loader from "../../components/Loader";
+import ModernSelect from "../../components/ModernSelect";
 
 function Instructors() {
   const { colors } = useTheme();
@@ -27,11 +28,17 @@ function Instructors() {
   const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null); // stores ID of item being processed
+  const [statusLoadingId, setStatusLoadingId] = useState(null); // stores ID for toggle loading
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
 
   const fetchInstructors = async () => {
+    setLoading(true);
     try {
-      const result = await getInstructors();
+      const result = await getInstructors({
+        search: searchTerm,
+        isActive: filterStatus === "all" ? undefined : filterStatus,
+      });
       if (result.success) {
         setInstructors(result.data);
       }
@@ -45,7 +52,13 @@ function Instructors() {
 
   useEffect(() => {
     fetchInstructors();
-  }, []);
+  }, [searchTerm, filterStatus]);
+
+  const statusOptions = [
+    { label: "All Status", value: "all" },
+    { label: "Active Only", value: "true" },
+    { label: "Inactive Only", value: "false" },
+  ];
 
   const handleDelete = (id) => {
     Swal.fire({
@@ -75,34 +88,25 @@ function Instructors() {
   };
 
   const toggleStatus = async (id, currentIsActive) => {
-    const newIsActive = !currentIsActive;
-    // Optimistic update
-    setInstructors((prev) =>
-      prev.map((ins) =>
-        ins._id === id ? { ...ins, isActive: newIsActive } : ins,
-      ),
-    );
-
     try {
+      setStatusLoadingId(id);
+      const newIsActive = !currentIsActive;
       await updateInstructor(id, { isActive: newIsActive });
-      toast.info(`Instructor ${newIsActive ? "Activated" : "Deactivated"}`);
-    } catch (error) {
-      // Revert if failed
+
       setInstructors((prev) =>
         prev.map((ins) =>
-          ins._id === id ? { ...ins, isActive: currentIsActive } : ins,
+          ins._id === id ? { ...ins, isActive: newIsActive } : ins,
         ),
       );
+      toast.info(`Instructor ${newIsActive ? "Activated" : "Deactivated"}`);
+    } catch (error) {
       toast.error("Failed to update status");
+    } finally {
+      setStatusLoadingId(null);
     }
   };
 
-  const filteredInstructors = instructors.filter(
-    (ins) =>
-      (ins.fullName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (ins.email || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (ins.role || "").toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const filteredInstructors = instructors; // Now handled by server-side
 
   return (
     <div className="p-6">
@@ -134,23 +138,34 @@ function Instructors() {
           borderColor: colors.accent + "20",
         }}
       >
-        <div className="relative max-w-md">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40"
-            size={18}
-          />
-          <input
-            type="text"
-            placeholder="Search by name, email or role..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded border outline-none transition-all text-sm"
-            style={{
-              backgroundColor: colors.background,
-              borderColor: colors.accent + "30",
-              color: colors.text,
-            }}
-          />
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40"
+              size={18}
+            />
+            <input
+              type="text"
+              placeholder="Search by name, email or role..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded border outline-none transition-all text-sm"
+              style={{
+                backgroundColor: colors.background,
+                borderColor: colors.accent + "30",
+                color: colors.text,
+              }}
+            />
+          </div>
+
+          <div className="w-full md:w-48">
+            <ModernSelect
+              options={statusOptions}
+              value={filterStatus}
+              onChange={(val) => setFilterStatus(val)}
+              placeholder="Filter by Status"
+            />
+          </div>
         </div>
       </div>
 
@@ -251,9 +266,11 @@ function Instructors() {
                     </td>
                     <td className="p-4 py-5">
                       <div className="flex items-center gap-2">
+                        {statusLoadingId === ins._id && <Loader size={12} />}
                         <Toggle
                           active={ins.isActive}
                           onClick={() => toggleStatus(ins._id, ins.isActive)}
+                          disabled={statusLoadingId === ins._id}
                         />
                         <span
                           className={`text-[9px] font-black uppercase tracking-wider ${ins.isActive ? "text-green-500" : "text-red-500"}`}

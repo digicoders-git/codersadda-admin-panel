@@ -119,8 +119,18 @@ function AddCourse() {
     }
   };
 
+  const removeImage = () => {
+    setFormData({ ...formData, thumbnailFile: null, thumbnailPreview: "" });
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
+  };
+
   const removeVideo = () => {
     setFormData({ ...formData, promoVideoFile: null, promoVideoPreview: "" });
+    if (videoInputRef.current) {
+      videoInputRef.current.value = "";
+    }
   };
 
   const handleAddWhatYoullLearn = () => {
@@ -579,11 +589,23 @@ function AddCourse() {
                   }}
                 >
                   {formData.thumbnailPreview ? (
-                    <img
-                      src={formData.thumbnailPreview}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
+                    <div className="relative w-full h-full group">
+                      <img
+                        src={formData.thumbnailPreview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeImage();
+                        }}
+                        className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
                   ) : (
                     <div
                       className="text-center opacity-40"

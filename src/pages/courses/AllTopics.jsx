@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Plus,
   Search,
   Trash2,
-  Edit,
+  Edit2,
+  BookOpen,
+  Layout,
+  Video,
+  X,
   ChevronLeft,
   ChevronRight,
-  BookOpen,
+  Check,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import {
@@ -19,35 +23,61 @@ import { getAllCourses } from "../../apis/course";
 import { toast } from "react-toastify";
 import Loader from "../../components/Loader";
 import ModernSelect from "../../components/ModernSelect";
+import Toggle from "../../components/ui/Toggle";
 import Swal from "sweetalert2";
 
 function AllTopics() {
   const { colors } = useTheme();
+
+  // Data States
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(null);
   const [topics, setTopics] = useState([]);
   const [courses, setCourses] = useState([]);
-  const [search, setSearch] = useState("");
-  const [courseFilter, setCourseFilter] = useState("");
-  const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState({});
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [editingTopic, setEditingTopic] = useState(null);
-  const [newTopic, setNewTopic] = useState({ topic: "", course: "" });
 
-  const fetchTopics = async () => {
+  // Filter States
+  const [search, setSearch] = useState("");
+  const [courseFilter, setCourseFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [activeCount, setActiveCount] = useState(0);
+  const [inactiveCount, setInactiveCount] = useState(0);
+  const [limit] = useState(10);
+
+  // Form States
+  const [topicName, setTopicName] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState("");
+  const [editingId, setEditingId] = useState(null);
+
+  const fetchTopics = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await getAllTopics(search, page, 10, courseFilter);
+      const params = {
+        search,
+        page: currentPage,
+        limit,
+        courseId: courseFilter === "all" ? "" : courseFilter,
+        isActive: statusFilter === "all" ? undefined : statusFilter,
+      };
+
+      const res = await getAllTopics(params);
       if (res.success) {
         setTopics(res.data);
-        setPagination(res.pagination);
+        setTotalItems(res.total || 0);
+        setTotalPages(res.totalPages || 1);
+        setActiveCount(res.activeCount || 0);
+        setInactiveCount(res.inactiveCount || 0);
       }
     } catch (err) {
       toast.error("Failed to fetch topics");
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, currentPage, limit, courseFilter, statusFilter]);
 
   const fetchCourses = async () => {
     try {
@@ -61,32 +91,40 @@ function AllTopics() {
   };
 
   useEffect(() => {
-    fetchTopics();
-  }, [search, page, courseFilter]);
+    const timer = setTimeout(
+      () => {
+        fetchTopics();
+      },
+      search ? 500 : 0,
+    );
+    return () => clearTimeout(timer);
+  }, [search, currentPage, courseFilter, statusFilter, fetchTopics]);
 
   useEffect(() => {
     fetchCourses();
   }, []);
 
-  const handleAddOrUpdateTopic = async (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
-    if (!newTopic.topic.trim()) return toast.warning("Topic name is required");
-    if (!newTopic.course) return toast.warning("Course selection is required");
+    if (!topicName.trim() || !selectedCourse) {
+      return toast.warning("Topic name and course are required");
+    }
 
     try {
       setLoading(true);
       let res;
-      if (editingTopic) {
-        res = await updateTopic(editingTopic._id, newTopic);
+      if (editingId) {
+        res = await updateTopic(editingId, {
+          topic: topicName,
+          course: selectedCourse,
+        });
       } else {
-        res = await createTopic(newTopic);
+        res = await createTopic({ topic: topicName, course: selectedCourse });
       }
 
       if (res.success) {
-        toast.success(res.message || "Operation successful");
-        setNewTopic({ topic: "", course: "" });
-        setShowAddModal(false);
-        setEditingTopic(null);
+        toast.success(res.message);
+        resetForm();
         fetchTopics();
       }
     } catch (err) {
@@ -97,12 +135,30 @@ function AllTopics() {
   };
 
   const handleEdit = (topic) => {
-    setEditingTopic(topic);
-    setNewTopic({
-      topic: topic.topic,
-      course: topic.course?._id || topic.course,
-    });
-    setShowAddModal(true);
+    setEditingId(topic._id);
+    setTopicName(topic.topic);
+    setSelectedCourse(topic.course?._id);
+  };
+
+  const resetForm = () => {
+    setEditingId(null);
+    setTopicName("");
+    setSelectedCourse("");
+  };
+
+  const toggleStatus = async (id, currentStatus) => {
+    try {
+      setActionLoading(id);
+      const res = await updateTopic(id, { isActive: !currentStatus });
+      if (res.success) {
+        toast.info(`Topic ${!currentStatus ? "activated" : "disabled"}`);
+        fetchTopics();
+      }
+    } catch (err) {
+      toast.error("Status update failed");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleDelete = (id) => {
@@ -117,6 +173,7 @@ function AllTopics() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
+          setActionLoading(id);
           const res = await deleteTopic(id);
           if (res.success) {
             toast.success("Topic deleted");
@@ -124,316 +181,468 @@ function AllTopics() {
           }
         } catch (err) {
           toast.error("Delete failed");
+        } finally {
+          setActionLoading(null);
         }
       }
     });
   };
 
-  const closeModal = () => {
-    setShowAddModal(false);
-    setEditingTopic(null);
-    setNewTopic({ topic: "", course: "" });
-  };
+  // Dropdown Options
+  const courseOptions = [
+    { label: "All Courses", value: "all" },
+    ...courses.map((c) => ({ label: c.title, value: c._id })),
+  ];
+
+  const statusOptions = [
+    { label: `All Status (${activeCount + inactiveCount})`, value: "all" },
+    { label: `Active (${activeCount})`, value: "true" },
+    { label: `Inactive (${inactiveCount})`, value: "false" },
+  ];
 
   return (
-    <div className="w-full flex-1 flex flex-col pt-4 overflow-hidden">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 px-4">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: colors.text }}>
+    <div
+      className="h-full w-full flex flex-col overflow-hidden"
+      style={{ backgroundColor: colors.background }}
+    >
+      {/* Header Section */}
+      <div
+        className="shrink-0 mb-6 sticky top-0 z-30 pb-4 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6"
+        style={{ backgroundColor: colors.background }}
+      >
+        <div className="relative hidden md:block">
+          <div
+            className="absolute -left-4 top-1/2 -translate-y-1/2 w-1 h-8 rounded-full"
+            style={{ backgroundColor: colors.primary }}
+          ></div>
+          <h1
+            className="text-2xl md:text-3xl font-semibold flex items-center gap-3"
+            style={{ color: colors.text }}
+          >
             Course Topics
           </h1>
-          <p className="text-xs font-bold opacity-40 uppercase tracking-widest">
-            Manage curriculum sections for all courses
+          <p
+            className="text-xs md:text-sm font-medium opacity-50 mt-1"
+            style={{ color: colors.text }}
+          >
+            Manage curriculum sections and content hierarchy for all courses.
           </p>
         </div>
 
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="px-6 py-3 rounded flex items-center gap-2 font-bold text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all cursor-pointer"
-          style={{ backgroundColor: colors.primary, color: colors.background }}
-        >
-          <Plus size={18} /> Add Topic
-        </button>
+        <div className="flex flex-row items-center gap-3 w-full lg:w-auto">
+          <div className="relative flex-1 group min-w-[200px]">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 transition-colors duration-300"
+              style={{ color: colors.textSecondary }}
+            />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Search topics..."
+              className="w-full pl-9 pr-3 py-2 rounded outline-none border transition-all text-xs font-medium backdrop-blur-sm"
+              style={{
+                backgroundColor: colors.sidebar || colors.background,
+                borderColor: colors.accent + "15",
+                color: colors.text,
+              }}
+            />
+          </div>
+          <div className="w-40">
+            <ModernSelect
+              options={statusOptions}
+              value={statusFilter}
+              onChange={(val) => {
+                setStatusFilter(val);
+                setCurrentPage(1);
+              }}
+              placeholder="All Status"
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Filter & Search */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 px-4">
-        <div className="md:col-span-2 relative">
-          <Search
-            size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40"
-            style={{ color: colors.text }}
-          />
-          <input
-            type="text"
-            placeholder="Search topics..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 rounded border outline-none text-sm font-semibold transition-all"
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-6 overflow-hidden">
+        {/* Left Side: Table Area */}
+        <div
+          className="flex-1 flex flex-col rounded border shadow-sm overflow-hidden"
+          style={{
+            borderColor: colors.accent + "15",
+            backgroundColor: colors.sidebar || colors.background,
+          }}
+        >
+          <div
+            className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-rounded-full"
+            style={{ scrollbarColor: `${colors.accent}40 transparent` }}
+          >
+            {loading && !topics.length ? (
+              <div className="flex items-center justify-center p-20 h-full min-h-[400px]">
+                <Loader size={80} />
+              </div>
+            ) : topics.length > 0 ? (
+              <table className="w-full text-left border-collapse table-auto">
+                <thead
+                  className="sticky top-0 z-30"
+                  style={{
+                    backgroundColor: colors.sidebar || colors.background,
+                  }}
+                >
+                  <tr
+                    style={{
+                      borderBottom: `2px solid ${colors.accent}15`,
+                      backgroundColor: colors.sidebar || colors.background,
+                    }}
+                  >
+                    <th
+                      className="px-4 py-4 text-[10px] font-bold uppercase tracking-widest w-16 text-center whitespace-nowrap"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      Sr.
+                    </th>
+                    <th
+                      className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest whitespace-nowrap"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      TOPIC DETAILS
+                    </th>
+                    <th
+                      className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-center whitespace-nowrap"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      STATUS
+                    </th>
+                    <th
+                      className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-right whitespace-nowrap"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      ACTIONS
+                    </th>
+                  </tr>
+                </thead>
+                <tbody
+                  className="divide-y"
+                  style={{ divideColor: colors.accent + "08" }}
+                >
+                  {topics.map((topic, index) => (
+                    <tr
+                      key={topic._id}
+                      className="hover:bg-opacity-10 transition-colors"
+                      style={{ color: colors.text }}
+                    >
+                      <td className="px-4 py-4 text-xs font-bold opacity-30 text-center whitespace-nowrap">
+                        {(currentPage - 1) * limit + index + 1}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="p-2 rounded-lg"
+                            style={{
+                              backgroundColor: colors.primary + "10",
+                              color: colors.primary,
+                            }}
+                          >
+                            <BookOpen size={16} />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold">
+                              {topic.topic}
+                            </span>
+                            <span
+                              className="text-[10px] font-bold opacity-40 uppercase tracking-tighter"
+                              style={{ color: colors.textSecondary }}
+                            >
+                              {topic.course?.title || "N/A"} •{" "}
+                              {topic.lectureCount || 0} Lectures
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex justify-center items-center gap-2 relative">
+                          {actionLoading === topic._id ? (
+                            <div className="flex items-center gap-2">
+                              <Loader size={12} variant="button" />
+                              <span className="text-[9px] font-black uppercase tracking-wider opacity-50">
+                                Wait...
+                              </span>
+                            </div>
+                          ) : (
+                            <>
+                              <Toggle
+                                active={topic.isActive}
+                                onClick={() =>
+                                  toggleStatus(topic._id, topic.isActive)
+                                }
+                              />
+                              <span
+                                className={`text-[9px] font-black uppercase tracking-wider ${topic.isActive ? "text-green-500" : "text-red-500"}`}
+                              >
+                                {topic.isActive ? "ACTIVE" : "DISABLED"}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleEdit(topic)}
+                            className="p-2 cursor-pointer rounded-xl transition-all hover:bg-opacity-20"
+                            style={{
+                              color: colors.primary,
+                              backgroundColor: colors.primary + "10",
+                            }}
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            disabled={actionLoading === topic._id}
+                            onClick={() => handleDelete(topic._id)}
+                            className="p-2 cursor-pointer rounded-xl transition-all hover:bg-opacity-20 disabled:opacity-50 flex items-center justify-center min-w-[36px] min-h-[36px]"
+                            style={{
+                              color: "#ef4444",
+                              backgroundColor: "#ef444415",
+                            }}
+                          >
+                            {actionLoading === topic._id ? (
+                              <Loader size={16} variant="button" />
+                            ) : (
+                              <Trash2 size={16} />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="flex flex-col items-center justify-center p-20 opacity-30 h-full min-h-[400px]">
+                <Layout size={64} className="mb-4" />
+                <p className="text-xl font-bold uppercase tracking-widest">
+                  No Topics Found
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Pagination */}
+          {(totalPages > 1 || totalItems > 0) && (
+            <div
+              className="px-6 py-4 border-t flex items-center justify-between"
+              style={{ borderColor: colors.accent + "10" }}
+            >
+              <span
+                className="text-xs font-medium"
+                style={{ color: colors.textSecondary }}
+              >
+                Total <b>{totalItems}</b> items • Page {currentPage} of{" "}
+                {totalPages}
+              </span>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((prev) => prev - 1)}
+                    className="p-2 rounded-lg border transition-all disabled:opacity-30 cursor-pointer hover:bg-black/5"
+                    style={{
+                      borderColor: colors.accent + "20",
+                      color: colors.text,
+                    }}
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+
+                  {[...Array(totalPages)].map((_, i) => {
+                    const pageNum = i + 1;
+                    if (
+                      pageNum === 1 ||
+                      pageNum === totalPages ||
+                      (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                    ) {
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${currentPage === pageNum ? "shadow-sm" : "hover:bg-black/5"}`}
+                          style={{
+                            backgroundColor:
+                              currentPage === pageNum
+                                ? colors.primary
+                                : "transparent",
+                            color:
+                              currentPage === pageNum
+                                ? colors.background
+                                : colors.text,
+                            border:
+                              currentPage === pageNum
+                                ? "none"
+                                : `1px solid ${colors.accent}20`,
+                          }}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    } else if (
+                      pageNum === currentPage - 2 ||
+                      pageNum === currentPage + 2
+                    ) {
+                      return (
+                        <span key={pageNum} className="px-1 opacity-40 text-xs">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  })}
+
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((prev) => prev + 1)}
+                    className="p-2 rounded-lg border transition-all disabled:opacity-30 cursor-pointer hover:bg-black/5"
+                    style={{
+                      borderColor: colors.accent + "20",
+                      color: colors.text,
+                    }}
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right Side: Add/Edit Box (Fixed) */}
+        <div className="w-full lg:w-96 shrink-0 flex flex-col gap-6">
+          <div
+            className="rounded p-6 border shadow-sm sticky top-0"
             style={{
               backgroundColor: colors.sidebar || colors.background,
               borderColor: colors.accent + "20",
-              color: colors.text,
-            }}
-          />
-        </div>
-        <div className="md:col-span-2">
-          <ModernSelect
-            options={[
-              { label: "All Courses", value: "" },
-              ...courses.map((c) => ({ label: c.title, value: c._id })),
-            ]}
-            value={courseFilter}
-            onChange={(val) => setCourseFilter(val)}
-            placeholder="Filter by Course"
-          />
-        </div>
-      </div>
-
-      {/* Table */}
-      <div
-        className="mx-4 overflow-hidden rounded border shadow-sm flex-1 flex flex-col"
-        style={{
-          borderColor: colors.accent + "20",
-          backgroundColor: colors.sidebar || colors.background,
-        }}
-      >
-        <div className="overflow-auto flex-1 relative min-h-[300px]">
-          {loading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
-              <Loader size={60} />
-            </div>
-          )}
-          <table className="w-full text-left border-collapse min-w-[700px]">
-            <thead>
-              <tr
-                className="border-b"
-                style={{
-                  borderColor: colors.accent + "20",
-                  backgroundColor: colors.accent + "05",
-                }}
-              >
-                <th
-                  className="px-6 py-4 text-[10px] font-black uppercase tracking-widest opacity-60"
-                  style={{ color: colors.text }}
-                >
-                  S.No
-                </th>
-                <th
-                  className="px-6 py-4 text-[10px] font-black uppercase tracking-widest opacity-60"
-                  style={{ color: colors.text }}
-                >
-                  Topic Name
-                </th>
-                <th
-                  className="px-6 py-4 text-[10px] font-black uppercase tracking-widest opacity-60"
-                  style={{ color: colors.text }}
-                >
-                  Course
-                </th>
-                <th
-                  className="px-6 py-4 text-[10px] font-black uppercase tracking-widest opacity-60"
-                  style={{ color: colors.text }}
-                >
-                  Created At
-                </th>
-                <th
-                  className="px-6 py-4 text-[10px] font-black uppercase tracking-widest opacity-60 text-right"
-                  style={{ color: colors.text }}
-                >
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {topics.map((topic, index) => (
-                <tr
-                  key={topic._id}
-                  className="border-b transition-colors hover:bg-black/5"
-                  style={{ borderColor: colors.accent + "10" }}
-                >
-                  <td
-                    className="px-6 py-4 text-sm font-bold opacity-60"
-                    style={{ color: colors.text }}
-                  >
-                    {(page - 1) * pagination.limit + index + 1}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className="text-sm font-bold"
-                      style={{ color: colors.text }}
-                    >
-                      {topic.topic}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className="text-xs font-semibold px-2 py-1 rounded-full bg-primary/10"
-                      style={{ color: colors.primary }}
-                    >
-                      {topic.course?.title || "N/A"}
-                    </span>
-                  </td>
-                  <td
-                    className="px-6 py-4 text-xs font-bold opacity-40"
-                    style={{ color: colors.text }}
-                  >
-                    {new Date(topic.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleEdit(topic)}
-                        className="p-2 rounded bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-all cursor-pointer"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(topic._id)}
-                        className="p-2 rounded bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all cursor-pointer"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {topics.length === 0 && !loading && (
-            <div className="p-10 text-center opacity-40 font-bold uppercase tracking-widest text-sm flex flex-col items-center gap-3">
-              <BookOpen size={40} />
-              No topics found
-            </div>
-          )}
-        </div>
-
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <div
-            className="px-6 py-4 border-t flex items-center justify-between"
-            style={{ borderColor: colors.accent + "20" }}
-          >
-            <span className="text-xs font-bold opacity-60">
-              Page {page} of {pagination.totalPages}
-            </span>
-            <div className="flex gap-2">
-              <button
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-                className="p-2 rounded border disabled:opacity-20 cursor-pointer"
-                style={{
-                  borderColor: colors.accent + "20",
-                  color: colors.text,
-                }}
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                disabled={page === pagination.totalPages}
-                onClick={() => setPage(page + 1)}
-                className="p-2 rounded border disabled:opacity-20 cursor-pointer"
-                style={{
-                  borderColor: colors.accent + "20",
-                  color: colors.text,
-                }}
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Add/Edit Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div
-            className="w-full max-w-md rounded p-8 shadow-2xl animate-in fade-in zoom-in duration-300"
-            style={{
-              backgroundColor: colors.sidebar || colors.background,
-              color: colors.text,
             }}
           >
-            <h2 className="text-xl font-bold mb-2">
-              {editingTopic ? "Edit Topic" : "Add New Topic"}
-            </h2>
-            <p className="text-xs opacity-60 mb-6 uppercase tracking-widest font-bold">
-              Define a category for course lectures
-            </p>
+            <div className="mb-6">
+              <h2 className="text-xl font-bold" style={{ color: colors.text }}>
+                {editingId ? "Update Topic" : "Add New Topic"}
+              </h2>
+              <div
+                className="w-12 h-1 rounded-full mt-2"
+                style={{ backgroundColor: colors.primary }}
+              ></div>
+            </div>
 
-            <form onSubmit={handleAddOrUpdateTopic}>
-              <div className="mb-6">
-                <label className="block text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">
-                  Select Course
+            <div className="space-y-4">
+              <div>
+                <label
+                  className="block text-[10px] font-bold uppercase tracking-widest mb-2"
+                  style={{ color: colors.textSecondary }}
+                >
+                  COURSE NAME
                 </label>
                 <ModernSelect
                   options={courses.map((c) => ({
                     label: c.title,
                     value: c._id,
                   }))}
-                  value={newTopic.course}
-                  onChange={(val) => setNewTopic({ ...newTopic, course: val })}
-                  placeholder="Choose a course"
+                  value={selectedCourse}
+                  onChange={setSelectedCourse}
+                  placeholder="Select target course"
                 />
               </div>
 
-              <div className="mb-6">
-                <label className="block text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">
-                  Topic Name
+              <div>
+                <label
+                  className="block text-[10px] font-bold uppercase tracking-widest mb-2"
+                  style={{ color: colors.textSecondary }}
+                >
+                  TOPIC NAME
                 </label>
                 <input
-                  autoFocus
                   type="text"
-                  value={newTopic.topic}
-                  onChange={(e) =>
-                    setNewTopic({
-                      ...newTopic,
-                      topic: e.target.value.replace(/[0-9]/g, ""),
-                    })
-                  }
-                  placeholder="e.g. Introduction, Advanced Setup"
-                  className="w-full px-4 py-3 rounded border outline-none text-sm font-semibold transition-all"
+                  value={topicName}
+                  onChange={(e) => setTopicName(e.target.value)}
+                  placeholder="e.g. Fundamental Concepts"
+                  className="w-full px-4 py-3 rounded outline-none border transition-all font-semibold text-sm"
                   style={{
                     backgroundColor: colors.background,
-                    borderColor: colors.accent + "30",
                     color: colors.text,
+                    borderColor: colors.accent + "20",
                   }}
+                  onFocus={(e) => (e.target.style.borderColor = colors.primary)}
+                  onBlur={(e) =>
+                    (e.target.style.borderColor = colors.accent + "20")
+                  }
+                  onKeyPress={(e) => e.key === "Enter" && handleFormSubmit(e)}
                 />
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3 pt-4">
                 <button
-                  type="button"
-                  onClick={closeModal}
-                  className="flex-1 px-6 py-3 rounded font-bold text-xs uppercase tracking-widest border opacity-60 hover:opacity-100 transition-all cursor-pointer"
-                  style={{ borderColor: colors.accent + "30" }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
+                  onClick={handleFormSubmit}
                   disabled={loading}
-                  className="flex-1 px-6 py-3 rounded font-bold text-xs uppercase tracking-widest shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded font-bold uppercase tracking-widest text-xs transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer"
                   style={{
                     backgroundColor: colors.primary,
                     color: colors.background,
                   }}
                 >
                   {loading ? (
-                    <Loader size={20} variant="button" />
-                  ) : editingTopic ? (
-                    "Update"
+                    <Loader size={16} variant="button" />
+                  ) : editingId ? (
+                    <>
+                      <Check size={16} /> UPDATE
+                    </>
                   ) : (
-                    "Create"
+                    <>
+                      <Plus size={16} /> CREATE
+                    </>
                   )}
                 </button>
+                {editingId && (
+                  <button
+                    onClick={resetForm}
+                    className="w-full py-3 rounded font-bold uppercase tracking-widest text-xs transition-all border opacity-60 hover:opacity-100 cursor-pointer"
+                    style={{
+                      backgroundColor: "transparent",
+                      color: colors.text,
+                      borderColor: colors.accent + "30",
+                    }}
+                  >
+                    Cancel Edit
+                  </button>
+                )}
               </div>
-            </form>
+            </div>
           </div>
+
+          {/* Quick Tip Box */}
+          {/* <div
+            className="rounded p-6 border shadow-sm bg-opacity-5"
+            style={{
+              backgroundColor: colors.primary + "05",
+              borderColor: colors.primary + "15",
+            }}
+          >
+            <h3
+              className="text-sm font-bold mb-3 flex items-center gap-2"
+              style={{ color: colors.primary }}
+            >
+              <Video size={16} /> Quick Tip
+            </h3>
+            <p
+              className="text-xs leading-relaxed opacity-70"
+              style={{ color: colors.text }}
+            >
+              Topics act as chapters for your course. Organize them logically so
+              students can follow the learning path easily.
+            </p>
+          </div> */}
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -117,8 +117,18 @@ function EditCourse() {
     }
   };
 
+  const removeImage = () => {
+    setFormData({ ...formData, thumbnailFile: null, thumbnailPreview: "" });
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
+  };
+
   const removeVideo = () => {
     setFormData({ ...formData, promoVideoFile: null, promoVideoUrl: "" });
+    if (videoInputRef.current) {
+      videoInputRef.current.value = "";
+    }
   };
 
   const handleAddWhatYoullLearn = () => {
@@ -296,6 +306,7 @@ function EditCourse() {
                     <label style={labelStyle}>Price (%) for Instructor</label>
                     <input
                       type="number"
+                      required
                       value={formData.priceForInstructor}
                       onChange={(e) =>
                         setFormData({
@@ -338,6 +349,7 @@ function EditCourse() {
                 <div className="space-y-1">
                   <label style={labelStyle}>Technology</label>
                   <input
+                  required
                     type="text"
                     value={formData.technology}
                     onChange={(e) =>
@@ -546,11 +558,23 @@ function EditCourse() {
                     }}
                   >
                     {formData.thumbnailPreview ? (
-                      <img
-                        src={formData.thumbnailPreview}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
+                      <div className="relative w-full h-full group">
+                        <img
+                          src={formData.thumbnailPreview}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeImage();
+                          }}
+                          className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
                     ) : (
                       <div className="text-center opacity-40">
                         <ImageIcon size={32} className="mx-auto mb-2" />
