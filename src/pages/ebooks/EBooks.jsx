@@ -47,13 +47,17 @@ function EBooks() {
   const [editingCatId, setEditingCatId] = useState(null);
   const [editingCatName, setEditingCatName] = useState("");
   const [newCatStatus, setNewCatStatus] = useState("Active");
+  const [priceTypeFilter, setPriceTypeFilter] = useState("");
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      const params = {};
+      if (priceTypeFilter) params.priceType = priceTypeFilter;
+
       const [catsRes, ebooksRes] = await Promise.all([
         getEbookCategories(),
-        getEbooks(),
+        getEbooks(params),
       ]);
 
       if (catsRes && catsRes.success) setEbookCategories(catsRes.data);
@@ -68,7 +72,7 @@ function EBooks() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [priceTypeFilter]);
 
   // Filtering
   const filteredCategories = ebookCategories.filter((cat) =>
@@ -287,29 +291,48 @@ function EBooks() {
           />
         </div>
 
-        {activeTab === "categories" ? (
-          <button
-            onClick={() => setIsCatModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded font-bold text-xs uppercase tracking-widest transition-all shadow-md active:scale-95 cursor-pointer"
-            style={{
-              backgroundColor: colors.primary,
-              color: colors.background,
-            }}
-          >
-            <Plus size={16} /> New Category
-          </button>
-        ) : (
-          <button
-            onClick={() => navigate("/dashboard/ebooks/add")}
-            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded font-bold text-xs uppercase tracking-widest transition-all shadow-md active:scale-95 cursor-pointer"
-            style={{
-              backgroundColor: colors.primary,
-              color: colors.background,
-            }}
-          >
-            <Plus size={16} /> Add E-Book
-          </button>
-        )}
+        <div className="flex flex-col sm:flex-row gap-4">
+          {activeTab !== "categories" && (
+            <select
+              value={priceTypeFilter}
+              onChange={(e) => setPriceTypeFilter(e.target.value)}
+              className="px-4 py-2.5 rounded border outline-none text-sm font-medium transition-all"
+              style={{
+                backgroundColor: colors.sidebar || colors.background,
+                borderColor: colors.accent + "20",
+                color: colors.text,
+              }}
+            >
+              <option value="">All Types</option>
+              <option value="free">Free</option>
+              <option value="paid">Paid</option>
+            </select>
+          )}
+
+          {activeTab === "categories" ? (
+            <button
+              onClick={() => setIsCatModalOpen(true)}
+              className="flex items-center justify-center gap-2 px-6 py-2.5 rounded font-bold text-xs uppercase tracking-widest transition-all shadow-md active:scale-95 cursor-pointer"
+              style={{
+                backgroundColor: colors.primary,
+                color: colors.background,
+              }}
+            >
+              <Plus size={16} /> New Category
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate("/dashboard/ebooks/add")}
+              className="flex items-center justify-center gap-2 px-6 py-2.5 rounded font-bold text-xs uppercase tracking-widest transition-all shadow-md active:scale-95 cursor-pointer"
+              style={{
+                backgroundColor: colors.primary,
+                color: colors.background,
+              }}
+            >
+              <Plus size={16} /> Add E-Book
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Content Area */}
@@ -577,7 +600,7 @@ function EBooks() {
                             {book.title}
                           </span>
                           <span className="text-[10px] opacity-40 font-bold uppercase tracking-wider">
-                            {book.fileSize || "2.4 MB"}
+                            {book.pdf?.fileSize || book.fileSize || "Wait..."}
                           </span>
                         </div>
                       </div>

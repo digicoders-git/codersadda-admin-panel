@@ -157,8 +157,6 @@ function Users() {
         </div>
 
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:max-w-2xl">
-
-
           {/* Search Bar */}
           <div className="relative group w-full flex-1">
             <Search

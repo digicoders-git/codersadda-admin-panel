@@ -70,6 +70,12 @@ function AddEBook() {
     if (!formData.description) return toast.warning("Description is required");
     if (!file) return toast.warning("Please upload a PDF file");
     if (!image) return toast.warning("Please upload a Cover Image");
+    if (
+      formData.priceType === "paid" &&
+      (!formData.price || Number(formData.price) <= 0)
+    ) {
+      return toast.warning("Please enter a valid price greater than 0");
+    }
 
     if (formData.title && formData.category) {
       const data = new FormData();
@@ -118,7 +124,7 @@ function AddEBook() {
     >
       {/* {loading && <Loader size={128} />} */}
       {/* Header */}
-      <div className="flex-shrink-0 mb-8 flex items-center justify-between">
+      <div className="shrink-0 mb-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate("/dashboard/ebooks")}
@@ -270,7 +276,7 @@ function AddEBook() {
                     min="0"
                     value={formData.price}
                     onChange={(e) => {
-                      const val = e.target.value.replace(/^0+/, "");
+                      const val = e.target.value.replace(/[^0-9]/g, "");
                       setFormData({ ...formData, price: val });
                     }}
                     placeholder="Ex: 499"

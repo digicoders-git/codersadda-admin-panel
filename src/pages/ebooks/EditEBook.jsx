@@ -98,6 +98,12 @@ function EditEBook() {
       return toast.warning("Please upload a PDF file");
     if (!image && !formData.thumbnailUrl)
       return toast.warning("Please upload a Cover Image");
+    if (
+      formData.priceType === "paid" &&
+      (!formData.price || Number(formData.price) <= 0)
+    ) {
+      return toast.warning("Please enter a valid price greater than 0");
+    }
 
     if (formData.title && formData.category) {
       const data = new FormData();
@@ -305,7 +311,7 @@ function EditEBook() {
                         min="0"
                         value={formData.price}
                         onChange={(e) => {
-                          const val = e.target.value.replace(/^0+/, "");
+                          const val = e.target.value.replace(/[^0-9]/g, "");
                           setFormData({ ...formData, price: val });
                         }}
                         placeholder="Ex: 499"
