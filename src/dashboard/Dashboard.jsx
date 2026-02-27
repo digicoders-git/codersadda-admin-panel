@@ -22,6 +22,7 @@ import {
   Share2,
   GraduationCap,
   Globe,
+  Ticket,
 } from "lucide-react";
 import { Clock } from "./Clock";
 import logo from "../assets/logo.png";
@@ -190,6 +191,7 @@ const Dashboard = () => {
         },
       ],
     },
+    { name: "Coupons", icon: Ticket, path: "/dashboard/coupons" },
     { name: "Referrals", icon: Share2, path: "/dashboard/referrals" },
     {
       name: "Website",

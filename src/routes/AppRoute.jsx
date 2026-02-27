@@ -79,6 +79,8 @@ import GenerateCertificate from "../pages/courses/GenerateCertificate";
 import ManageCertificates from "../pages/courses/ManageCertificates";
 import ManageQuizCertificates from "../pages/quizzes/ManageQuizCertificates";
 import GenerateQuizCertificate from "../pages/quizzes/GenerateQuizCertificate";
+import Coupons from "../pages/coupons/Coupons";
+import AddCoupon from "../pages/coupons/AddCoupon";
 
 export const AppRoute = [
   { path: "courses/manage-certificates", component: ManageCertificates },
@@ -176,4 +178,6 @@ export const AppRoute = [
   { path: "instructors/add", component: AddInstructor },
   { path: "instructors/edit/:id", component: AddInstructor },
   { path: "instructors/view/:id", component: ViewInstructor },
+  { path: "coupons", component: Coupons },
+  { path: "coupons/add", component: AddCoupon },
 ];
