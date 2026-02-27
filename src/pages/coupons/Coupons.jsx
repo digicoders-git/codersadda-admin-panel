@@ -2,6 +2,7 @@ import {
   Plus,
   Search,
   Trash2,
+  Edit2,
   Ticket,
   Calendar,
   Layers,
@@ -250,7 +251,15 @@ function Coupons() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end pt-4 border-t border-black/5">
+                <div className="flex items-center justify-end pt-4 border-t border-black/5 gap-2">
+                  <button
+                    onClick={() =>
+                      navigate(`/dashboard/coupons/edit/${coupon._id}`)
+                    }
+                    className="p-2 cursor-pointer rounded-lg hover:bg-black/5 text-blue-500 transition-colors"
+                  >
+                    <Edit2 size={20} />
+                  </button>
                   <button
                     onClick={() => handleDelete(coupon._id)}
                     disabled={actionLoading === coupon._id}

@@ -15,6 +15,16 @@ export const deleteCoupon = async (id) => {
   return response.data;
 };
 
+export const getSingleCoupon = async (id) => {
+  const response = await http.get(`/coupon/get/${id}`);
+  return response.data;
+};
+
+export const updateCoupon = async (id, data) => {
+  const response = await http.put(`/coupon/update/${id}`, data);
+  return response.data;
+};
+
 export const validateCoupon = async (data) => {
   const response = await http.post('/coupon/validate', data);
   return response.data;
