@@ -21,6 +21,7 @@ import {
   deleteQuiz as apiDeleteQuiz,
   updateQuiz as apiUpdateQuiz,
   toggleQuizStatus as apiToggleQuizStatus,
+  exportReportExcel,
 } from "../../apis/quiz";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify";
@@ -42,6 +43,7 @@ function Quizzes() {
     totalPages: 1,
     totalCount: 0,
   });
+  const [downloadingReportId, setDownloadingReportId] = useState(null);
 
   const fetchQuizzes = async (page = 1) => {
     try {
@@ -134,6 +136,29 @@ function Quizzes() {
         }
       }
     });
+  };
+
+  const handleDownloadReport = async (quiz) => {
+    try {
+      setDownloadingReportId(quiz._id);
+      const response = await exportReportExcel(quiz._id);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `Quiz_Report_${quiz.title.replace(/\s+/g, "_")}.xlsx`,
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success("Excel report downloaded successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export Excel report");
+    } finally {
+      setDownloadingReportId(null);
+    }
   };
 
   return (
@@ -346,14 +371,17 @@ function Quizzes() {
                     <td className="p-4">
                       <div className="flex items-center justify-end gap-2">
                         <button
-                          onClick={() =>
-                            navigate(`/dashboard/quizzes/report/${quiz._id}`)
-                          }
-                          className="p-2 rounded border hover:bg-purple-50 text-purple-600 cursor-pointer transition-colors"
+                          onClick={() => handleDownloadReport(quiz)}
+                          disabled={downloadingReportId === quiz._id}
+                          className="p-2 rounded border hover:bg-purple-50 text-purple-600 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           style={{ borderColor: colors.accent + "30" }}
-                          title="View Attempts"
+                          title="Download Excel Report"
                         >
-                          <FileText size={16} />
+                          {downloadingReportId === quiz._id ? (
+                            <Loader2 size={16} className="animate-spin" />
+                          ) : (
+                            <FileText size={16} />
+                          )}
                         </button>
                         <button
                           onClick={() =>

@@ -311,7 +311,7 @@ function EditCourse() {
                     <input
                       type="number"
                       required
-                      value={formData.priceForInstructor || 0}
+                      value={formData.priceForInstructor ?? ""}
                       onChange={(e) =>
                         setFormData({
                           ...formData,

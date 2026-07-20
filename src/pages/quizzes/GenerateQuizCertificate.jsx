@@ -217,9 +217,14 @@ export default function GenerateQuizCertificate() {
         const cert = res.template;
         setFormData({
           name: cert.certificateName,
-          image: cert.certificateImage.startsWith("/uploads")
-            ? `${import.meta.env.VITE_API_BASE_URL}${cert.certificateImage}`
-            : cert.certificateImage,
+          image: (() => {
+            const imgUrl = cert.certificateImage || "";
+            if (imgUrl.includes("/uploads/")) {
+              const relativePath = imgUrl.substring(imgUrl.indexOf("/uploads/"));
+              return `${import.meta.env.VITE_API_BASE_URL || "https://coders-adda-backend.onrender.com"}${relativePath}`;
+            }
+            return imgUrl;
+          })(),
           imageFile: null,
           width: cert.width || 1200,
           height: cert.height || 800,
@@ -277,12 +282,134 @@ export default function GenerateQuizCertificate() {
     const file = e.target.files[0];
     if (file) {
       const url = URL.createObjectURL(file);
-      setFormData((prev) => ({
-        ...prev,
-        image: url,
-        imageFile: file,
-      }));
-      // Width/Height logic moved to img onload if needed, keeping it simple for now
+      const img = new Image();
+      img.onload = () => {
+        const w = img.naturalWidth || img.width || 1200;
+        const h = img.naturalHeight || img.height || 800;
+
+        const calculatedLayers = {
+          studentName: {
+            status: true,
+            textColor: "#1a1a2e",
+            verticalPosition: Math.round(h * 0.45).toString(),
+            horizontalPosition: Math.round(w * 0.5).toString(),
+            fontSize: `${Math.round(h * 0.056)}px`,
+            fontFamily: "Kaushan Script",
+            bold: true,
+            italic: false,
+            underline: false,
+          },
+          quizName: {
+            status: true,
+            textColor: "#0f3460",
+            verticalPosition: Math.round(h * 0.56).toString(),
+            horizontalPosition: Math.round(w * 0.5).toString(),
+            fontSize: `${Math.round(h * 0.038)}px`,
+            fontFamily: "Playfair Display",
+            bold: true,
+            italic: true,
+            underline: false,
+          },
+          quizCode: {
+            status: true,
+            textColor: "#4e4e50",
+            verticalPosition: Math.round(h * 0.62).toString(),
+            horizontalPosition: Math.round(w * 0.5).toString(),
+            fontSize: `${Math.round(h * 0.022)}px`,
+            fontFamily: "Inter",
+            bold: false,
+            italic: false,
+            underline: false,
+          },
+          userMobile: {
+            status: true,
+            textColor: "#4e4e50",
+            verticalPosition: Math.round(h * 0.67).toString(),
+            horizontalPosition: Math.round(w * 0.5).toString(),
+            fontSize: `${Math.round(h * 0.022)}px`,
+            fontFamily: "Inter",
+            bold: false,
+            italic: false,
+            underline: false,
+          },
+          collegeName: {
+            status: true,
+            textColor: "#333333",
+            verticalPosition: Math.round(h * 0.32).toString(),
+            horizontalPosition: Math.round(w * 0.5).toString(),
+            fontSize: `${Math.round(h * 0.025)}px`,
+            fontFamily: "Montserrat",
+            bold: true,
+            italic: false,
+            underline: false,
+          },
+          rank: {
+            status: true,
+            textColor: "#b38867",
+            verticalPosition: Math.round(h * 0.72).toString(),
+            horizontalPosition: Math.round(w * 0.35).toString(),
+            fontSize: `${Math.round(h * 0.028)}px`,
+            fontFamily: "Montserrat",
+            bold: true,
+            italic: false,
+            underline: false,
+          },
+          totalScore: {
+            status: true,
+            textColor: "#1a1a2e",
+            verticalPosition: Math.round(h * 0.72).toString(),
+            horizontalPosition: Math.round(w * 0.5).toString(),
+            fontSize: `${Math.round(h * 0.028)}px`,
+            fontFamily: "Montserrat",
+            bold: true,
+            italic: false,
+            underline: false,
+          },
+          timeTaken: {
+            status: true,
+            textColor: "#b38867",
+            verticalPosition: Math.round(h * 0.72).toString(),
+            horizontalPosition: Math.round(w * 0.65).toString(),
+            fontSize: `${Math.round(h * 0.028)}px`,
+            fontFamily: "Montserrat",
+            bold: true,
+            italic: false,
+            underline: false,
+          },
+          certificateId: {
+            status: true,
+            textColor: "#333333",
+            verticalPosition: Math.round(h * 0.88).toString(),
+            horizontalPosition: Math.round(w * 0.8).toString(),
+            fontSize: `${Math.round(h * 0.02)}px`,
+            fontFamily: "Inter",
+            bold: false,
+            italic: false,
+            underline: false,
+          },
+          issueDate: {
+            status: true,
+            textColor: "#333333",
+            verticalPosition: Math.round(h * 0.88).toString(),
+            horizontalPosition: Math.round(w * 0.2).toString(),
+            fontSize: `${Math.round(h * 0.02)}px`,
+            fontFamily: "Inter",
+            bold: false,
+            italic: false,
+            underline: false,
+          },
+        };
+
+        setFormData((prev) => ({
+          ...prev,
+          image: url,
+          imageFile: file,
+          width: w,
+          height: h,
+          ...calculatedLayers,
+        }));
+      };
+      img.src = url;
     }
   };
 
@@ -409,9 +536,26 @@ export default function GenerateQuizCertificate() {
         const x = parseFloat(settings.horizontalPosition) || 0;
         const y = parseFloat(settings.verticalPosition) || 0;
 
-        ctx.fillText(layer.sample, x, y);
+        let sampleText = layer.sample;
+        if (sampleText === undefined || sampleText === null || sampleText === "undefined" || sampleText === "") {
+          const defaults = {
+            studentName: "Mayank Pandey",
+            quizName: "React",
+            quizCode: "QZ-1045",
+            userMobile: "9876543210",
+            collegeName: "DigiCoders Technologies",
+            rank: "1",
+            totalScore: "45 / 50",
+            timeTaken: "15 mins",
+            certificateId: "QZ-1045 / 50",
+            issueDate: new Date().toLocaleDateString("en-GB"),
+          };
+          sampleText = defaults[layer.id] || "";
+        }
 
-        const metrics = ctx.measureText(layer.sample);
+        ctx.fillText(sampleText, x, y);
+
+        const metrics = ctx.measureText(sampleText);
         layerBounds.current.push({
           id: layer.id,
           x: x - metrics.width / 2,
@@ -607,6 +751,36 @@ export default function GenerateQuizCertificate() {
                 Click to upload template
               </p>
             </label>
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className="text-xs font-bold opacity-75 mb-1 block" style={{ color: colors.text }}>Width (px)</label>
+                <input
+                  type="number"
+                  className="w-full px-3 py-2 rounded border focus:outline-none focus:ring-1 transition-all text-sm"
+                  style={{
+                    backgroundColor: colors.background,
+                    borderColor: colors.accent + "30",
+                    color: colors.text,
+                  }}
+                  value={formData.width}
+                  onChange={(e) => setFormData(prev => ({ ...prev, width: parseInt(e.target.value) || 1200 }))}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold opacity-75 mb-1 block" style={{ color: colors.text }}>Height (px)</label>
+                <input
+                  type="number"
+                  className="w-full px-3 py-2 rounded border focus:outline-none focus:ring-1 transition-all text-sm"
+                  style={{
+                    backgroundColor: colors.background,
+                    borderColor: colors.accent + "30",
+                    color: colors.text,
+                  }}
+                  value={formData.height}
+                  onChange={(e) => setFormData(prev => ({ ...prev, height: parseInt(e.target.value) || 800 }))}
+                />
+              </div>
+            </div>
           </div>
 
           <div className="space-y-4">

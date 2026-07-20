@@ -412,11 +412,11 @@ function QuizReport() {
                         )}
                       </div>
                     </td>
-                    <td className="p-4 text-right">
+                    <td className="p-4 text-right flex items-center justify-end gap-2">
                       <button
                         onClick={() =>
                           navigate(
-                            `/dashboard/quizzes/report/${quiz._id}/result/${attempt.studentId}`,
+                            `/dashboard/quizzes/report/${quiz._id}/result/${attempt.studentId?._id || attempt.studentId}`,
                           )
                         }
                         className="p-2 rounded bg-blue-500/10 hover:bg-blue-500/20 transition-all cursor-pointer text-blue-500"
@@ -424,6 +424,17 @@ function QuizReport() {
                       >
                         <Eye size={18} />
                       </button>
+                      {attempt.certificateUrl && (
+                        <a
+                          href={attempt.certificateUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-2 rounded bg-green-500/10 hover:bg-green-500/20 transition-all cursor-pointer text-green-500 flex items-center justify-center"
+                          title="Download Certificate"
+                        >
+                          <Download size={18} />
+                        </a>
+                      )}
                     </td>
                   </tr>
                 ))

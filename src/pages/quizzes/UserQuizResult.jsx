@@ -48,9 +48,10 @@ function UserQuizResult() {
           const foundStudent = userList.find((u) => u._id === studentId);
           setStudent(foundStudent);
 
-          const foundAttempt = foundQuiz.attempts?.find(
-            (a) => (a.studentId?._id || a.studentId) === studentId,
-          );
+          const foundAttempt = foundQuiz.attempts?.find((a) => {
+            const attemptStudentId = a.studentId?._id || a.studentId;
+            return attemptStudentId && attemptStudentId.toString() === studentId.toString();
+          });
 
           if (foundAttempt) {
             setAttempt({
@@ -146,9 +147,10 @@ function UserQuizResult() {
       return (a.duration || 0) - (b.duration || 0);
     });
 
-    const index = sorted.findIndex(
-      (a) => (a.studentId?._id || a.studentId) === studentId,
-    );
+    const index = sorted.findIndex((a) => {
+      const attemptStudentId = a.studentId?._id || a.studentId;
+      return attemptStudentId && attemptStudentId.toString() === studentId.toString();
+    });
     return {
       rank: index !== -1 ? index + 1 : "N/A",
       total: sorted.length,

@@ -15,10 +15,13 @@ const CertificatePreviewCanvas = ({
     const ctx = canvas.getContext("2d");
     const img = new Image();
     img.crossOrigin = "anonymous";
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
-    img.src = template.certificateImage?.startsWith("/uploads")
-      ? `${baseUrl}${template.certificateImage}`
-      : template.certificateImage;
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://coders-adda-backend.onrender.com";
+    let imageSrc = template.certificateImage || "";
+    if (imageSrc.includes("/uploads/")) {
+      const relativePath = imageSrc.substring(imageSrc.indexOf("/uploads/"));
+      imageSrc = `${baseUrl}${relativePath}`;
+    }
+    img.src = imageSrc;
 
     img.onload = () => {
       // Clear canvas
@@ -45,7 +48,23 @@ const CertificatePreviewCanvas = ({
       layers.forEach((layerKey) => {
         const config = template[layerKey];
         if (config && config.status) {
-          const text = template.sampleTexts?.[layerKey] || "";
+          let text = template.sampleTexts?.[layerKey];
+          if (text === undefined || text === null || text === "undefined" || text === "") {
+            const defaults = {
+              studentName: "Mayank Pandey",
+              courseName: "React JS",
+              quizName: "React",
+              quizCode: "QZ-1045",
+              userMobile: "9876543210",
+              collegeName: "DigiCoders Technologies",
+              rank: "1",
+              totalScore: "45 / 50",
+              timeTaken: "15 mins",
+              certificateId: "QZ-1045 / 50",
+              issueDate: new Date().toLocaleDateString("en-GB"),
+            };
+            text = defaults[layerKey] || "";
+          }
 
           ctx.font = `${config.italic ? "italic " : ""}${config.bold ? "bold " : ""}${config.fontSize} ${config.fontFamily}`;
           ctx.fillStyle = config.textColor;
@@ -78,6 +97,32 @@ const CertificatePreviewCanvas = ({
           }
         }
       });
+    };
+
+    img.onerror = () => {
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw dark background placeholder
+      ctx.fillStyle = "#1e1e2d";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw border
+      ctx.strokeStyle = "#ef4444";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+
+      // Draw Error text
+      ctx.font = "bold 28px sans-serif";
+      ctx.fillStyle = "#ef4444";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Background Template Image Missing (404)", canvas.width / 2, canvas.height / 2 - 25);
+
+      // Draw Instruction text
+      ctx.font = "18px sans-serif";
+      ctx.fillStyle = "#a1a1aa";
+      ctx.fillText("Please click Edit and upload/save the certificate image again.", canvas.width / 2, canvas.height / 2 + 25);
     };
   }, [template, width, height]);
 

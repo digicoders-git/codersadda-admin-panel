@@ -220,11 +220,10 @@ const Dashboard = () => {
     >
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full z-40 transition-all duration-700 ease-out border-r md:relative md:z-auto flex flex-col ${
-          sidebarOpen
+        className={`fixed top-0 left-0 h-full z-40 transition-all duration-700 ease-out border-r md:relative md:z-auto flex flex-col ${sidebarOpen
             ? "translate-x-0 w-64 "
             : "-translate-x-full w-64 md:translate-x-0 md:w-18"
-        }`}
+          }`}
         style={{
           backgroundColor: colors.sidebar || colors.background,
           borderColor: colors.accent + "30",
@@ -264,9 +263,8 @@ const Dashboard = () => {
                 <div key={index}>
                   <button
                     onClick={() => setOpenSubmenu(isOpen ? null : link.name)}
-                    className={`flex items-center justify-between w-[93%] px-4 py-2 mx-2 rounded mb-1 transition-all duration-200 cursor-pointer ${
-                      isAnySubmenuActive ? "ring-1" : ""
-                    } ${!sidebarOpen ? "justify-center! w-auto!" : ""}`}
+                    className={`flex items-center justify-between w-[93%] px-4 py-2 mx-2 rounded mb-1 transition-all duration-200 cursor-pointer ${isAnySubmenuActive ? "ring-1" : ""
+                      } ${!sidebarOpen ? "justify-center! w-auto!" : ""}`}
                     style={{
                       color: isAnySubmenuActive ? colors.primary : colors.text,
                       backgroundColor: isAnySubmenuActive
@@ -307,11 +305,10 @@ const Dashboard = () => {
                   </button>
 
                   <div
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                      isOpen && sidebarOpen
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen && sidebarOpen
                         ? "max-h-96 opacity-100"
                         : "max-h-0 opacity-0"
-                    }`}
+                      }`}
                   >
                     <div className="ml-8 mr-2 mb-2 space-y-1 pt-1">
                       {link.submenu.map((sublink, subIndex) => {
@@ -371,9 +368,8 @@ const Dashboard = () => {
                     setSidebarOpen(false);
                   }
                 }}
-                className={`flex items-center px-4 py-2 mx-2 rounded mb-2 transition-all duration-200 ${
-                  isActive ? "ring-1" : ""
-                } ${!sidebarOpen ? "justify-center" : ""}`}
+                className={`flex items-center px-4 py-2 mx-2 rounded mb-2 transition-all duration-200 ${isActive ? "ring-1" : ""
+                  } ${!sidebarOpen ? "justify-center" : ""}`}
                 style={{
                   color: isActive ? colors.primary : colors.text,
                   backgroundColor: isActive
@@ -558,11 +554,10 @@ const Dashboard = () => {
 
       {/* Right Sidebar - Integrated */}
       <div
-        className={`fixed top-0 right-0 h-full z-40 transition-all duration-700 ease-in-out border-l flex flex-col w-80 md:w-96 shadow-none ${
-          rightSidebarOpen
+        className={`fixed top-0 right-0 h-full z-40 transition-all duration-700 ease-in-out border-l flex flex-col w-80 md:w-96 shadow-none ${rightSidebarOpen
             ? "translate-x-0 opacity-100"
             : "translate-x-full opacity-0 pointer-events-none"
-        }`}
+          }`}
         style={{
           backgroundColor: colors.sidebar || colors.background,
           borderColor: colors.accent + "30",
@@ -574,11 +569,10 @@ const Dashboard = () => {
 
       {/* Settings Modal */}
       <div
-        className={`settings-modal fixed top-0 right-0 w-full sm:w-80 z-50 transform transition-all duration-700 ease-out ${
-          settingsOpen
+        className={`settings-modal fixed top-0 right-0 w-full sm:w-80 z-50 transform transition-all duration-700 ease-out ${settingsOpen
             ? "translate-x-0 opacity-100"
             : "translate-x-full opacity-0"
-        } shadow-2xl`}
+          } shadow-2xl`}
         style={{ backgroundColor: colors.background }}
       >
         <div
@@ -619,9 +613,8 @@ const Dashboard = () => {
               <span style={{ color: colors.text }}>Dark Mode</span>
               <button
                 onClick={toggleTheme}
-                className={`w-12 h-6 cursor-pointer rounded-full transition-all duration-300 relative ${
-                  isDarkMode ? "bg-opacity-100" : "bg-opacity-30"
-                }`}
+                className={`w-12 h-6 cursor-pointer rounded-full transition-all duration-300 relative ${isDarkMode ? "bg-opacity-100" : "bg-opacity-30"
+                  }`}
                 style={{ backgroundColor: colors.primary }}
               >
                 <div
@@ -654,9 +647,8 @@ const Dashboard = () => {
                 <button
                   key={theme.key}
                   onClick={() => setTheme(theme.key)}
-                  className={`w-full cursor-pointer flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:bg-opacity-20 ${
-                    currentTheme === theme.key ? "ring-2" : ""
-                  }`}
+                  className={`w-full cursor-pointer flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:bg-opacity-20 ${currentTheme === theme.key ? "ring-2" : ""
+                    }`}
                   style={{
                     backgroundColor: colors.accent + "10",
                     ringColor:
