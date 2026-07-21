@@ -4,6 +4,7 @@ import { Plus, Eye, Edit, Trash2, Search, Grid, List, Tag } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
+import Toggle from "../../components/ui/Toggle";
 import { getCourseCategories, deleteCourseCategory, updateCourseCategory } from "../../apis/courseCategory";
 
 function WebsiteCategories() {
@@ -12,7 +13,7 @@ function WebsiteCategories() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState("list");
 
   const fetchCategories = async () => {
     setLoading(true);
@@ -72,6 +73,18 @@ function WebsiteCategories() {
       }
     } catch (err) {
       toast.error("Failed to update status");
+    }
+  };
+
+  const handlePlatformChange = async (id, newPlatform) => {
+    try {
+      const res = await updateCourseCategory(id, { displayPlatform: newPlatform });
+      if (res.success) {
+        toast.success("Display platform updated!");
+        fetchCategories();
+      }
+    } catch (err) {
+      toast.error("Failed to update display platform");
     }
   };
 
@@ -323,17 +336,29 @@ function WebsiteCategories() {
 
                       {/* Status & Actions */}
                       <div className="flex items-center gap-3">
-                        <button
-                          onClick={() =>
-                            handleStatusToggle(category._id, category.status)
-                          }
-                          className="px-3 py-1 rounded text-xs font-bold text-white cursor-pointer transition-all hover:opacity-80"
-                          style={{
-                            backgroundColor: getStatusColor(category.status),
-                          }}
+                        <select
+                          value={category.displayPlatform || "both"}
+                          onChange={(e) => handlePlatformChange(category._id, e.target.value)}
+                          className="text-xs font-bold px-2 py-1 rounded bg-purple-50 text-purple-700 border border-purple-200 outline-none cursor-pointer"
                         >
-                          {category.status}
-                        </button>
+                          <option value="both">Both (App & Website)</option>
+                          <option value="app">App Only</option>
+                          <option value="website">Website Only</option>
+                          <option value="none">None (Hidden)</option>
+                        </select>
+                        <div className="flex items-center gap-2">
+                          <Toggle
+                            active={category.isActive}
+                            onClick={() =>
+                              handleStatusToggle(category._id, category.status)
+                            }
+                          />
+                          <span
+                            className={`text-xs font-bold uppercase tracking-wider ${category.isActive ? "text-green-500" : "text-red-500"}`}
+                          >
+                            {category.isActive ? "Active" : "Disabled"}
+                          </span>
+                        </div>
 
                         <div className="flex gap-2">
                           <button

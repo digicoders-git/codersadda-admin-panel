@@ -14,7 +14,8 @@ function AddWebsiteBlog() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    status: "Active",
+    displayPlatform: "both",
+    status: "Disabled",
   });
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState("https://placehold.co/400x250?text=Blog+Image");
@@ -45,6 +46,7 @@ function AddWebsiteBlog() {
     const data = new FormData();
     data.append("title", formData.title);
     data.append("description", formData.description);
+    data.append("displayPlatform", formData.displayPlatform || "both");
     data.append("status", formData.status);
     if (imageFile) {
       data.append("image", imageFile);
@@ -125,11 +127,28 @@ function AddWebsiteBlog() {
               </div>
 
               <div className="space-y-1">
-                <label style={labelStyle}>Status</label>
+                <label style={labelStyle}>Display Platform</label>
                 <ModernSelect
                   options={[
-                    { value: "Active", label: "Active" },
-                    { value: "Disabled", label: "Disabled" },
+                    { value: "both", label: "Both (App & Website)" },
+                    { value: "app", label: "App Only" },
+                    { value: "website", label: "Website Only" },
+                    { value: "none", label: "None (Hide Everywhere)" },
+                  ]}
+                  value={formData.displayPlatform || "both"}
+                  onChange={(value) =>
+                    setFormData({ ...formData, displayPlatform: value })
+                  }
+                  placeholder="Select Display Platform"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label style={labelStyle}>Status (Approval Status)</label>
+                <ModernSelect
+                  options={[
+                    { value: "Active", label: "Active (Approved)" },
+                    { value: "Disabled", label: "Disabled (Pending Approval)" },
                   ]}
                   value={formData.status}
                   onChange={(value) =>

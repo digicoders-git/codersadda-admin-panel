@@ -15,7 +15,8 @@ function AddWebsiteCategory() {
     image: null,
     technology: "",
     description: "",
-    status: "Active",
+    displayPlatform: "both",
+    status: "Disabled",
   });
 
   const handleImageChange = (e) => {
@@ -43,6 +44,8 @@ function AddWebsiteCategory() {
     const data = new FormData();
     data.append("name", formData.technology);
     data.append("description", formData.description);
+    data.append("displayPlatform", formData.displayPlatform || "both");
+    data.append("status", formData.status);
     data.append("isActive", formData.status === "Active");
     
     // Check if image is a base64 string or a file object
@@ -127,11 +130,28 @@ function AddWebsiteCategory() {
               </div>
 
               <div className="space-y-1">
-                <label style={labelStyle}>Status</label>
+                <label style={labelStyle}>Display Platform</label>
                 <ModernSelect
                   options={[
-                    { value: "Active", label: "Active" },
-                    { value: "Disabled", label: "Disabled" },
+                    { value: "both", label: "Both (App & Website)" },
+                    { value: "app", label: "App Only" },
+                    { value: "website", label: "Website Only" },
+                    { value: "none", label: "None (Hide Everywhere)" },
+                  ]}
+                  value={formData.displayPlatform || "both"}
+                  onChange={(value) =>
+                    setFormData({ ...formData, displayPlatform: value })
+                  }
+                  placeholder="Select Display Platform"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label style={labelStyle}>Status (Approval Status)</label>
+                <ModernSelect
+                  options={[
+                    { value: "Active", label: "Active (Approved)" },
+                    { value: "Disabled", label: "Disabled (Pending Approval)" },
                   ]}
                   value={formData.status}
                   onChange={(value) =>

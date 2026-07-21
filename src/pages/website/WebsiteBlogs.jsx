@@ -15,9 +15,11 @@ import {
   getBlogs,
   deleteBlog as apiDeleteBlog,
   toggleBlogStatus as apiToggleBlogStatus,
+  updateBlog as apiUpdateBlog,
 } from "../../apis/blog";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
+import Toggle from "../../components/ui/Toggle";
 
 function WebsiteBlogs() {
   const { colors } = useTheme();
@@ -25,7 +27,7 @@ function WebsiteBlogs() {
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState("list");
 
   const fetchBlogs = async () => {
     try {
@@ -93,6 +95,22 @@ function WebsiteBlogs() {
       }
     } catch (err) {
       toast.error("Failed to update status");
+    }
+  };
+
+  const handlePlatformChange = async (id, newPlatform) => {
+    try {
+      const formData = new FormData();
+      formData.append("displayPlatform", newPlatform);
+      const res = await apiUpdateBlog(id, formData);
+      if (res.success) {
+        setBlogs((prev) =>
+          prev.map((b) => (b._id === id ? { ...b, displayPlatform: newPlatform } : b)),
+        );
+        toast.success("Display platform updated!");
+      }
+    } catch (err) {
+      toast.error("Failed to update display platform");
     }
   };
 
@@ -332,18 +350,29 @@ function WebsiteBlogs() {
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <button
-                          onClick={() =>
-                            handleStatusToggle(blog._id, blog.status)
-                          }
-                          className={`px-3 py-1 rounded text-xs font-bold text-white cursor-pointer transition-all hover:opacity-80 ${
-                            blog.status === "Active"
-                              ? "bg-green-500"
-                              : "bg-red-500"
-                          }`}
+                        <select
+                          value={blog.displayPlatform || "both"}
+                          onChange={(e) => handlePlatformChange(blog._id, e.target.value)}
+                          className="text-xs font-bold px-2 py-1 rounded bg-purple-50 text-purple-700 border border-purple-200 outline-none cursor-pointer"
                         >
-                          {blog.status}
-                        </button>
+                          <option value="both">Both (App & Website)</option>
+                          <option value="app">App Only</option>
+                          <option value="website">Website Only</option>
+                          <option value="none">None (Hidden)</option>
+                        </select>
+                        <div className="flex items-center gap-2">
+                          <Toggle
+                            active={blog.isActive}
+                            onClick={() =>
+                              handleStatusToggle(blog._id, blog.status)
+                            }
+                          />
+                          <span
+                            className={`text-xs font-bold uppercase tracking-wider ${blog.isActive ? "text-green-500" : "text-red-500"}`}
+                          >
+                            {blog.isActive ? "Active" : "Disabled"}
+                          </span>
+                        </div>
 
                         <div className="flex gap-2">
                           <button

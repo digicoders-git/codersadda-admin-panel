@@ -83,6 +83,7 @@ function AddCourse() {
     priceType: "free",
     price: "",
     badge: "normal",
+    displayPlatform: "both",
     duration: "",
 
     whatYouWillLearn: [""],
@@ -181,6 +182,7 @@ function AddCourse() {
       payload.append("priceForInstructor", formData.priceForInstructor || "0");
       payload.append("priceType", formData.priceType);
       payload.append("badge", formData.badge);
+      payload.append("displayPlatform", formData.displayPlatform || "both");
       payload.append("duration", formData.duration || "");
 
       payload.append("isActive", formData.status === "Active");
@@ -477,6 +479,23 @@ function AddCourse() {
                     setFormData({ ...formData, badge: value })
                   }
                   placeholder="Select Badge"
+                  required
+                />
+              </div>
+              <div className="space-y-1">
+                <label style={labelStyle}>Display Platform</label>
+                <ModernSelect
+                  options={[
+                    { value: "both", label: "Both (App & Website)" },
+                    { value: "app", label: "App Only" },
+                    { value: "website", label: "Website Only" },
+                    { value: "none", label: "None (Hide Everywhere)" },
+                  ]}
+                  value={formData.displayPlatform || "both"}
+                  onChange={(value) =>
+                    setFormData({ ...formData, displayPlatform: value })
+                  }
+                  placeholder="Select Display Platform"
                   required
                 />
               </div>

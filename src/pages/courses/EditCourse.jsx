@@ -71,6 +71,7 @@ function EditCourse() {
             promoVideoFile: null,
             promoVideoUrl: course.promoVideo?.url || course.promoVideoUrl || "",
             badge: (course.badge || "normal").toLowerCase(),
+            displayPlatform: course.displayPlatform || "both",
             status: course.isActive ? "Active" : "Disabled",
             priceForInstructor: course.priceForInstructor || 0,
             reviews: (course.reviews || []).map((r) => ({
@@ -164,6 +165,7 @@ function EditCourse() {
       payload.append("priceForInstructor", formData.priceForInstructor || "0");
       payload.append("priceType", formData.priceType);
       payload.append("badge", formData.badge);
+      payload.append("displayPlatform", formData.displayPlatform || "both");
       payload.append("duration", formData.duration || "");
 
 
@@ -444,6 +446,26 @@ function EditCourse() {
                     <option value="top">Top Course</option>
                     <option value="popular">Popular Course</option>
                     <option value="trending">Trending Course</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label style={labelStyle}>Display Platform</label>
+                  <select
+                    value={formData.displayPlatform || "both"}
+                    onChange={(e) =>
+                      setFormData({ ...formData, displayPlatform: e.target.value })
+                    }
+                    className="w-full px-4 py-2 rounded-md border outline-none text-sm transition-all"
+                    style={{
+                      backgroundColor: colors.background,
+                      borderColor: colors.accent + "30",
+                      color: colors.text,
+                    }}
+                  >
+                    <option value="both">Both (App & Website)</option>
+                    <option value="app">App Only</option>
+                    <option value="website">Website Only</option>
+                    <option value="none">None (Hide Everywhere)</option>
                   </select>
                 </div>
                 <div className="space-y-1">

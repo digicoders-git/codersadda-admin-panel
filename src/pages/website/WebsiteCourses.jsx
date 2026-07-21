@@ -17,9 +17,11 @@ import {
   getAllCourses,
   deleteCourse as apiDeleteCourse,
   toggleCourseStatus as apiToggleCourseStatus,
+  updateCourse as apiUpdateCourse,
 } from "../../apis/course";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
+import Toggle from "../../components/ui/Toggle";
 
 function WebsiteCourses() {
   const { colors } = useTheme();
@@ -28,7 +30,7 @@ function WebsiteCourses() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("All");
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState("list");
 
   const fetchCourses = async () => {
     try {
@@ -84,18 +86,33 @@ function WebsiteCourses() {
     }
   };
 
-  const handleStatusToggle = async (id, currentStatus) => {
+  const handleStatusToggle = async (id, currentIsActive) => {
     try {
       const res = await apiToggleCourseStatus(id);
       if (res.success) {
-        const newStatus = currentStatus === "Active" ? "Disabled" : "Active";
         setCourses((prev) =>
-          prev.map((c) => (c._id === id ? { ...c, status: newStatus } : c)),
+          prev.map((c) => (c._id === id ? { ...c, isActive: !currentIsActive, status: !currentIsActive ? "Active" : "Disabled" } : c)),
         );
-        toast.success(`Course status updated successfully`);
+        toast.success(res.message || `Course status updated successfully`);
       }
     } catch (err) {
       toast.error("Failed to update status");
+    }
+  };
+
+  const handlePlatformChange = async (id, newPlatform) => {
+    try {
+      const formData = new FormData();
+      formData.append("displayPlatform", newPlatform);
+      const res = await apiUpdateCourse(id, formData);
+      if (res.success) {
+        setCourses((prev) =>
+          prev.map((c) => (c._id === id ? { ...c, displayPlatform: newPlatform } : c)),
+        );
+        toast.success("Display platform updated!");
+      }
+    } catch (err) {
+      toast.error("Failed to update display platform");
     }
   };
 
@@ -502,17 +519,29 @@ function WebsiteCourses() {
 
                       {/* Status & Actions */}
                       <div className="flex items-center gap-3">
-                        <button
-                          onClick={() =>
-                            handleStatusToggle(course._id, course.status)
-                          }
-                          className="px-3 py-1 rounded text-xs font-bold text-white cursor-pointer transition-all hover:opacity-80"
-                          style={{
-                            backgroundColor: getStatusColor(course.status),
-                          }}
+                        <select
+                          value={course.displayPlatform || "both"}
+                          onChange={(e) => handlePlatformChange(course._id, e.target.value)}
+                          className="text-xs font-bold px-2.5 py-1 rounded bg-purple-50 text-purple-700 border border-purple-200 outline-none cursor-pointer"
                         >
-                          {course.status}
-                        </button>
+                          <option value="both">Both (App & Website)</option>
+                          <option value="app">App Only</option>
+                          <option value="website">Website Only</option>
+                          <option value="none">None (Hidden)</option>
+                        </select>
+                        <div className="flex items-center gap-2">
+                          <Toggle
+                            active={course.isActive}
+                            onClick={() =>
+                              handleStatusToggle(course._id, course.isActive)
+                            }
+                          />
+                          <span
+                            className={`text-xs font-bold uppercase tracking-wider ${course.isActive ? "text-green-500" : "text-red-500"}`}
+                          >
+                            {course.isActive ? "Active" : "Disabled"}
+                          </span>
+                        </div>
 
                         <div className="flex gap-2">
                           <button

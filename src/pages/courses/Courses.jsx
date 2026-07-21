@@ -20,6 +20,7 @@ import {
   deleteCourse as apiDeleteCourse,
   toggleCourseStatus,
   getCategoriesWithCount,
+  updateCourse as apiUpdateCourse,
 } from "../../apis/course";
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
@@ -113,6 +114,23 @@ function Courses() {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Error updating status");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handlePlatformChange = async (id, newPlatform) => {
+    try {
+      setActionLoading(id);
+      const formData = new FormData();
+      formData.append("displayPlatform", newPlatform);
+      const res = await apiUpdateCourse(id, formData);
+      if (res.success) {
+        toast.success("Display platform updated!");
+        fetchData();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Error updating display platform");
     } finally {
       setActionLoading(null);
     }
@@ -322,6 +340,10 @@ function Courses() {
                       <img
                         src={course.thumbnail.url}
                         alt={course.title}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.style.display = 'none';
+                        }}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     ) : (
@@ -436,17 +458,23 @@ function Courses() {
                   className="flex items-center gap-4 p-4 rounded border hover:shadow-sm transition-all duration-200"
                   style={cardStyle}
                 >
-                  <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 shadow-sm">
-                    <img
-                      src={
-                        course.thumbnail?.url ||
-                        "https://via.placeholder.com/150"
-                      }
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 shadow-sm bg-slate-100 flex items-center justify-center">
+                    {course.thumbnail?.url ? (
+                      <img
+                        src={course.thumbnail.url}
+                        alt={course.title}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.style.display = 'none';
+                        }}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <BookOpen size={24} className="text-slate-400" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
+                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                       <span
                         className="text-[10px] font-bold uppercase tracking-wider"
                         style={{ color: colors.primary }}
@@ -459,10 +487,25 @@ function Courses() {
                       >
                         {course.priceType?.toLowerCase() === "free"
                           ? "Free"
-                          : `₹${course.price || ""}`}
+                          : `₹${course.price || "0"}`}
                       </span>
                       <span className="opacity-20">•</span>
-                      <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-500">
+                        {course.badge || "NORMAL"}
+                      </span>
+                      <span className="opacity-20">•</span>
+                      <select
+                        value={course.displayPlatform || "both"}
+                        onChange={(e) => handlePlatformChange(course._id, e.target.value)}
+                        className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-purple-200 bg-purple-50 text-purple-700 outline-none cursor-pointer"
+                      >
+                        <option value="both">Both (App & Website)</option>
+                        <option value="app">App Only</option>
+                        <option value="website">Website Only</option>
+                        <option value="none">None (Hidden)</option>
+                      </select>
+                      <span className="opacity-20">•</span>
+                      <div className="flex items-center gap-1.5">
                         {actionLoading === course._id ? (
                           <Loader size={12} variant="button" />
                         ) : (
