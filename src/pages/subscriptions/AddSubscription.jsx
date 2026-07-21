@@ -44,6 +44,7 @@ function AddSubscription() {
     includedCourses: [],
     includedEbooks: [],
     planStatus: true,
+    displayPlatform: "both",
   });
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -73,6 +74,7 @@ function AddSubscription() {
                 : [],
               planBenefits: found.planBenefits || [""],
               planPricingType: found.planPricingType || "paid",
+              displayPlatform: found.displayPlatform || "both",
             });
           } else {
             toast.error("Plan not found");
@@ -342,6 +344,23 @@ function AddSubscription() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="space-y-1">
+            <label style={labelStyle}>Display Platform</label>
+            <ModernSelect
+              options={[
+                { value: "both", label: "Both (App & Website)" },
+                { value: "app", label: "Mobile App Only" },
+                { value: "website", label: "Website Only" },
+                { value: "none", label: "None (Hidden)" },
+              ]}
+              value={formData.displayPlatform || "both"}
+              onChange={(value) =>
+                setFormData({ ...formData, displayPlatform: value })
+              }
+              placeholder="Select Display Platform"
+            />
           </div>
         </div>
 

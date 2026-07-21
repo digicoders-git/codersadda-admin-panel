@@ -110,10 +110,15 @@ function ViewSubscription() {
                   {plan.planType}
                 </span>
                 <span
-                  className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm border ${
+                  className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider text-purple-600 bg-purple-50`}
+                >
+                  Platform: {plan.displayPlatform || "both"}
+                </span>
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
                     plan.planStatus
-                      ? "bg-green-500/10 text-green-500 border-green-500/20"
-                      : "bg-red-500/10 text-red-500 border-red-500/20"
+                      ? "bg-green-500/10 text-green-500"
+                      : "bg-red-500/10 text-red-500"
                   }`}
                 >
                   {plan.planStatus ? "Active" : "Disabled"}
