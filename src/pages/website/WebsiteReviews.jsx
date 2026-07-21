@@ -36,7 +36,7 @@ function WebsiteReviews() {
         const mapped = res.data.map(review => ({
           ...review,
           status: review.isActive ? "Active" : "Disabled",
-          image: review.image?.url || "https://placehold.co/60x60?text=No+Image"
+          image: typeof review.image === "object" ? review.image?.url : review.image || "https://placehold.co/60x60?text=No+Image"
         }));
         setReviews(mapped);
       }

@@ -153,8 +153,12 @@ function ViewWebsiteReview() {
               }}
             >
               <img
-                src={review.image}
+                src={typeof review.image === "object" ? review.image?.url : review.image || "https://placehold.co/120x120?text=No+Image"}
                 alt={review.name}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "https://placehold.co/120x120?text=No+Image";
+                }}
                 className="w-32 h-32 rounded-full object-cover mx-auto mb-4 border"
                 style={{ borderColor: colors.accent + "30" }}
               />

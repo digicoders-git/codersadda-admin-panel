@@ -226,8 +226,12 @@ function EditWebsiteReview() {
                 <label style={labelStyle}>Student Image</label>
                 <div className="flex flex-col items-center gap-4">
                   <img
-                    src={formData.image}
+                    src={typeof formData.image === "object" ? formData.image?.url : formData.image || "https://placehold.co/100x100?text=No+Image"}
                     alt="Student"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "https://placehold.co/100x100?text=No+Image";
+                    }}
                     className="w-24 h-24 rounded-full object-cover border"
                     style={{ borderColor: colors.accent + "30" }}
                   />
