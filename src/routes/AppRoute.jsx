@@ -65,6 +65,9 @@ import WebsiteBlogs from "../pages/website/WebsiteBlogs";
 import AddWebsiteBlog from "../pages/website/AddWebsiteBlog";
 import EditWebsiteBlog from "../pages/website/EditWebsiteBlog";
 import ViewWebsiteBlog from "../pages/website/ViewWebsiteBlog";
+import WebsiteServices from "../pages/website/WebsiteServices";
+import AddWebsiteService from "../pages/website/AddWebsiteService";
+import EditWebsiteService from "../pages/website/EditWebsiteService";
 import WebsiteSubscriptions from "../pages/website/WebsiteSubscriptions";
 import AddWebsiteSubscription from "../pages/website/AddWebsiteSubscription";
 import EditWebsiteSubscription from "../pages/website/EditWebsiteSubscription";
@@ -142,6 +145,9 @@ export const AppRoute = [
   { path: "website/blogs/add", component: AddWebsiteBlog },
   { path: "website/blogs/edit/:id", component: EditWebsiteBlog },
   { path: "website/blogs/view/:id", component: ViewWebsiteBlog },
+  { path: "website/services", component: WebsiteServices },
+  { path: "website/services/add", component: AddWebsiteService },
+  { path: "website/services/edit/:id", component: EditWebsiteService },
   { path: "website/subscriptions", component: WebsiteSubscriptions },
   { path: "website/subscriptions/add", component: AddWebsiteSubscription },
   {

@@ -82,14 +82,21 @@ function WebsiteBlogs() {
     }
   };
 
-  const handleStatusToggle = async (id, currentStatus) => {
+  const handleStatusToggle = async (id) => {
     try {
       const res = await apiToggleBlogStatus(id);
       if (res.success) {
-        // Assuming API returns updated object or we just toggle locally
-        const newStatus = currentStatus === "Active" ? "Disabled" : "Active";
+        const isNowActive = res.isActive !== undefined ? res.isActive : true;
         setBlogs((prev) =>
-          prev.map((b) => (b._id === id ? { ...b, status: newStatus } : b)),
+          prev.map((b) =>
+            b._id === id
+              ? {
+                  ...b,
+                  isActive: isNowActive,
+                  status: isNowActive ? "Active" : "Disabled",
+                }
+              : b,
+          ),
         );
         toast.success(`Blog status updated successfully`);
       }
@@ -236,12 +243,12 @@ function WebsiteBlogs() {
                   />
                   <div className="absolute top-3 right-3">
                     <button
-                      onClick={() => handleStatusToggle(blog._id, blog.status)}
+                      onClick={() => handleStatusToggle(blog._id)}
                       className={`px-2 py-1 rounded text-xs font-bold text-white cursor-pointer transition-all hover:opacity-80 ${
-                        blog.status === "Active" ? "bg-green-500" : "bg-red-500"
+                        blog.isActive ? "bg-green-500" : "bg-red-500"
                       }`}
                     >
-                      {blog.status}
+                      {blog.isActive ? "Active" : "Disabled"}
                     </button>
                   </div>
                 </div>
@@ -364,7 +371,7 @@ function WebsiteBlogs() {
                           <Toggle
                             active={blog.isActive}
                             onClick={() =>
-                              handleStatusToggle(blog._id, blog.status)
+                              handleStatusToggle(blog._id)
                             }
                           />
                           <span

@@ -201,6 +201,7 @@ const Dashboard = () => {
       submenu: [
         { name: "Courses", path: "/dashboard/website/courses" },
         { name: "Categories", path: "/dashboard/website/categories" },
+        { name: "Our Services", path: "/dashboard/website/services" },
         { name: "Student Reviews", path: "/dashboard/website/reviews" },
         { name: "Blogs", path: "/dashboard/website/blogs" },
         { name: "Subscriptions", path: "/dashboard/website/subscriptions" },

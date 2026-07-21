@@ -15,7 +15,7 @@ function AddWebsiteBlog() {
     title: "",
     description: "",
     displayPlatform: "both",
-    status: "Disabled",
+    status: "Active",
   });
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState("https://placehold.co/400x250?text=Blog+Image");
