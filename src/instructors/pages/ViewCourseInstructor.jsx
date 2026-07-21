@@ -598,20 +598,28 @@ function ViewCourseInstructor() {
             {/* Modal Header */}
             <div className="p-4 px-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50 dark:bg-slate-800/50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-base uppercase shadow-md">
+                <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-base uppercase shadow-md overflow-hidden relative border border-indigo-500/20">
                   {selectedStudent.profilePicture?.url ? (
                     <img
                       src={selectedStudent.profilePicture.url}
                       alt=""
-                      className="w-full h-full rounded-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
+                      className="w-full h-full rounded-full object-cover absolute inset-0"
                     />
-                  ) : (
-                    selectedStudent.name ? selectedStudent.name[0] : "S"
-                  )}
+                  ) : null}
+                  <span>
+                    {selectedStudent.name
+                      ? selectedStudent.name[0]
+                      : selectedStudent.email
+                      ? selectedStudent.email[0].toUpperCase()
+                      : "S"}
+                  </span>
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
-                    {selectedStudent.name}
+                    {selectedStudent.name || selectedStudent.fullName || "Student"}
                   </h3>
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 mt-0.5">
                     <UserCheck size={12} /> Active Student
