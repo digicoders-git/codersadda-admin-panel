@@ -46,6 +46,7 @@ function Category() {
 
   // Form States
   const [categoryName, setCategoryName] = useState("");
+  const [displayPlatform, setDisplayPlatform] = useState("both");
   const [editingId, setEditingId] = useState(null);
 
   const fetchCategories = useCallback(async () => {
@@ -70,12 +71,10 @@ function Category() {
   }, [searchQuery, statusFilter, currentPage, limit]);
 
   useEffect(() => {
-    setLoading(true); // Show loader immediately on any change
+    setLoading(true);
     if (!searchQuery) {
-      // Immediate fetch for pagination and status changes when not searching
       fetchCategories();
     } else {
-      // Debounce only for search queries
       const delayDebounceFn = setTimeout(() => {
         fetchCategories();
       }, 500);
@@ -95,18 +94,24 @@ function Category() {
       if (editingId) {
         const res = await updateCourseCategory(editingId, {
           name: categoryName,
+          displayPlatform: displayPlatform,
         });
         if (res.success) {
           toast.success("Category updated successfully!");
           setEditingId(null);
           setCategoryName("");
+          setDisplayPlatform("both");
           fetchCategories();
         }
       } else {
-        const res = await createCourseCategory({ name: categoryName });
+        const res = await createCourseCategory({
+          name: categoryName,
+          displayPlatform: displayPlatform,
+        });
         if (res.success) {
           toast.success("Category added successfully!");
           setCategoryName("");
+          setDisplayPlatform("both");
           fetchCategories();
         }
       }
@@ -149,12 +154,29 @@ function Category() {
 
   const handleEditStart = (category) => {
     setEditingId(category._id);
-    setCategoryName(category.name);
+    setCategoryName(category.name || "");
+    setDisplayPlatform(category.displayPlatform || "both");
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
     setCategoryName("");
+    setDisplayPlatform("both");
+  };
+
+  const handlePlatformChange = async (id, newPlatform) => {
+    try {
+      setActionLoading(id);
+      const res = await updateCourseCategory(id, { displayPlatform: newPlatform });
+      if (res.success) {
+        toast.success("Display platform updated!");
+        fetchCategories();
+      }
+    } catch (error) {
+      toast.error("Failed to update display platform");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const toggleStatus = async (id, currentIsActive) => {
@@ -292,6 +314,12 @@ function Category() {
                       className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-center whitespace-nowrap"
                       style={{ color: colors.textSecondary }}
                     >
+                      Platform
+                    </th>
+                    <th
+                      className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-center whitespace-nowrap"
+                      style={{ color: colors.textSecondary }}
+                    >
                       Status
                     </th>
                     <th
@@ -330,6 +358,18 @@ function Category() {
                             {category.name}
                           </span>
                         </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <select
+                          value={category.displayPlatform || "both"}
+                          onChange={(e) => handlePlatformChange(category._id, e.target.value)}
+                          className="text-xs font-bold px-2 py-1 rounded bg-purple-50 text-purple-700 border border-purple-200 outline-none cursor-pointer"
+                        >
+                          <option value="both">Both (App & Website)</option>
+                          <option value="app">App Only</option>
+                          <option value="website">Website Only</option>
+                          <option value="none">None (Hidden)</option>
+                        </select>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex justify-center items-center gap-2 relative">
@@ -531,6 +571,25 @@ function Category() {
                     (e.target.style.borderColor = colors.accent + "20")
                   }
                   onKeyPress={(e) => e.key === "Enter" && handleSubmit()}
+                />
+              </div>
+              <div>
+                <label
+                  className="block text-[10px] font-bold uppercase tracking-widest mb-2"
+                  style={{ color: colors.textSecondary }}
+                >
+                  Display Platform
+                </label>
+                <ModernSelect
+                  options={[
+                    { value: "both", label: "Both (App & Website)" },
+                    { value: "app", label: "App Only" },
+                    { value: "website", label: "Website Only" },
+                    { value: "none", label: "None (Hide Everywhere)" },
+                  ]}
+                  value={displayPlatform}
+                  onChange={(val) => setDisplayPlatform(val)}
+                  placeholder="Select Platform"
                 />
               </div>
 
