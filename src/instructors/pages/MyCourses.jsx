@@ -53,7 +53,7 @@ function MyCourses() {
   };
 
   const filteredCourses = courses.filter((c) =>
-    c.title.toLowerCase().includes(searchQuery.toLowerCase()),
+    c.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getCourseThumbnail = (c) => {
@@ -97,7 +97,7 @@ function MyCourses() {
             className="text-xs md:text-sm font-medium opacity-60 truncate"
             style={{ color: colors.textSecondary }}
           >
-            View and monitor your courses.
+            View and monitor your courses & enrolled students.
           </p>
         </div>
 
@@ -173,8 +173,9 @@ function MyCourses() {
             {filteredCourses.map((course) => (
               <div
                 key={course._id}
-                className="rounded border overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md flex flex-col"
+                className="rounded border overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md flex flex-col cursor-pointer"
                 style={cardStyle}
+                onClick={() => navigate(`/instructor-dashboard/my-courses/view/${course._id}`)}
               >
                 <div className="relative h-44 overflow-hidden bg-gray-100 group">
                   <img
@@ -227,24 +228,29 @@ function MyCourses() {
                     style={{ borderColor: colors.accent + "15" }}
                   >
                     <div
-                      className="flex items-center gap-3 text-[10px] font-semibold opacity-50"
+                      className="flex items-center gap-3 text-[10px] font-semibold opacity-60"
                       style={{ color: colors.textSecondary }}
                     >
                       <span className="flex items-center gap-1">
                         <Clock size={12} /> {formatCourseDuration(course.duration)}
                       </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1 text-indigo-600 font-bold">
+                        <Users size={12} /> {course.totalStudents || course.studentsCount || 0} Enrolled
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() =>
+                        onClick={(e) => {
+                          e.stopPropagation();
                           navigate(
-                            `/instructor-dashboard/my-courses/view/${course._id}`,
-                          )
-                        }
-                        className="p-2 cursor-pointer rounded transition-all"
+                            `/instructor-dashboard/my-courses/view/${course._id}`
+                          );
+                        }}
+                        className="p-2 cursor-pointer rounded transition-all hover:bg-black/5"
                         style={{ color: colors.primary }}
-                        title="View Course"
+                        title="View Course & Students"
                       >
                         <Eye size={18} />
                       </button>
@@ -259,7 +265,8 @@ function MyCourses() {
             {filteredCourses.map((course) => (
               <div
                 key={course._id}
-                className="flex items-center gap-4 p-4 rounded border hover:shadow-sm transition-all duration-200 group"
+                onClick={() => navigate(`/instructor-dashboard/my-courses/view/${course._id}`)}
+                className="flex items-center gap-4 p-4 rounded border hover:shadow-sm transition-all duration-200 group cursor-pointer"
                 style={cardStyle}
               >
                 <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 shadow-sm bg-slate-100 dark:bg-slate-800">
@@ -291,17 +298,19 @@ function MyCourses() {
                     </span>
                   </div>
                   <h3
-                    onClick={() =>
-                      navigate(
-                        `/instructor-dashboard/my-courses/view/${course._id}`,
-                      )
-                    }
-                    className="font-semibold cursor-pointer text-base truncate"
+                    className="font-semibold text-base truncate"
                     style={{ color: colors.text }}
                   >
                     {course.title}
                   </h3>
                 </div>
+
+                {/* Enrolled Students Badge */}
+                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 text-xs font-bold">
+                  <Users size={14} />
+                  <span>{course.totalStudents || course.studentsCount || 0} Enrolled</span>
+                </div>
+
                 <div
                   className="hidden md:flex items-center gap-6 text-[11px] font-semibold opacity-40 uppercase tracking-widest mr-4"
                   style={{ color: colors.textSecondary }}
@@ -310,34 +319,27 @@ function MyCourses() {
                     <Clock size={16} /> {formatCourseDuration(course.duration)}
                   </span>
                 </div>
+
                 <div
                   className="flex items-center gap-1 border-l pl-4"
                   style={{ borderColor: colors.accent + "20" }}
                 >
                   <button
-                    onClick={() =>
+                    onClick={(e) => {
+                      e.stopPropagation();
                       navigate(
-                        `/instructor-dashboard/my-courses/view/${course._id}`,
-                      )
-                    }
-                    className="p-2.5 cursor-pointer rounded text-primary transition-all"
+                        `/instructor-dashboard/my-courses/view/${course._id}`
+                      );
+                    }}
+                    className="p-2 rounded transition-all hover:bg-black/5"
                     style={{ color: colors.primary }}
+                    title="View Course & Enrolled Students"
                   >
-                    <Eye size={20} />
+                    <Eye size={18} />
                   </button>
                 </div>
               </div>
             ))}
-          </div>
-        )}
-
-        {filteredCourses.length === 0 && (
-          <div
-            className="text-center py-20 border-2 border-dashed rounded opacity-30"
-            style={{ borderColor: colors.accent + "30" }}
-          >
-            <BookOpen size={48} className="mx-auto mb-4" />
-            <p className="text-lg font-semibold">No Courses Found</p>
           </div>
         )}
       </div>

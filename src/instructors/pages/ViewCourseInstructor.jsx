@@ -17,6 +17,9 @@ import {
   Lock,
   Search,
   Award,
+  X,
+  UserCheck,
+  Calendar,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import { getCourseById } from "../../apis/course";
@@ -37,6 +40,10 @@ function ViewCourseInstructor() {
   const [students, setStudents] = useState([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [studentSearch, setStudentSearch] = useState("");
+
+  // Student Detail Modal state
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [studentModalOpen, setStudentModalOpen] = useState(false);
 
   const fetchCourse = async () => {
     try {
@@ -77,6 +84,11 @@ function ViewCourseInstructor() {
 
   const toggleSection = (sectionId) => {
     setOpenSections((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }));
+  };
+
+  const openStudentDetails = (student) => {
+    setSelectedStudent(student);
+    setStudentModalOpen(true);
   };
 
   const totalLessons = course?.curriculum?.reduce(
@@ -340,10 +352,10 @@ function ViewCourseInstructor() {
                         className="text-sm font-black uppercase tracking-widest flex items-center gap-2"
                         style={{ color: colors.text }}
                       >
-                        <Users size={18} /> Registered Students ({students.length})
+                        <Users size={18} /> Total Enrolled Students ({students.length})
                       </h3>
                       <p className="text-[10px] font-bold opacity-40 mt-0.5 uppercase">
-                        Students who enrolled or purchased this course
+                        Students currently registered for this course
                       </p>
                     </div>
 
@@ -384,49 +396,58 @@ function ViewCourseInstructor() {
                       <table className="w-full text-left text-xs">
                         <thead className="bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
                           <tr>
-                            <th className="p-3 font-bold uppercase tracking-wider text-slate-500">Student</th>
-                            <th className="p-3 font-bold uppercase tracking-wider text-slate-500">Contact Details</th>
+                            <th className="p-3 font-bold uppercase tracking-wider text-slate-500">Student Name</th>
+                            <th className="p-3 font-bold uppercase tracking-wider text-slate-500">Contact Info</th>
                             <th className="p-3 font-bold uppercase tracking-wider text-slate-500">Progress</th>
                             <th className="p-3 font-bold uppercase tracking-wider text-slate-500">Certificate</th>
+                            <th className="p-3 font-bold uppercase tracking-wider text-slate-500 text-right">Action</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                           {filteredStudents.map((st) => {
                             const progressVal = st.progressPercentage || st.progress || 0;
                             return (
-                              <tr key={st._id} className="hover:bg-black/5 transition-colors">
+                              <tr
+                                key={st._id}
+                                className="hover:bg-indigo-500/5 transition-colors cursor-pointer"
+                                onClick={() => openStudentDetails(st)}
+                              >
                                 <td className="p-3">
                                   <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-full bg-indigo-500/10 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0 uppercase border border-indigo-500/20">
+                                    <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shrink-0 uppercase shadow-sm overflow-hidden relative border border-indigo-500/20">
                                       {st.profilePicture?.url ? (
                                         <img
                                           src={st.profilePicture.url}
                                           alt=""
-                                          className="w-full h-full rounded-full object-cover"
+                                          onError={(e) => {
+                                            e.target.style.display = "none";
+                                          }}
+                                          className="w-full h-full rounded-full object-cover absolute inset-0"
                                         />
-                                      ) : (
-                                        st.name ? st.name[0] : "S"
-                                      )}
+                                      ) : null}
+                                      <span>{st.name ? st.name[0] : st.email ? st.email[0].toUpperCase() : "S"}</span>
                                     </div>
                                     <div>
-                                      <p className="font-bold text-slate-900 dark:text-white text-sm">{st.name}</p>
+                                      <p className="font-bold text-slate-900 dark:text-white text-sm">
+                                        {st.name || st.fullName || "Student"}
+                                      </p>
                                       <span className="text-[10px] font-semibold text-slate-400">ID: {st._id?.slice(-6)}</span>
                                     </div>
                                   </div>
                                 </td>
                                 <td className="p-3">
                                   <div className="space-y-1">
-                                    <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
-                                      <Mail size={12} className="text-indigo-500 shrink-0" />
+                                    <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white">
+                                      <Mail size={13} className="text-indigo-500 shrink-0" />
                                       <span>{st.email || "N/A"}</span>
                                     </div>
-                                    <div className="flex items-center gap-1.5 font-medium text-slate-500">
-                                      <Phone size={12} className="text-slate-400 shrink-0" />
+                                    <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
+                                      <Phone size={13} className="text-slate-400 shrink-0" />
                                       <span>{st.mobile || "N/A"}</span>
                                     </div>
                                   </div>
                                 </td>
-                                <td className="p-3 min-w-[140px]">
+                                <td className="p-3 min-w-[130px]">
                                   <div className="space-y-1">
                                     <div className="flex justify-between text-[11px] font-bold">
                                       <span>{progressVal}%</span>
@@ -449,6 +470,17 @@ function ViewCourseInstructor() {
                                       In Progress
                                     </span>
                                   )}
+                                </td>
+                                <td className="p-3 text-right">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openStudentDetails(st);
+                                    }}
+                                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all cursor-pointer"
+                                  >
+                                    View Details
+                                  </button>
                                 </td>
                               </tr>
                             );
@@ -558,6 +590,131 @@ function ViewCourseInstructor() {
           </div>
         )}
       </div>
+
+      {/* STUDENT DETAILS MODAL */}
+      {studentModalOpen && selectedStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+            {/* Modal Header */}
+            <div className="p-4 px-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50 dark:bg-slate-800/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-base uppercase shadow-md">
+                  {selectedStudent.profilePicture?.url ? (
+                    <img
+                      src={selectedStudent.profilePicture.url}
+                      alt=""
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  ) : (
+                    selectedStudent.name ? selectedStudent.name[0] : "S"
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
+                    {selectedStudent.name}
+                  </h3>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 mt-0.5">
+                    <UserCheck size={12} /> Active Student
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setStudentModalOpen(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-5 flex-1">
+              {/* Profile Card */}
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <span className="font-bold uppercase tracking-wider text-slate-400">Email Address</span>
+                    <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5 mt-1">
+                      <Mail size={14} className="text-indigo-500" /> {selectedStudent.email || "Not Provided"}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="font-bold uppercase tracking-wider text-slate-400">Mobile Number</span>
+                    <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5 mt-1">
+                      <Phone size={14} className="text-indigo-500" /> {selectedStudent.mobile || "Not Provided"}
+                    </div>
+                  </div>
+                </div>
+
+                {selectedStudent.createdAt && (
+                  <div className="pt-3 border-t border-slate-200 dark:border-slate-700 text-xs">
+                    <span className="font-bold uppercase tracking-wider text-slate-400">Joined Date</span>
+                    <div className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mt-1">
+                      <Calendar size={14} className="text-indigo-500" />
+                      {new Date(selectedStudent.createdAt).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Course Progress Section */}
+              <div className="p-4 rounded-xl border border-indigo-100 dark:border-indigo-950 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-2">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    Course Watch Progress
+                  </span>
+                  <span className="font-black text-indigo-600 text-sm">
+                    {selectedStudent.progressPercentage || selectedStudent.progress || 0}%
+                  </span>
+                </div>
+                <div className="w-full h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-600 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(
+                        selectedStudent.progressPercentage || selectedStudent.progress || 0,
+                        100
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Certificate Status */}
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                <span className="block text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Completion & Certificate Status
+                </span>
+                {selectedStudent.certificateIssued || (selectedStudent.progressPercentage || 0) >= 100 ? (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold">
+                    <Award size={18} />
+                    <span>Certificate Issued & Awarded to Student!</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-xs font-semibold">
+                    <Clock size={18} />
+                    <span>In Progress — Certificate will unlock upon 100% course completion.</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 px-6 border-t border-slate-200 dark:border-slate-800 flex justify-end shrink-0 bg-slate-50 dark:bg-slate-800/50">
+              <button
+                onClick={() => setStudentModalOpen(false)}
+                className="px-5 py-2 rounded-xl text-xs font-bold bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white hover:bg-slate-300 transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
