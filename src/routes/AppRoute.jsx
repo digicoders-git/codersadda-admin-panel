@@ -82,6 +82,7 @@ import GenerateQuizCertificate from "../pages/quizzes/GenerateQuizCertificate";
 import Coupons from "../pages/coupons/Coupons";
 import AddCoupon from "../pages/coupons/AddCoupon";
 import EditCoupon from "../pages/coupons/EditCoupon";
+import SupportTickets from "../pages/SupportTickets";
 
 export const AppRoute = [
   { path: "courses/manage-certificates", component: ManageCertificates },
@@ -182,4 +183,5 @@ export const AppRoute = [
   { path: "coupons", component: Coupons },
   { path: "coupons/add", component: AddCoupon },
   { path: "coupons/edit/:id", component: EditCoupon },
+  { path: "support-tickets", component: SupportTickets },
 ];

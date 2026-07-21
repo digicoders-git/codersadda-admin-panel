@@ -43,3 +43,8 @@ export const getInstructorStats = async () => {
   const response = await http.get('/instructor/stats');
   return response.data;
 };
+
+export const getInstructorCourseStudents = async (courseId) => {
+  const response = await http.get(`/instructor/course/${courseId}/students`);
+  return response.data;
+};

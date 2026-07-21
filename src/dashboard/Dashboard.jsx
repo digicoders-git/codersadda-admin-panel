@@ -23,6 +23,7 @@ import {
   GraduationCap,
   Globe,
   Ticket,
+  LifeBuoy,
 } from "lucide-react";
 import { Clock } from "./Clock";
 import logo from "../assets/logo.png";
@@ -192,6 +193,7 @@ const Dashboard = () => {
       ],
     },
     { name: "Coupons", icon: Ticket, path: "/dashboard/coupons" },
+    { name: "Support Tickets", icon: LifeBuoy, path: "/dashboard/support-tickets" },
     { name: "Referrals", icon: Share2, path: "/dashboard/referrals" },
     {
       name: "Website",

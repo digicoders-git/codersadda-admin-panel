@@ -56,6 +56,21 @@ function MyCourses() {
     c.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
+  const getCourseThumbnail = (c) => {
+    if (!c) return "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&auto=format&fit=crop";
+    if (typeof c.thumbnail === "string" && c.thumbnail.trim().length > 0) return c.thumbnail;
+    if (c.thumbnail?.url && c.thumbnail.url.trim().length > 0) return c.thumbnail.url;
+    if (c.thumbnail?.localUrl && c.thumbnail.localUrl.trim().length > 0) return c.thumbnail.localUrl;
+    return "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&auto=format&fit=crop";
+  };
+
+  const formatCourseDuration = (duration) => {
+    if (duration && duration.trim().length > 0 && duration.toUpperCase() !== "N/A") {
+      return duration;
+    }
+    return "Self-Paced";
+  };
+
   const cardStyle = {
     backgroundColor: colors.sidebar || colors.background,
     borderColor: colors.accent + "30",
@@ -162,17 +177,15 @@ function MyCourses() {
                 style={cardStyle}
               >
                 <div className="relative h-44 overflow-hidden bg-gray-100 group">
-                  {course.thumbnail?.url ? (
-                    <img
-                      src={course.thumbnail.url}
-                      alt={course.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center opacity-10">
-                      <BookOpen size={48} style={{ color: colors.text }} />
-                    </div>
-                  )}
+                  <img
+                    src={getCourseThumbnail(course)}
+                    alt={course.title}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&auto=format&fit=crop";
+                    }}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
 
                   <div className="absolute top-3 left-3 flex flex-col gap-2">
                     <div
@@ -218,7 +231,7 @@ function MyCourses() {
                       style={{ color: colors.textSecondary }}
                     >
                       <span className="flex items-center gap-1">
-                        <Clock size={12} /> {course.duration || "N/A"}
+                        <Clock size={12} /> {formatCourseDuration(course.duration)}
                       </span>
                     </div>
 
@@ -249,11 +262,13 @@ function MyCourses() {
                 className="flex items-center gap-4 p-4 rounded border hover:shadow-sm transition-all duration-200 group"
                 style={cardStyle}
               >
-                <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 shadow-sm">
+                <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 shadow-sm bg-slate-100 dark:bg-slate-800">
                   <img
-                    src={
-                      course.thumbnail?.url || "https://via.placeholder.com/150"
-                    }
+                    src={getCourseThumbnail(course)}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&auto=format&fit=crop";
+                    }}
                     className="w-full h-full object-cover"
                     alt={course.title}
                   />
@@ -292,7 +307,7 @@ function MyCourses() {
                   style={{ color: colors.textSecondary }}
                 >
                   <span className="flex items-center gap-1.5">
-                    <Clock size={16} /> {course.duration || "N/A"}
+                    <Clock size={16} /> {formatCourseDuration(course.duration)}
                   </span>
                 </div>
                 <div

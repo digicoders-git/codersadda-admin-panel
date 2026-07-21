@@ -160,6 +160,12 @@ function MyEarning() {
                   className="pb-4 text-xs font-bold opacity-50 uppercase"
                   style={{ color: colors.text }}
                 >
+                  Commission %
+                </th>
+                <th
+                  className="pb-4 text-xs font-bold opacity-50 uppercase"
+                  style={{ color: colors.text }}
+                >
                   Sales
                 </th>
                 <th
@@ -186,17 +192,19 @@ function MyEarning() {
                     <td className="py-4 pr-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded bg-gray-100 overflow-hidden shrink-0">
-                          {item.course?.thumbnail?.url ? (
-                            <img
-                              src={item.course.thumbnail.url}
-                              className="w-full h-full object-cover"
-                              alt=""
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center opacity-20">
-                              <BookOpen size={20} />
-                            </div>
-                          )}
+                          <img
+                            src={
+                              item.course?.thumbnail?.url ||
+                              item.course?.thumbnail?.localUrl ||
+                              "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&auto=format&fit=crop"
+                            }
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&auto=format&fit=crop";
+                            }}
+                            className="w-full h-full object-cover"
+                            alt=""
+                          />
                         </div>
                         <span
                           className="font-semibold text-sm line-clamp-1"
@@ -205,6 +213,11 @@ function MyEarning() {
                           {item.course?.title || "Unknown Course"}
                         </span>
                       </div>
+                    </td>
+                    <td className="py-4">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-bold bg-indigo-500/10 text-indigo-600 border border-indigo-500/20">
+                        {item.course?.priceForInstructor ?? 15}%
+                      </span>
                     </td>
                     <td className="py-4">
                       <span
@@ -238,7 +251,7 @@ function MyEarning() {
               ) : (
                 <tr>
                   <td
-                    colSpan="4"
+                    colSpan="5"
                     className="py-10 text-center opacity-40 italic"
                   >
                     No sales recorded yet.
