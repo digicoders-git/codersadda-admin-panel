@@ -104,54 +104,66 @@ function ViewCourseInstructor() {
   );
 
   return (
-    <div className="w-full min-h-full flex flex-col">
-      {/* Header */}
+    <div className="w-full min-h-full flex flex-col" style={{ backgroundColor: colors.background }}>
+      {/* Top Header Navigation */}
       <div
-        className="flex items-center justify-between p-4 border-b sticky top-0 z-10"
+        className="flex items-center justify-between p-4 px-6 border-b sticky top-0 z-10 shadow-sm backdrop-blur-md"
         style={{
-          backgroundColor: colors.background,
-          borderColor: colors.accent + "20",
+          backgroundColor: colors.background || "#ffffff",
+          borderColor: colors.accent ? colors.accent + "20" : "#e2e8f0",
         }}
       >
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate("/instructor-dashboard/my-courses")}
-            className="p-2 rounded hover:bg-black/5 transition-all cursor-pointer"
+            className="p-2 rounded-xl border hover:opacity-80 transition-all cursor-pointer"
+            style={{
+              borderColor: colors.border || "#e2e8f0",
+              backgroundColor: colors.sidebar || colors.background,
+            }}
           >
             <ArrowLeft size={18} style={{ color: colors.text }} />
           </button>
           <div className="min-w-0">
             <h1
-              className="text-base font-bold truncate"
+              className="text-base md:text-lg font-bold truncate"
               style={{ color: colors.text }}
             >
               {course?.title || "Loading..."}
             </h1>
-            <p className="text-[9px] font-bold opacity-40 uppercase tracking-widest truncate">
+            <p className="text-[10px] font-bold uppercase tracking-widest truncate" style={{ color: colors.textSecondary }}>
               {course?.category?.name || ""} • {course?.technology || "--"}
             </p>
           </div>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex bg-black/5 p-1 rounded-xl gap-1 border border-black/5">
+        <div
+          className="flex p-1 rounded-xl gap-1 border"
+          style={{
+            backgroundColor: colors.sidebar || colors.background,
+            borderColor: colors.border || "#e2e8f0",
+          }}
+        >
           <button
             onClick={() => setActiveTab("curriculum")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
               activeTab === "curriculum"
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "opacity-60 hover:opacity-100"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                : "hover:opacity-100"
             }`}
+            style={activeTab !== "curriculum" ? { color: colors.textSecondary } : {}}
           >
             <Monitor size={14} /> Curriculum
           </button>
           <button
             onClick={() => setActiveTab("students")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
               activeTab === "students"
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "opacity-60 hover:opacity-100"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
+                : "hover:opacity-100"
             }`}
+            style={activeTab !== "students" ? { color: colors.textSecondary } : {}}
           >
             <Users size={14} /> Enrolled Students ({students.length})
           </button>
@@ -168,16 +180,16 @@ function ViewCourseInstructor() {
             {/* Main Content */}
             <div
               className="lg:col-span-8 p-4 md:p-6 space-y-8 border-r"
-              style={{ borderColor: colors.accent + "10" }}
+              style={{ borderColor: colors.border || "#e2e8f0" }}
             >
-              {/* Top Banner */}
+              {/* Top Banner Card */}
               <div
                 className="flex flex-col md:flex-row gap-6 items-start pb-6 border-b"
-                style={{ borderColor: colors.accent + "05" }}
+                style={{ borderColor: colors.border || "#e2e8f0" }}
               >
                 <div
-                  className="w-48 h-32 rounded overflow-hidden border shrink-0 bg-gray-100"
-                  style={{ borderColor: colors.accent + "15" }}
+                  className="w-48 h-32 rounded-2xl overflow-hidden border shrink-0 bg-slate-100 dark:bg-slate-800 shadow-md"
+                  style={{ borderColor: colors.border || "#e2e8f0" }}
                 >
                   <img
                     src={
@@ -191,33 +203,27 @@ function ViewCourseInstructor() {
                         "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&auto=format&fit=crop";
                     }}
                     alt={course.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover hover:scale-105 transition-all duration-500"
                   />
                 </div>
                 <div className="flex-1 space-y-3">
                   <div className="flex flex-wrap gap-2">
-                    <span
-                      className="px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest"
-                      style={{
-                        backgroundColor: colors.primary + "10",
-                        color: colors.primary,
-                      }}
-                    >
-                      {course.badge || "Standard"}
+                    <span className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-600 border border-indigo-500/20">
+                      {course.badge || "Standard Course"}
                     </span>
                   </div>
                   <h2
-                    className="text-xl font-black leading-tight"
+                    className="text-xl font-bold leading-tight"
                     style={{ color: colors.text }}
                   >
                     {course.title}
                   </h2>
-                  <div className="flex flex-wrap items-center gap-4 text-[10px] font-bold uppercase tracking-wider opacity-50">
-                    <div className="flex items-center gap-1.5">
-                      <Users size={12} /> {students.length} Enrolled Students
+                  <div className="flex flex-wrap items-center gap-4 text-[11px] font-semibold uppercase tracking-wider" style={{ color: colors.textSecondary }}>
+                    <div className="flex items-center gap-1.5 text-indigo-600 font-bold">
+                      <Users size={14} /> {students.length} Enrolled Students
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Clock size={12} /> {course.duration || "Self-Paced"}
+                      <Clock size={14} /> {course.duration || "Self-Paced"}
                     </div>
                   </div>
                 </div>
@@ -234,7 +240,7 @@ function ViewCourseInstructor() {
                       >
                         <Monitor size={18} /> Course Curriculum
                       </h3>
-                      <p className="text-[10px] font-bold opacity-40 mt-1 uppercase">
+                      <p className="text-[10px] font-bold mt-1 uppercase" style={{ color: colors.textSecondary }}>
                         {course.curriculum?.length || 0} Topics • {totalLessons}{" "}
                         Lectures
                       </p>
@@ -245,22 +251,22 @@ function ViewCourseInstructor() {
                     {course.curriculum?.map((section, sIdx) => (
                       <div
                         key={section._id}
-                        className="rounded border"
+                        className="rounded-xl border shadow-sm"
                         style={{
                           backgroundColor: colors.sidebar || colors.background,
-                          borderColor: colors.accent + "15",
+                          borderColor: colors.border || "#e2e8f0",
                         }}
                       >
                         <div
-                          className="p-3 flex items-center justify-between border-b cursor-pointer"
-                          style={{ borderColor: colors.accent + "05" }}
+                          className="p-3.5 flex items-center justify-between border-b cursor-pointer hover:bg-black/5 transition-all"
+                          style={{ borderColor: colors.border || "#e2e8f0" }}
                           onClick={() => toggleSection(section._id)}
                         >
                           <div className="flex items-center gap-3">
                             <div
-                              className={`p-1.5 rounded transition-colors ${
+                              className={`p-1.5 rounded-lg transition-colors ${
                                 openSections[section._id]
-                                  ? "bg-primary text-white"
+                                  ? "bg-indigo-600 text-white shadow-sm"
                                   : "bg-black/5"
                               }`}
                             >
@@ -273,12 +279,12 @@ function ViewCourseInstructor() {
                             </div>
                             <div>
                               <p
-                                className="text-xs font-black uppercase tracking-wider"
+                                className="text-xs font-bold uppercase tracking-wider"
                                 style={{ color: colors.text }}
                               >
                                 Topic {sIdx + 1}: {section.title}
                               </p>
-                              <p className="text-[9px] font-bold opacity-40 uppercase">
+                              <p className="text-[9px] font-bold uppercase" style={{ color: colors.textSecondary }}>
                                 {section.lessons?.length || 0} Lectures
                               </p>
                             </div>
@@ -293,27 +299,30 @@ function ViewCourseInstructor() {
                             {section.lessons?.map((lesson, lIdx) => (
                               <div
                                 key={lesson._id}
-                                className="p-3 rounded-lg border border-transparent hover:border-black/5 hover:bg-black/2 flex items-center justify-between group transition-all"
+                                className="p-3 rounded-lg border border-transparent hover:border-indigo-500/20 hover:bg-indigo-500/5 flex items-center justify-between group transition-all"
                               >
                                 <div className="flex items-center gap-4">
-                                  <div className="w-7 h-7 rounded bg-black/5 flex items-center justify-center text-[10px] font-black opacity-30">
+                                  <div
+                                    className="w-7 h-7 rounded-md flex items-center justify-center text-[10px] font-bold"
+                                    style={{ backgroundColor: colors.sidebar, color: colors.textSecondary }}
+                                  >
                                     {lIdx + 1}
                                   </div>
                                   <div className="space-y-1">
                                     <p
-                                      className="text-[11px] font-bold"
+                                      className="text-xs font-semibold"
                                       style={{ color: colors.text }}
                                     >
                                       {lesson.title}
                                     </p>
                                     <div className="flex items-center gap-3">
-                                      <div className="flex items-center gap-1 opacity-40">
+                                      <div className="flex items-center gap-1 text-[10px]" style={{ color: colors.textSecondary }}>
                                         {lesson.videoUrl ? (
-                                          <VideoIcon size={10} />
+                                          <VideoIcon size={12} />
                                         ) : (
-                                          <FileText size={10} />
+                                          <FileText size={12} />
                                         )}
-                                        <span className="text-[9px] font-bold">
+                                        <span className="font-medium">
                                           {lesson.duration || "--:--"}
                                         </span>
                                       </div>
@@ -327,10 +336,10 @@ function ViewCourseInstructor() {
                                         `/instructor-dashboard/my-courses/view/${course._id}/lecture/${lesson._id}`
                                       )
                                     }
-                                    className="p-1.5 cursor-pointer text-primary transition-all hover:bg-primary/10 rounded"
+                                    className="p-1.5 cursor-pointer text-indigo-600 hover:bg-indigo-500/10 rounded-lg transition-all"
                                     title="View Lecture"
                                   >
-                                    <Eye size={14} />
+                                    <Eye size={16} />
                                   </button>
                                 </div>
                               </div>
@@ -345,34 +354,44 @@ function ViewCourseInstructor() {
 
               {/* TAB 2: ENROLLED STUDENTS */}
               {activeTab === "students" && (
-                <div className="space-y-4">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-5">
+                  <div
+                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl border"
+                    style={{
+                      backgroundColor: colors.sidebar || colors.background,
+                      borderColor: colors.border || "#e2e8f0",
+                    }}
+                  >
                     <div>
                       <h3
-                        className="text-sm font-black uppercase tracking-widest flex items-center gap-2"
+                        className="text-base font-bold flex items-center gap-2.5"
                         style={{ color: colors.text }}
                       >
-                        <Users size={18} /> Total Enrolled Students ({students.length})
+                        <div className="p-2 rounded-xl bg-indigo-600 text-white shadow-sm">
+                          <Users size={18} />
+                        </div>
+                        Total Enrolled Students ({students.length})
                       </h3>
-                      <p className="text-[10px] font-bold opacity-40 mt-0.5 uppercase">
-                        Students currently registered for this course
+                      <p className="text-xs font-medium mt-1" style={{ color: colors.textSecondary }}>
+                        Live monitor and view all students currently registered for this course
                       </p>
                     </div>
 
                     <div className="relative w-full sm:w-64">
                       <Search
-                        size={14}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40"
+                        size={15}
+                        className="absolute left-3 top-1/2 -translate-y-1/2"
+                        style={{ color: colors.textSecondary }}
                       />
                       <input
                         type="text"
-                        placeholder="Search student..."
+                        placeholder="Search student name, email..."
                         value={studentSearch}
                         onChange={(e) => setStudentSearch(e.target.value)}
-                        className="w-full pl-9 pr-3 py-1.5 rounded-lg border text-xs outline-none"
+                        className="w-full pl-9 pr-3 py-2 rounded-xl border text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                         style={{
-                          borderColor: colors.accent + "20",
-                          backgroundColor: colors.sidebar || colors.background,
+                          borderColor: colors.border || "#e2e8f0",
+                          backgroundColor: colors.background,
                           color: colors.text,
                         }}
                       />
@@ -384,37 +403,56 @@ function ViewCourseInstructor() {
                       <Loader size={50} />
                     </div>
                   ) : filteredStudents.length === 0 ? (
-                    <div className="p-12 text-center border rounded-xl bg-black/2 space-y-2">
-                      <Users size={36} className="mx-auto opacity-20" />
-                      <p className="font-bold text-sm">No Registered Students Found</p>
-                      <p className="text-xs opacity-50">
+                    <div
+                      className="p-12 text-center border rounded-2xl space-y-2"
+                      style={{
+                        backgroundColor: colors.sidebar || colors.background,
+                        borderColor: colors.border || "#e2e8f0",
+                      }}
+                    >
+                      <Users size={42} className="mx-auto opacity-30" style={{ color: colors.text }} />
+                      <p className="font-bold text-sm" style={{ color: colors.text }}>No Registered Students Found</p>
+                      <p className="text-xs" style={{ color: colors.textSecondary }}>
                         When students purchase or enroll in this course, their details will appear here.
                       </p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                    <div
+                      className="overflow-x-auto rounded-2xl border shadow-sm"
+                      style={{
+                        backgroundColor: colors.sidebar || colors.background,
+                        borderColor: colors.border || "#e2e8f0",
+                      }}
+                    >
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
+                        <thead
+                          className="border-b"
+                          style={{
+                            backgroundColor: colors.background,
+                            borderColor: colors.border || "#e2e8f0",
+                            color: colors.textSecondary,
+                          }}
+                        >
                           <tr>
-                            <th className="p-3 font-bold uppercase tracking-wider text-slate-500">Student Name</th>
-                            <th className="p-3 font-bold uppercase tracking-wider text-slate-500">Contact Info</th>
-                            <th className="p-3 font-bold uppercase tracking-wider text-slate-500">Progress</th>
-                            <th className="p-3 font-bold uppercase tracking-wider text-slate-500">Certificate</th>
-                            <th className="p-3 font-bold uppercase tracking-wider text-slate-500 text-right">Action</th>
+                            <th className="p-3.5 px-4 font-bold uppercase tracking-wider text-[11px]">Student Profile</th>
+                            <th className="p-3.5 font-bold uppercase tracking-wider text-[11px]">Contact Information</th>
+                            <th className="p-3.5 font-bold uppercase tracking-wider text-[11px]">Course Progress</th>
+                            <th className="p-3.5 font-bold uppercase tracking-wider text-[11px]">Certificate</th>
+                            <th className="p-3.5 px-4 font-bold uppercase tracking-wider text-[11px] text-right">Action</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                        <tbody className="divide-y" style={{ borderColor: colors.border || "#e2e8f0" }}>
                           {filteredStudents.map((st) => {
                             const progressVal = st.progressPercentage || st.progress || 0;
                             return (
                               <tr
                                 key={st._id}
-                                className="hover:bg-indigo-500/5 transition-colors cursor-pointer"
+                                className="hover:bg-indigo-500/5 transition-all cursor-pointer"
                                 onClick={() => openStudentDetails(st)}
                               >
-                                <td className="p-3">
+                                <td className="p-3.5 px-4">
                                   <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shrink-0 uppercase shadow-sm overflow-hidden relative border border-indigo-500/20">
+                                    <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shrink-0 uppercase shadow-md overflow-hidden relative ring-2 ring-indigo-500/20">
                                       {st.profilePicture?.url ? (
                                         <img
                                           src={st.profilePicture.url}
@@ -428,56 +466,59 @@ function ViewCourseInstructor() {
                                       <span>{st.name ? st.name[0] : st.email ? st.email[0].toUpperCase() : "S"}</span>
                                     </div>
                                     <div>
-                                      <p className="font-bold text-slate-900 dark:text-white text-sm">
+                                      <p className="font-bold text-sm" style={{ color: colors.text }}>
                                         {st.name || st.fullName || "Student"}
                                       </p>
-                                      <span className="text-[10px] font-semibold text-slate-400">ID: {st._id?.slice(-6)}</span>
+                                      <span className="text-[10px] font-semibold" style={{ color: colors.textSecondary }}>
+                                        ID: {st._id?.slice(-6)}
+                                      </span>
                                     </div>
                                   </div>
                                 </td>
-                                <td className="p-3">
+                                <td className="p-3.5">
                                   <div className="space-y-1">
-                                    <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white">
+                                    <div className="flex items-center gap-1.5 font-bold text-xs" style={{ color: colors.text }}>
                                       <Mail size={13} className="text-indigo-500 shrink-0" />
                                       <span>{st.email || "N/A"}</span>
                                     </div>
-                                    <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
+                                    <div className="flex items-center gap-1.5 font-semibold text-xs" style={{ color: colors.textSecondary }}>
                                       <Phone size={13} className="text-slate-400 shrink-0" />
                                       <span>{st.mobile || "N/A"}</span>
                                     </div>
                                   </div>
                                 </td>
-                                <td className="p-3 min-w-[130px]">
-                                  <div className="space-y-1">
+                                <td className="p-3.5 min-w-[140px]">
+                                  <div className="space-y-1.5">
                                     <div className="flex justify-between text-[11px] font-bold">
-                                      <span>{progressVal}%</span>
+                                      <span style={{ color: colors.textSecondary }}>Watched</span>
+                                      <span className="text-indigo-600 font-extrabold">{progressVal}%</span>
                                     </div>
-                                    <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                    <div className="w-full h-2 rounded-full overflow-hidden border" style={{ backgroundColor: colors.background, borderColor: colors.border || "#e2e8f0" }}>
                                       <div
-                                        className="h-full bg-indigo-600 rounded-full"
+                                        className="h-full bg-indigo-600 rounded-full shadow-sm transition-all duration-500"
                                         style={{ width: `${Math.min(progressVal, 100)}%` }}
                                       />
                                     </div>
                                   </div>
                                 </td>
-                                <td className="p-3">
+                                <td className="p-3.5">
                                   {st.certificateIssued || progressVal >= 100 ? (
-                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 shadow-sm">
                                       <Award size={12} /> Issued
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-600 border border-amber-500/20">
                                       In Progress
                                     </span>
                                   )}
                                 </td>
-                                <td className="p-3 text-right">
+                                <td className="p-3.5 px-4 text-right">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       openStudentDetails(st);
                                     }}
-                                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white transition-all cursor-pointer"
+                                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm hover:shadow-indigo-500/25 transition-all cursor-pointer"
                                   >
                                     View Details
                                   </button>
@@ -494,22 +535,22 @@ function ViewCourseInstructor() {
             </div>
 
             {/* Sidebar */}
-            <div className="lg:col-span-4 p-8 space-y-8 bg-black/2">
+            <div className="lg:col-span-4 p-8 space-y-8" style={{ backgroundColor: colors.background }}>
               <div
-                className="p-6 rounded border space-y-6"
+                className="p-6 rounded-2xl border space-y-6 shadow-sm"
                 style={{
                   backgroundColor: colors.sidebar || colors.background,
-                  borderColor: colors.accent + "15",
+                  borderColor: colors.border || "#e2e8f0",
                 }}
               >
                 <div className="space-y-4">
-                  <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: colors.textSecondary }}>
                     Course Information
                   </p>
                   <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-6">
                       <div className="space-y-1">
-                        <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: colors.textSecondary }}>
                           Language
                         </p>
                         <p
@@ -520,7 +561,7 @@ function ViewCourseInstructor() {
                         </p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: colors.textSecondary }}>
                           Technology
                         </p>
                         <p
@@ -532,7 +573,7 @@ function ViewCourseInstructor() {
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">
+                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: colors.textSecondary }}>
                         Pricing
                       </p>
                       <p
@@ -544,8 +585,8 @@ function ViewCourseInstructor() {
                           : `₹${course.price}`}
                       </p>
                     </div>
-                    <div className="space-y-1 pt-3 border-t border-black/5">
-                      <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">
+                    <div className="space-y-1 pt-3 border-t" style={{ borderColor: colors.border || "#e2e8f0" }}>
+                      <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: colors.textSecondary }}>
                         Instructor Share (%)
                       </p>
                       <p className="text-base font-bold text-indigo-600">
@@ -557,22 +598,25 @@ function ViewCourseInstructor() {
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-xs font-black uppercase tracking-[2px] opacity-40">
+                <h3 className="text-xs font-black uppercase tracking-[2px]" style={{ color: colors.textSecondary }}>
                   What you'll learn
                 </h3>
                 <div className="space-y-3">
                   {course.whatYouWillLearn?.map((item, i) => (
                     <div
                       key={i}
-                      className="flex gap-3 p-3 rounded border bg-white dark:bg-black/20"
-                      style={{ borderColor: colors.accent + "10" }}
+                      className="flex gap-3 p-3 rounded-xl border"
+                      style={{
+                        backgroundColor: colors.sidebar || colors.background,
+                        borderColor: colors.border || "#e2e8f0",
+                      }}
                     >
                       <CheckCircle
                         size={14}
                         className="text-green-500 shrink-0 mt-0.5"
                       />
                       <span
-                        className="text-xs font-semibold opacity-70"
+                        className="text-xs font-semibold"
                         style={{ color: colors.text }}
                       >
                         {item}
@@ -594,11 +638,24 @@ function ViewCourseInstructor() {
       {/* STUDENT DETAILS MODAL */}
       {studentModalOpen && selectedStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div
+            className="w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl shadow-2xl border overflow-hidden"
+            style={{
+              backgroundColor: colors.cardBg || colors.sidebar || "#ffffff",
+              borderColor: colors.border || "#cbd5e1",
+              color: colors.text || "#0f172a",
+            }}
+          >
             {/* Modal Header */}
-            <div className="p-4 px-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 bg-slate-50 dark:bg-slate-800/50">
+            <div
+              className="p-4 px-6 border-b flex items-center justify-between shrink-0"
+              style={{
+                backgroundColor: colors.background,
+                borderColor: colors.border || "#e2e8f0",
+              }}
+            >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-base uppercase shadow-md overflow-hidden relative border border-indigo-500/20">
+                <div className="w-11 h-11 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-base uppercase shadow-md overflow-hidden relative ring-2 ring-indigo-500/20">
                   {selectedStudent.profilePicture?.url ? (
                     <img
                       src={selectedStudent.profilePicture.url}
@@ -618,10 +675,10 @@ function ViewCourseInstructor() {
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
+                  <h3 className="text-lg font-bold leading-tight" style={{ color: colors.text }}>
                     {selectedStudent.name || selectedStudent.fullName || "Student"}
                   </h3>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 mt-0.5">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-0.5 rounded-md border border-emerald-500/20 mt-0.5">
                     <UserCheck size={12} /> Active Student
                   </span>
                 </div>
@@ -629,7 +686,7 @@ function ViewCourseInstructor() {
 
               <button
                 onClick={() => setStudentModalOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-black/5 transition-all"
               >
                 <X size={20} />
               </button>
@@ -638,26 +695,32 @@ function ViewCourseInstructor() {
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto space-y-5 flex-1">
               {/* Profile Card */}
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 space-y-3">
+              <div
+                className="p-4 rounded-2xl border space-y-3"
+                style={{
+                  backgroundColor: colors.background,
+                  borderColor: colors.border || "#e2e8f0",
+                }}
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                   <div>
                     <span className="font-bold uppercase tracking-wider text-slate-400">Email Address</span>
-                    <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5 mt-1">
+                    <div className="font-bold flex items-center gap-1.5 mt-1 text-xs" style={{ color: colors.text }}>
                       <Mail size={14} className="text-indigo-500" /> {selectedStudent.email || "Not Provided"}
                     </div>
                   </div>
                   <div>
                     <span className="font-bold uppercase tracking-wider text-slate-400">Mobile Number</span>
-                    <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5 mt-1">
+                    <div className="font-bold flex items-center gap-1.5 mt-1 text-xs" style={{ color: colors.text }}>
                       <Phone size={14} className="text-indigo-500" /> {selectedStudent.mobile || "Not Provided"}
                     </div>
                   </div>
                 </div>
 
                 {selectedStudent.createdAt && (
-                  <div className="pt-3 border-t border-slate-200 dark:border-slate-700 text-xs">
+                  <div className="pt-3 border-t text-xs" style={{ borderColor: colors.border || "#e2e8f0" }}>
                     <span className="font-bold uppercase tracking-wider text-slate-400">Joined Date</span>
-                    <div className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mt-1">
+                    <div className="font-semibold flex items-center gap-1.5 mt-1" style={{ color: colors.text }}>
                       <Calendar size={14} className="text-indigo-500" />
                       {new Date(selectedStudent.createdAt).toLocaleDateString('en-IN', {
                         day: '2-digit',
@@ -670,18 +733,24 @@ function ViewCourseInstructor() {
               </div>
 
               {/* Course Progress Section */}
-              <div className="p-4 rounded-xl border border-indigo-100 dark:border-indigo-950 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-2">
+              <div
+                className="p-4 rounded-2xl border space-y-2"
+                style={{
+                  backgroundColor: colors.background,
+                  borderColor: colors.border || "#e2e8f0",
+                }}
+              >
                 <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  <span className="font-bold uppercase tracking-wider" style={{ color: colors.textSecondary }}>
                     Course Watch Progress
                   </span>
                   <span className="font-black text-indigo-600 text-sm">
                     {selectedStudent.progressPercentage || selectedStudent.progress || 0}%
                   </span>
                 </div>
-                <div className="w-full h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div className="w-full h-2.5 rounded-full overflow-hidden border" style={{ backgroundColor: colors.sidebar, borderColor: colors.border || "#e2e8f0" }}>
                   <div
-                    className="h-full bg-indigo-600 rounded-full transition-all duration-500"
+                    className="h-full bg-indigo-600 rounded-full transition-all duration-500 shadow-sm"
                     style={{
                       width: `${Math.min(
                         selectedStudent.progressPercentage || selectedStudent.progress || 0,
@@ -693,17 +762,23 @@ function ViewCourseInstructor() {
               </div>
 
               {/* Certificate Status */}
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+              <div
+                className="p-4 rounded-2xl border space-y-2"
+                style={{
+                  backgroundColor: colors.background,
+                  borderColor: colors.border || "#e2e8f0",
+                }}
+              >
                 <span className="block text-xs font-bold uppercase tracking-wider text-slate-400">
                   Completion & Certificate Status
                 </span>
                 {selectedStudent.certificateIssued || (selectedStudent.progressPercentage || 0) >= 100 ? (
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold">
+                  <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs font-bold">
                     <Award size={18} />
                     <span>Certificate Issued & Awarded to Student!</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-xs font-semibold">
+                  <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/20 text-xs font-semibold">
                     <Clock size={18} />
                     <span>In Progress — Certificate will unlock upon 100% course completion.</span>
                   </div>
@@ -712,10 +787,16 @@ function ViewCourseInstructor() {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 px-6 border-t border-slate-200 dark:border-slate-800 flex justify-end shrink-0 bg-slate-50 dark:bg-slate-800/50">
+            <div
+              className="p-4 px-6 border-t flex justify-end shrink-0"
+              style={{
+                backgroundColor: colors.background,
+                borderColor: colors.border || "#e2e8f0",
+              }}
+            >
               <button
                 onClick={() => setStudentModalOpen(false)}
-                className="px-5 py-2 rounded-xl text-xs font-bold bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white hover:bg-slate-300 transition-all"
+                className="px-6 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition-all"
               >
                 Close
               </button>
