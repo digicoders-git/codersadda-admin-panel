@@ -16,6 +16,7 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import {
   getSubscriptions,
+  updateSubscription,
   deleteSubscription as apiDeleteSubscription,
   toggleSubscriptionStatus as apiToggleSubscriptionStatus,
   getStudentsBySubscription,
@@ -401,6 +402,12 @@ function Subscriptions() {
                   className="p-5 text-[10px] font-bold uppercase tracking-widest opacity-60"
                   style={{ color: colors.text }}
                 >
+                  Display Platform
+                </th>
+                <th
+                  className="p-5 text-[10px] font-bold uppercase tracking-widest opacity-60"
+                  style={{ color: colors.text }}
+                >
                   Duration
                 </th>
                 <th
@@ -488,6 +495,30 @@ function Subscriptions() {
                           </span>
                         </div>
                       </div>
+                    </td>
+                    <td className="p-5">
+                      <select
+                        value={plan.displayPlatform || "both"}
+                        onChange={async (e) => {
+                          const val = e.target.value;
+                          try {
+                            const res = await updateSubscription(plan._id, { displayPlatform: val });
+                            if (res.success) {
+                              toast.success(`Platform updated to ${val}`);
+                              fetchSubscriptions();
+                            }
+                          } catch (err) {
+                            toast.error("Failed to update platform");
+                          }
+                        }}
+                        className="px-2.5 py-1 rounded text-xs font-bold border outline-none bg-white cursor-pointer"
+                        style={{ borderColor: colors.accent + "30", color: colors.text }}
+                      >
+                        <option value="both">Both (App & Web)</option>
+                        <option value="app">App Only</option>
+                        <option value="website">Website Only</option>
+                        <option value="none">None</option>
+                      </select>
                     </td>
                     <td className="p-5">
                       <div
