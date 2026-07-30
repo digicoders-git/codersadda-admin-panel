@@ -5,6 +5,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { getBlogById, updateBlog as apiUpdateBlog } from "../../apis/blog";
 import { toast } from "react-toastify";
 import ModernSelect from "../../components/ModernSelect";
+import RichTextEditor from "../../components/RichTextEditor";
 
 function EditWebsiteBlog() {
   const { colors } = useTheme();
@@ -202,20 +203,13 @@ function EditWebsiteBlog() {
           <div className="mt-6">
             <div className="space-y-1">
               <label style={labelStyle}>Blog Description *</label>
-              <textarea
-                required
+              <RichTextEditor
                 value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
+                onChange={(content) =>
+                  setFormData({ ...formData, description: content })
                 }
                 placeholder="Enter blog description..."
-                rows={6}
-                className="w-full px-4 py-2 rounded-md border outline-none text-sm resize-none"
-                style={{
-                  backgroundColor: colors.background,
-                  borderColor: colors.accent + "30",
-                  color: colors.text,
-                }}
+                colors={colors}
               />
             </div>
           </div>

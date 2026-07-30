@@ -245,7 +245,7 @@ function WebsiteServices() {
                     className="text-sm line-clamp-3 mb-4"
                     style={{ color: colors.textSecondary }}
                   >
-                    {service.description}
+                    {service.description ? service.description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() : ""}
                   </p>
 
                   <div className="flex items-center justify-between pt-3 border-t border-slate-100">
@@ -310,7 +310,7 @@ function WebsiteServices() {
                       className="text-sm line-clamp-2"
                       style={{ color: colors.textSecondary }}
                     >
-                      {service.description}
+                      {service.description ? service.description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() : ""}
                     </p>
                   </div>
 

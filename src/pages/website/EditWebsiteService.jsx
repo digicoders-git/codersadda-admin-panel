@@ -5,6 +5,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { getServiceById, updateService } from "../../apis/service";
 import { toast } from "react-toastify";
 import ModernSelect from "../../components/ModernSelect";
+import RichTextEditor from "../../components/RichTextEditor";
 
 function EditWebsiteService() {
   const { colors } = useTheme();
@@ -168,14 +169,11 @@ function EditWebsiteService() {
             <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: colors.textSecondary }}>
               Service Description *
             </label>
-            <textarea
-              required
-              rows={5}
+            <RichTextEditor
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(content) => setFormData({ ...formData, description: content })}
               placeholder="Write detailed description of this service offering..."
-              className="w-full px-4 py-2.5 rounded-lg border outline-none text-sm"
-              style={{ backgroundColor: colors.background, borderColor: colors.accent + "30", color: colors.text }}
+              colors={colors}
             />
           </div>
 

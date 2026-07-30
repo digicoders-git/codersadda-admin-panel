@@ -272,7 +272,7 @@ function WebsiteBlogs() {
                     className="text-sm mb-4 line-clamp-3"
                     style={{ color: colors.textSecondary }}
                   >
-                    {blog.description}
+                    {blog.description ? blog.description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() : ""}
                   </p>
 
                   <div className="flex gap-2">
@@ -352,7 +352,7 @@ function WebsiteBlogs() {
                           className="text-sm line-clamp-2"
                           style={{ color: colors.textSecondary }}
                         >
-                          {blog.description}
+                          {blog.description ? blog.description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() : ""}
                         </p>
                       </div>
 

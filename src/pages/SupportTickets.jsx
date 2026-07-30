@@ -284,9 +284,18 @@ function SupportTickets() {
                     </td>
 
                     <td className="p-4">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 mb-1">
-                        <Tag size={10} /> {t.category}
-                      </span>
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 border border-indigo-500/20">
+                          <Tag size={10} /> {t.category}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md border ${
+                          t.source === 'Website' 
+                            ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' 
+                            : 'bg-blue-500/10 text-blue-600 border-blue-500/20'
+                        }`}>
+                          {t.source === 'Website' ? '🌐 Website' : '📱 Mobile App'}
+                        </span>
+                      </div>
                       <div className="font-semibold text-sm line-clamp-1" style={{ color: colors.text }}>
                         {t.subject}
                       </div>
