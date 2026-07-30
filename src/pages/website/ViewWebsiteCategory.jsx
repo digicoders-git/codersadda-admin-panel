@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Edit, Trash2, Tag, Globe, FileText } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
-// import {
-//   getCategoryById,
-//   deleteCategory as apiDeleteCategory,
-// } from "../../apis/courseCategory";
+import {
+  getCourseCategoryById,
+  deleteCourseCategory,
+} from "../../apis/courseCategory";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 
@@ -20,9 +20,15 @@ function ViewWebsiteCategory() {
     const fetchCategory = async () => {
       try {
         setLoading(true);
-        const res = await getCategoryById(id);
+        const res = await getCourseCategoryById(id);
         if (res.success && res.data) {
-          setCategory(res.data);
+          const cat = res.data;
+          setCategory({
+            ...cat,
+            technology: cat.name,
+            status: cat.isActive ? "Active" : "Disabled",
+            image: cat.image?.url || null
+          });
         } else {
           toast.error("Category not found");
           navigate("/dashboard/website/categories");
@@ -50,7 +56,7 @@ function ViewWebsiteCategory() {
 
     if (result.isConfirmed) {
       try {
-        const res = await apiDeleteCategory(id);
+        const res = await deleteCourseCategory(id);
         if (res.success) {
           toast.success("Category deleted successfully!");
           navigate("/dashboard/website/categories");
