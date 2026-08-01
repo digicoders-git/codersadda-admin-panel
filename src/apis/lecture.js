@@ -1,17 +1,16 @@
 import http from './http';
 
 export const createLecture = async (data) => {
-  const response = await http.post('/lecture/create', data, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const isFormData = data instanceof FormData;
+  const config = isFormData ? { headers: { 'Content-Type': undefined } } : {};
+  const response = await http.post('/lecture/create', data, config);
   return response.data;
 };
 
 export const updateLecture = async (id, data) => {
   const isFormData = data instanceof FormData;
-  const response = await http.patch(`/lecture/update/${id}`, data, {
-    headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : { 'Content-Type': 'application/json' },
-  });
+  const config = isFormData ? { headers: { 'Content-Type': undefined } } : {};
+  const response = await http.patch(`/lecture/update/${id}`, data, config);
   return response.data;
 };
 
