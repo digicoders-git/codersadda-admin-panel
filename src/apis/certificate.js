@@ -1,9 +1,7 @@
 import http from './http';
 
 export const saveCertificateTemplate = async (formData) => {
-  const response = await http.post('/certificate/template/save', formData, {
-    headers: { 'Content-Type': undefined },
-  });
+  const response = await http.post('/certificate/template/save', formData);
   return response.data;
 };
 
