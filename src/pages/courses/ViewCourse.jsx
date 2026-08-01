@@ -254,7 +254,7 @@ function ViewCourse() {
       });
       if (res.success) {
         toast.info(`Lecture ${newStatus}`);
-        fetchCourse();
+        await fetchCourse();
       }
     } catch (error) {
       toast.error("Failed to update status");
@@ -269,7 +269,13 @@ function ViewCourse() {
       const res = await toggleCourseReviewStatus(course._id, reviewId);
       if (res.success) {
         toast.success(res.message);
-        fetchCourse();
+        setCourse(prev => {
+          if (!prev) return prev;
+          const updatedReviews = prev.reviews.map(r => 
+            r._id === reviewId ? { ...r, isApproved: res.isApproved } : r
+          );
+          return { ...prev, reviews: updatedReviews };
+        });
       }
     } catch (error) {
       toast.error("Failed to update review status");
