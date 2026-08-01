@@ -343,8 +343,10 @@ export default function GenerateCertificate() {
       data.append("sampleTexts", JSON.stringify(sampleTexts));
 
       const response = await saveCertificateTemplate(data);
-      if (response.success)
+      if (response.success) {
         toast.success("Certificate template saved successfully!");
+        navigate("/dashboard/courses/manage-certificates");
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to save template");
     } finally {
