@@ -30,6 +30,7 @@ import { useTheme } from "../../context/ThemeContext";
 import {
   getCourseById,
   updateCourse as apiUpdateCourse,
+  toggleCourseReviewStatus,
 } from "../../apis/course";
 import { createTopic, updateTopic, deleteTopic } from "../../apis/curriculum";
 import { deleteLecture, updateLecture } from "../../apis/lecture";
@@ -262,6 +263,21 @@ function ViewCourse() {
     }
   };
 
+  const handleToggleReviewStatus = async (reviewId) => {
+    try {
+      setActionLoading(reviewId);
+      const res = await toggleCourseReviewStatus(course._id, reviewId);
+      if (res.success) {
+        toast.success(res.message);
+        fetchCourse();
+      }
+    } catch (error) {
+      toast.error("Failed to update review status");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   return (
     <div className="w-full mx-auto pb-20 pt-2 px-4 h-full overflow-auto">
       {/* Header */}
@@ -408,7 +424,7 @@ function ViewCourse() {
               <div className="space-y-1">
                 <label style={labelStyle}>Stats</label>
                 <div className="flex gap-4 text-[11px] font-bold opacity-60">
-                  <p>{course.studentsEnrolled || 0} Students</p>
+                  <p>{course.totalStudents || 0} Students</p>
                   <p>{course.duration || "Not Set"} Duration</p>
                   <p>{course.rating || 0} Rating</p>
                 </div>
@@ -816,6 +832,25 @@ function ViewCourse() {
                         ? new Date(review.createdAt).toLocaleDateString()
                         : "--"}
                     </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {actionLoading === review._id ? (
+                      <Loader size={14} />
+                    ) : (
+                      <Toggle
+                        active={review.isApproved !== false}
+                        onClick={() => handleToggleReviewStatus(review._id)}
+                      />
+                    )}
+                    <span
+                      className={`text-[9px] font-bold uppercase ${
+                        review.isApproved !== false
+                          ? "text-green-500"
+                          : "text-red-500"
+                      }`}
+                    >
+                      {review.isApproved !== false ? "Approved" : "Pending"}
+                    </span>
                   </div>
                 </div>
               ))}

@@ -43,3 +43,8 @@ export const getCategoriesWithCount = async () => {
   const response = await http.get('/course/categories-with-count');
   return response.data;
 };
+
+export const toggleCourseReviewStatus = async (courseId, reviewId) => {
+  const response = await http.patch(`/course/toggle-review-status/${courseId}/${reviewId}`);
+  return response.data;
+};
