@@ -139,6 +139,7 @@ function EditLecture() {
     if (file) {
       const videoUrl = URL.createObjectURL(file);
       const videoElement = document.createElement("video");
+      videoElement.preload = "metadata";
       videoElement.src = videoUrl;
 
       videoElement.onloadedmetadata = () => {
@@ -150,7 +151,7 @@ function EditLecture() {
         const durationStr =
           h > 0
             ? `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`
-            : `${m}:${s.toString().padStart(2, "0")}`;
+            : `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 
         setFormData((prev) => ({
           ...prev,
@@ -159,6 +160,10 @@ function EditLecture() {
           duration: durationStr,
         }));
         toast.info(`Video updated: ${file.name}`);
+      };
+
+      videoElement.onerror = () => {
+        toast.error("Failed to load video metadata. Is it a valid video format?");
       };
     }
   };
