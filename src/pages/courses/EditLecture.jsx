@@ -106,12 +106,20 @@ function EditLecture() {
 
       if (videoInputRef.current?.files[0]) {
         payload.append("video", videoInputRef.current.files[0]);
+      } else if (!formData.videoFileName) {
+        payload.append("removeVideo", "true");
       }
+      
       if (thumbnailInputRef.current?.files[0]) {
         payload.append("thumbnail", thumbnailInputRef.current.files[0]);
+      } else if (!formData.thumbnailUrl) {
+        payload.append("removeThumbnail", "true");
       }
+      
       if (pdfInputRef.current?.files[0]) {
         payload.append("resource", pdfInputRef.current.files[0]);
+      } else if (!formData.pdfFileName) {
+        payload.append("removeResource", "true");
       }
 
       const res = await updateLecture(lectureId, payload);
