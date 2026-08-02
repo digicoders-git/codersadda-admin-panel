@@ -49,10 +49,10 @@ function ViewLecture() {
             lectureSrNo: l.srNo,
             isLocked: l.privacy === "locked",
             videoUrl: l.video?.url,
+            videoFileName: l.video?.url?.split("/").pop() || l.video?.public_id?.split("/").pop() || "Video File",
             thumbnailUrl: l.thumbnail?.url,
             pdfUrl: l.resource?.url,
-            pdfFileName:
-              l.resource?.public_id?.split("/").pop() || "Download Notes",
+            pdfFileName: l.resource?.url?.split("/").pop() || l.resource?.public_id?.split("/").pop() || "Download Notes",
           });
         }
       } catch (error) {
