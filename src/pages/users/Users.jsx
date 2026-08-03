@@ -286,17 +286,25 @@ function Users() {
                           className="w-10 h-10 rounded-full overflow-hidden border shadow-sm shrink-0"
                           style={{ borderColor: colors.accent + "20" }}
                         >
-                          {user.profilePicture?.url ? (
+                          {user.profilePicture?.url || (typeof user.profilePicture === 'string' && user.profilePicture) || user.picture ? (
                             <img
-                              src={user.profilePicture.url}
+                              src={user.profilePicture?.url || (typeof user.profilePicture === 'string' ? user.profilePicture : null) || user.picture}
                               alt={user.name}
                               className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
                             />
                           ) : (
                             <div className="w-full h-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold">
-                              {user.name?.charAt(0)}
+                              {user.name?.charAt(0) || "U"}
                             </div>
                           )}
+                          <div className="w-full h-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold hidden">
+                            {user.name?.charAt(0) || "U"}
+                          </div>
                         </div>
                         <div className="flex flex-col">
                           <span className="text-sm font-bold truncate max-w-[150px]">

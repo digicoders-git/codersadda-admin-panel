@@ -192,17 +192,25 @@ function ViewUser() {
               className="w-24 h-24 rounded-full border-4 shadow-md overflow-hidden shrink-0"
               style={{ borderColor: colors.primary + "20" }}
             >
-              {user.profilePhoto ? (
+              {user.profilePicture?.url || (typeof user.profilePicture === 'string' && user.profilePicture) || user.picture ? (
                 <img
-                  src={user.profilePhoto}
+                  src={user.profilePicture?.url || (typeof user.profilePicture === 'string' ? user.profilePicture : null) || user.picture}
                   alt={user.name}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
                 />
               ) : (
                 <div className="w-full h-full bg-purple-100 flex items-center justify-center text-purple-600 text-3xl font-bold">
-                  {user.name?.charAt(0)}
+                  {user.name?.charAt(0) || "U"}
                 </div>
               )}
+              <div className="w-full h-full bg-purple-100 flex items-center justify-center text-purple-600 text-3xl font-bold hidden">
+                {user.name?.charAt(0) || "U"}
+              </div>
             </div>
             <div className="flex-1 text-center md:text-left">
               <h2

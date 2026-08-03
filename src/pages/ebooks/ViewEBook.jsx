@@ -200,9 +200,9 @@ function ViewEBook() {
                         style={{ borderColor: colors.accent + "10" }}
                       >
                         <div className="flex flex-wrap gap-4">
-                          {(ebook.pdf?.url || ebook.pdf?.localUrl) && (
+                          {(ebook.pdf?.localUrl || ebook.pdf?.url) && (
                             <a
-                              href={ebook.pdf.url || ebook.pdf.localUrl}
+                              href={ebook.pdf.localUrl || ebook.pdf.url}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-6 py-3 rounded-lg font-bold uppercase tracking-widest text-xs flex items-center gap-2 transition-all shadow-lg active:scale-95"

@@ -15,6 +15,8 @@ import Jobs from "../pages/jobs/Jobs";
 import AddJob from "../pages/jobs/AddJob";
 import EditJob from "../pages/jobs/EditJob";
 import ViewJob from "../pages/jobs/ViewJob";
+import JobApplications from "../pages/job-applications/JobApplications";
+import ViewApplication from "../pages/job-applications/ViewApplication";
 import AddLecture from "../pages/courses/AddLecture";
 import ViewLecture from "../pages/courses/ViewLecture";
 import EditLecture from "../pages/courses/EditLecture";
@@ -86,6 +88,8 @@ import Coupons from "../pages/coupons/Coupons";
 import AddCoupon from "../pages/coupons/AddCoupon";
 import EditCoupon from "../pages/coupons/EditCoupon";
 import SupportTickets from "../pages/SupportTickets";
+import Notifications from "../pages/Notifications";
+import CreateNotification from "../pages/CreateNotification";
 
 export const AppRoute = [
   { path: "courses/manage-certificates", component: ManageCertificates },
@@ -97,6 +101,8 @@ export const AppRoute = [
   { path: "sales/ebooks", component: EbookSales },
   { path: "sales/jobs", component: JobSales },
   { path: "sales/subscriptions", component: SubscriptionSales },
+  { path: "notifications", component: Notifications },
+  { path: "notifications/create", component: CreateNotification },
   { path: "category", component: Category },
   { path: "courses", component: Courses },
   { path: "courses/topics", component: AllTopics },
@@ -124,6 +130,8 @@ export const AppRoute = [
   { path: "jobs/enrolled", component: JobEnrollments },
   { path: "jobs/edit/:id", component: EditJob },
   { path: "jobs/view/:id", component: ViewJob },
+  { path: "job-applications", component: JobApplications },
+  { path: "job-applications/:id", component: ViewApplication },
   { path: "subscriptions", component: Subscriptions },
   { path: "subscriptions/add", component: AddSubscription },
   { path: "subscriptions/enrolled", component: EnrolledStudents },

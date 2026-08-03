@@ -107,22 +107,26 @@ const CertificatePreviewCanvas = ({
       ctx.fillStyle = "#1e1e2d";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      const isThumbnail = canvas.width < 300;
+
       // Draw border
       ctx.strokeStyle = "#ef4444";
-      ctx.lineWidth = 4;
-      ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+      ctx.lineWidth = isThumbnail ? 2 : 4;
+      ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
 
       // Draw Error text
-      ctx.font = "bold 28px sans-serif";
+      ctx.font = `bold ${isThumbnail ? 12 : 28}px sans-serif`;
       ctx.fillStyle = "#ef4444";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("Background Template Image Missing (404)", canvas.width / 2, canvas.height / 2 - 25);
+      ctx.fillText(isThumbnail ? "No Image" : "Background Template Image Missing (404)", canvas.width / 2, canvas.height / 2 - (isThumbnail ? 0 : 25));
 
       // Draw Instruction text
-      ctx.font = "18px sans-serif";
-      ctx.fillStyle = "#a1a1aa";
-      ctx.fillText("Please click Edit and upload/save the certificate image again.", canvas.width / 2, canvas.height / 2 + 25);
+      if (!isThumbnail) {
+        ctx.font = "18px sans-serif";
+        ctx.fillStyle = "#a1a1aa";
+        ctx.fillText("Please click Edit and upload/save the certificate image again.", canvas.width / 2, canvas.height / 2 + 25);
+      }
     };
   }, [template, width, height]);
 
