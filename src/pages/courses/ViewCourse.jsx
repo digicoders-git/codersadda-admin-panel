@@ -25,15 +25,26 @@ import {
   Info,
   Layout,
   X,
+  Folder,
+  Hash,
+  ShieldAlert,
+  RotateCcw,
+  Search,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import {
   getCourseById,
   updateCourse as apiUpdateCourse,
   toggleCourseReviewStatus,
+  toggleCourseStatus,
 } from "../../apis/course";
 import { createTopic, updateTopic, deleteTopic } from "../../apis/curriculum";
 import { deleteLecture, updateLecture } from "../../apis/lecture";
+import {
+  getCourseStudents,
+  toggleCourseAccess,
+  resetCourseProgress,
+} from "../../apis/courseEnrollment";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import Toggle from "../../components/ui/Toggle";
@@ -51,6 +62,11 @@ function ViewCourse() {
   const [openSections, setOpenSections] = useState({});
   const [showCertModal, setShowCertModal] = useState(false);
   const [showModalContent, setShowModalContent] = useState(false);
+
+  const [activeTab, setActiveTab] = useState("content");
+  const [students, setStudents] = useState([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
+  const [studentSearch, setStudentSearch] = useState("");
 
   const labelStyle = {
     color: colors.textSecondary,
@@ -115,6 +131,119 @@ function ViewCourse() {
       }
     };
   }, [id]);
+
+  const fetchStudents = async () => {
+    if (!id) return;
+    try {
+      setStudentsLoading(true);
+      const res = await getCourseStudents(id);
+      if (res.success) {
+        setStudents(res.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch course students", error);
+    } finally {
+      setStudentsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "users") {
+      fetchStudents();
+    }
+  }, [activeTab, id]);
+
+  const handleToggleCourseStatus = async () => {
+    try {
+      setActionLoading("toggle-course-status");
+      const res = await toggleCourseStatus(id);
+      if (res.success) {
+        toast.info(res.message);
+        await fetchCourse();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Error updating course status");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleToggleAccess = async (userId) => {
+    try {
+      setActionLoading(userId);
+      const res = await toggleCourseAccess(userId, id);
+      if (res.success) {
+        toast.success(res.message || "Access status updated!");
+        fetchStudents();
+      }
+    } catch (error) {
+      toast.error("Failed to update access status");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleResetProgress = async (userId) => {
+    Swal.fire({
+      title: "Reset Progress?",
+      text: "This will reset all course progress for this student.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      confirmButtonText: "Yes, reset",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          setActionLoading(userId);
+          const res = await resetCourseProgress(userId, id);
+          if (res.success) {
+            toast.success(res.message || "Progress reset successfully!");
+          }
+        } catch (error) {
+          toast.error("Failed to reset progress");
+        } finally {
+          setActionLoading(null);
+        }
+      }
+    });
+  };
+
+  const handleAddContentClick = (type) => {
+    if (type === "folder") {
+      handleAddTopic();
+      return;
+    }
+
+    if (!course?.curriculum || course.curriculum.length === 0) {
+      toast.warning("Please add at least one Topic (Folder) first!");
+      return;
+    }
+
+    // If there is only one section/topic, directly select it
+    if (course.curriculum.length === 1) {
+      navigate(`/dashboard/courses/view/${course._id}/add-lecture/${course.curriculum[0]._id}?type=${type}`);
+      return;
+    }
+
+    // Otherwise, show a quick SweetAlert2 dropdown selector
+    Swal.fire({
+      title: "Select Topic / Module",
+      text: `Choose which topic to add this ${type} content to:`,
+      input: "select",
+      inputOptions: course.curriculum.reduce((acc, item) => {
+        acc[item._id] = item.title;
+        return acc;
+      }, {}),
+      inputPlaceholder: "Select a topic...",
+      showCancelButton: true,
+      confirmButtonText: "Continue",
+      confirmButtonColor: colors.primary,
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        navigate(`/dashboard/courses/view/${course._id}/add-lecture/${result.value}?type=${type}`);
+      }
+    });
+  };
 
   const toggleSection = (sectionId) => {
     setOpenSections((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }));
@@ -302,676 +431,910 @@ function ViewCourse() {
     }
   };
 
+  const filteredStudents = students.filter(
+    (s) =>
+      s.student?.fullName?.toLowerCase().includes(studentSearch.toLowerCase()) ||
+      s.student?.email?.toLowerCase().includes(studentSearch.toLowerCase()) ||
+      s.student?.phone?.includes(studentSearch)
+  );
+
   return (
     <div className="w-full mx-auto pb-20 pt-2 px-4 h-full overflow-auto">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <button
-          onClick={() => navigate("/dashboard/courses")}
-          className="p-2 rounded-lg transition-all cursor-pointer border"
-          style={{
-            color: colors.text,
-            backgroundColor: colors.sidebar || colors.background,
-            borderColor: colors.accent + "20",
-          }}
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold" style={{ color: colors.text }}>
-            View Course
-          </h1>
-        </div>
-        {course && (
+      <div className="flex items-center justify-between mb-8 pb-4 border-b" style={{ borderColor: colors.accent + "10" }}>
+        <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate(`/dashboard/courses/edit/${course._id}`)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all active:scale-95 text-white shadow-md cursor-pointer"
-            style={{ backgroundColor: colors.primary }}
+            onClick={() => navigate("/dashboard/courses")}
+            className="p-2 rounded-lg transition-all cursor-pointer border"
+            style={{
+              color: colors.text,
+              backgroundColor: colors.sidebar || colors.background,
+              borderColor: colors.accent + "20",
+            }}
           >
-            <Edit size={16} /> Edit Course
+            <ArrowLeft size={20} />
           </button>
+          <div>
+            <h1 className="text-xl font-extrabold uppercase tracking-wide animate-none" style={{ color: colors.text }}>
+              {course ? course.title : "View Course"}
+            </h1>
+          </div>
+        </div>
+
+        {course && (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(`/dashboard/courses/edit/${course._id}`)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border font-bold text-xs uppercase tracking-widest transition-all hover:bg-black/[0.03] shadow-sm cursor-pointer"
+              style={{
+                borderColor: colors.accent + "30",
+                color: colors.text,
+                backgroundColor: colors.sidebar || colors.background,
+              }}
+            >
+              <Edit size={14} /> Edit
+            </button>
+
+            <button
+              onClick={handleToggleCourseStatus}
+              disabled={actionLoading === "toggle-course-status"}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-widest transition-all active:scale-95 text-white shadow-md cursor-pointer"
+              style={{
+                backgroundColor: course.isActive ? "#1f2937" : colors.primary,
+              }}
+            >
+              {actionLoading === "toggle-course-status" ? (
+                <Loader size={12} variant="button" />
+              ) : (
+                <>
+                  <Lock size={14} />
+                  <span>{course.isActive ? "Unpublish" : "Publish"}</span>
+                </>
+              )}
+            </button>
+          </div>
         )}
       </div>
+
+      {/* Tabs */}
+      {course && (
+        <div className="flex border-b mb-6 gap-6" style={{ borderColor: colors.accent + "20" }}>
+          {[
+            { id: "overview", label: "Overview" },
+            { id: "content", label: "Content" },
+            { id: "links", label: "Links" },
+            { id: "forum", label: "Forum" },
+            { id: "chat", label: "Chat" },
+            { id: "posts", label: "Posts" },
+            { id: "users", label: "Users" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`pb-3 text-xs font-bold tracking-wider relative transition-all uppercase cursor-pointer ${
+                activeTab === tab.id ? "opacity-100" : "opacity-40 hover:opacity-80"
+              }`}
+              style={{
+                color: colors.text,
+              }}
+            >
+              {tab.label}
+              {activeTab === tab.id && (
+                <span
+                  className="absolute bottom-0 left-0 w-full h-[2.5px] rounded-full"
+                  style={{ backgroundColor: colors.primary }}
+                />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center p-20">
           <Loader size={80} />
         </div>
       ) : course ? (
-        <div className="w-full space-y-6">
-          {/* General Information */}
-          <Card>
-            <SectionHeader icon={Info} title="General Information" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-1">
-                <label style={labelStyle}>Course Title</label>
-                <p className="text-sm font-bold" style={{ color: colors.text }}>
-                  {course.title}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label style={labelStyle}>Instructor</label>
-                  <p
-                    className="text-sm font-bold"
-                    style={{ color: colors.text }}
-                  >
-                    {typeof course.instructor === "object"
-                      ? course.instructor?.fullName
-                      : course.instructor || "--"}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <label style={labelStyle}>Instructor Share</label>
-                  <p
-                    className="text-sm font-bold"
-                    style={{ color: colors.text }}
-                  >
-                    {course.priceForInstructor || 0}%
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label style={labelStyle}>Category</label>
-                <p className="text-sm font-bold" style={{ color: colors.text }}>
-                  {course.category?.name ||
-                    (typeof course.category === "string"
-                      ? course.category
-                      : "--")}
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <label style={labelStyle}>Technology</label>
-                <p className="text-sm font-bold" style={{ color: colors.text }}>
-                  {course.technology || "--"}
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <label style={labelStyle}>Price Details</label>
-                <div className="flex items-center gap-3">
-                  <span
-                    className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest"
-                    style={{
-                      backgroundColor: colors.primary + "15",
-                      color: colors.primary,
-                    }}
-                  >
-                    {course.priceType || "Free"}
-                  </span>
-                  {course.priceType?.toLowerCase() === "paid" && (
-                    <p
-                      className="text-sm font-bold"
-                      style={{ color: colors.text }}
-                    >
-                      ₹{course.price}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label style={labelStyle}>Course Badge</label>
-                  <p
-                    className="text-sm font-bold uppercase"
-                    style={{ color: colors.text }}
-                  >
-                    {course.badge || "Normal"}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <label style={labelStyle}>Status</label>
-                  <span
-                    className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${
-                      course.isActive
-                        ? "bg-green-100 text-green-600"
-                        : "bg-red-100 text-red-600"
-                    }`}
-                  >
-                    {course.isActive ? "Active" : "Disabled"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label style={labelStyle}>Certificate Template</label>
-                <p className="text-sm font-bold" style={{ color: colors.text }}>
-                  {course.certificateTemplate?.certificateName ||
-                    "No template assigned"}
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <label style={labelStyle}>Stats</label>
-                <div className="flex gap-4 text-[11px] font-bold opacity-60">
-                  <p>{course.totalStudents || 0} Students</p>
-                  <p>{course.duration || "Not Set"} Duration</p>
-                  <p>{course.rating || 0} Rating</p>
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Course Details */}
-          <Card>
-            <SectionHeader icon={Layout} title="Course Details" />
+        <div className="w-full">
+          {activeTab === "overview" && (
             <div className="space-y-6">
-              <div className="space-y-1">
-                <label style={labelStyle}>Course Description</label>
-                <p
-                  className="text-sm leading-relaxed opacity-80"
-                  style={{ color: colors.text }}
-                >
-                  {course.description || "No description provided."}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <label style={labelStyle}>What you will learn</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {course.whatYouWillLearn?.map((item, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2 p-2 rounded bg-black/5"
-                    >
-                      <CheckCircle size={14} className="text-green-500" />
-                      <span
-                        className="text-sm font-medium"
-                        style={{ color: colors.text }}
-                      >
-                        {item}
-                      </span>
-                    </div>
-                  ))}
-                  {(!course.whatYouWillLearn ||
-                    course.whatYouWillLearn.length === 0) && (
-                    <p className="text-xs opacity-40">No points added.</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Course Assets */}
-          <Card>
-            <SectionHeader icon={Play} title="Course Assets" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label style={labelStyle}>Thumbnail Image</label>
-                <div
-                  className="relative h-44 rounded-lg border border-dashed flex items-center justify-center overflow-hidden"
-                  style={{
-                    borderColor: colors.accent + "30",
-                    backgroundColor: colors.background,
-                  }}
-                >
-                  {course.thumbnail ? (
-                    <img
-                      src={
-                        typeof course.thumbnail === "string"
-                          ? course.thumbnail
-                          : course.thumbnail.url
-                      }
-                      alt="Thumbnail"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="text-center opacity-40">
-                      <Layout size={32} className="mx-auto mb-2" />
-                      <p className="text-xs font-bold">No Image</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label style={labelStyle}>Promo Video</label>
-                <div
-                  className="h-44 rounded-lg border border-dashed flex items-center justify-center relative overflow-hidden bg-black"
-                  style={{ borderColor: colors.accent + "30" }}
-                >
-                  {course.promoVideo ? (
-                    <video
-                      src={
-                        typeof course.promoVideo === "string"
-                          ? course.promoVideo
-                          : course.promoVideo.url
-                      }
-                      controls
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="text-center opacity-40">
-                      <VideoIcon size={32} className="mx-auto mb-2" />
-                      <p className="text-xs font-bold text-white">No Video</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Curriculum Section */}
-          <Card>
-            <div className="flex items-center justify-between mb-6">
-              <h2
-                className="text-lg font-bold flex items-center gap-2"
-                style={{ color: colors.text }}
-              >
-                <Monitor size={18} className="text-primary" /> Course Content
-              </h2>
-              <button
-                onClick={handleAddTopic}
-                disabled={actionLoading === "topic-add"}
-                className="flex cursor-pointer items-center gap-2 px-4 py-2 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all active:scale-95 text-white disabled:opacity-50"
-                style={{ backgroundColor: colors.primary }}
-              >
-                {actionLoading === "topic-add" ? (
-                  <Loader size={12} />
-                ) : (
-                  <Plus size={14} />
-                )}
-                Add New Topic
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {course.curriculum?.map((section, sIdx) => (
-                <div
-                  key={section._id}
-                  className="rounded-lg border overflow-hidden"
-                  style={{
-                    backgroundColor: colors.background,
-                    borderColor: colors.accent + "15",
-                  }}
-                >
-                  <div
-                    className="p-4 flex items-center justify-between border-b"
-                    style={{
-                      backgroundColor: colors.sidebar + "20",
-                      borderColor: colors.accent + "10",
-                    }}
-                  >
-                    <div
-                      className="flex items-center gap-3 cursor-pointer flex-1"
-                      onClick={() => toggleSection(section._id)}
-                    >
-                      <ChevronDown
-                        size={16}
-                        className={`transition-transform duration-300 ${
-                          openSections[section._id] ? "rotate-180" : ""
-                        }`}
-                        style={{ color: colors.text }}
-                      />
-                      <div>
-                        <p
-                          className="text-sm font-bold uppercase tracking-wider"
-                          style={{ color: colors.text }}
-                        >
-                          Topic {sIdx + 1}: {section.title}
-                        </p>
-                        <p className="text-[10px] font-bold opacity-40 uppercase">
-                          {section.lessons?.length || 0} Lectures
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() =>
-                          handleEditTopic(section._id, section.title)
-                        }
-                        disabled={actionLoading === section._id}
-                        className="p-1.5 cursor-pointer text-blue-500 hover:bg-blue-500/10 rounded transition-all"
-                      >
-                        {actionLoading === section._id ? (
-                          <Loader size={12} />
-                        ) : (
-                          <Edit size={16} />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTopic(section._id)}
-                        disabled={actionLoading === section._id}
-                        className="p-1.5 cursor-pointer text-red-500 hover:bg-red-500/10 rounded transition-all"
-                      >
-                        {actionLoading === section._id ? (
-                          <Loader size={12} />
-                        ) : (
-                          <Trash2 size={16} />
-                        )}
-                      </button>
-                    </div>
+              {/* General Information */}
+              <Card>
+                <SectionHeader icon={Info} title="General Information" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <label style={labelStyle}>Course Title</label>
+                    <p className="text-sm font-bold" style={{ color: colors.text }}>
+                      {course.title}
+                    </p>
                   </div>
 
-                  {openSections[section._id] && (
-                    <div className="p-2 space-y-1">
-                      <button
-                        onClick={() =>
-                          navigate(
-                            `/dashboard/courses/view/${course._id}/add-lecture/${section._id}`,
-                          )
-                        }
-                        className="w-full p-2 mb-2 rounded border border-dashed border-primary/30 text-primary font-bold text-[10px] uppercase tracking-widest hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-2"
-                      >
-                        <Plus size={14} /> Add New Lecture
-                      </button>
-
-                      {section.lessons?.map((lesson, lIdx) => {
-                        const typeThemes = {
-                          video: { border: "rgba(59, 130, 246, 0.15)", bg: "rgba(59, 130, 246, 0.02)", iconBg: "rgba(59, 130, 246, 0.1)", iconColor: "#3b82f6", icon: VideoIcon },
-                          pdf: { border: "rgba(239, 68, 68, 0.15)", bg: "rgba(239, 68, 68, 0.02)", iconBg: "rgba(239, 68, 68, 0.1)", iconColor: "#ef4444", icon: FileText },
-                          live: { border: "rgba(244, 63, 94, 0.2)", bg: "rgba(244, 63, 94, 0.03)", iconBg: "rgba(244, 63, 94, 0.1)", iconColor: "#f43f5e", icon: Play },
-                          youtube_zoom: { border: "rgba(99, 102, 241, 0.15)", bg: "rgba(99, 102, 241, 0.02)", iconBg: "rgba(99, 102, 241, 0.1)", iconColor: "#6366f1", icon: Monitor },
-                          webinar: { border: "rgba(16, 185, 129, 0.15)", bg: "rgba(16, 185, 129, 0.02)", iconBg: "rgba(16, 185, 129, 0.1)", iconColor: "#10b981", icon: Layout },
-                          test: { border: "rgba(245, 158, 11, 0.15)", bg: "rgba(245, 158, 11, 0.02)", iconBg: "rgba(245, 158, 11, 0.1)", iconColor: "#f59e0b", icon: CheckCircle },
-                          subjective_test: { border: "rgba(168, 85, 247, 0.15)", bg: "rgba(168, 85, 247, 0.02)", iconBg: "rgba(168, 85, 247, 0.1)", iconColor: "#a855f7", icon: Hash },
-                        };
-                        const typeTheme = typeThemes[lesson.contentType] || typeThemes.video;
-                        const IconComponent = typeTheme.icon;
-
-                        return (
-                          <div
-                            key={lesson._id}
-                            className="p-3.5 rounded-xl border mb-2 flex items-center justify-between transition-all hover:shadow-md"
-                            style={{
-                              borderColor: typeTheme.border,
-                              backgroundColor: typeTheme.bg,
-                            }}
-                          >
-                            <div className="flex items-center gap-4">
-                              <div
-                                className="w-10 h-10 rounded-lg flex items-center justify-center font-bold"
-                                style={{
-                                  backgroundColor: typeTheme.iconBg,
-                                  color: typeTheme.iconColor,
-                                }}
-                              >
-                                <IconComponent size={20} />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <p
-                                    className="text-sm font-bold"
-                                    style={{ color: colors.text }}
-                                  >
-                                    {lesson.title}
-                                  </p>
-                                  {lesson.contentType === "live" && (
-                                    <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border ${
-                                      lesson.liveStatus === "live"
-                                        ? "bg-red-50 text-red-500 border-red-100 animate-pulse"
-                                        : lesson.liveStatus === "ended"
-                                        ? "bg-gray-100 text-gray-500 border-gray-200"
-                                        : "bg-amber-50 text-amber-600 border-amber-100"
-                                    }`}>
-                                      {lesson.liveStatus === "live" ? "🔴 Live" : lesson.liveStatus === "ended" ? "Ended" : "Scheduled"}
-                                    </span>
-                                  )}
-                                  {lesson.contentType === "youtube_zoom" && (
-                                    <span className="text-[8px] font-bold uppercase text-blue-500 px-1.5 py-0.5 rounded bg-blue-50 border border-blue-100">
-                                      Zoom/YT Live
-                                    </span>
-                                  )}
-                                  {lesson.contentType === "webinar" && (
-                                    <span className="text-[8px] font-bold uppercase text-emerald-600 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-100">
-                                      Webinar
-                                    </span>
-                                  )}
-                                  {lesson.contentType === "test" && (
-                                    <span className="text-[8px] font-bold uppercase text-amber-500 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-100">
-                                      Quiz / Test
-                                    </span>
-                                  )}
-                                  {lesson.contentType === "subjective_test" && (
-                                    <span className="text-[8px] font-bold uppercase text-purple-500 px-1.5 py-0.5 rounded bg-purple-50 border border-purple-100">
-                                      Subjective Test
-                                    </span>
-                                  )}
-                                  {lesson.isPreview && (
-                                    <span className="text-[8px] font-bold uppercase text-blue-500 px-1.5 py-0.5 rounded bg-blue-50 border border-blue-100">
-                                      Preview
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-3 opacity-40 mt-0.5">
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-[9px] font-bold capitalize">
-                                      {lesson.contentType === "video"
-                                        ? lesson.duration || "--:--"
-                                        : lesson.contentType || "lecture"}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-3">
-                              {actionLoading === lesson._id ? (
-                                <Loader size={14} />
-                              ) : (
-                                <Toggle
-                                  active={lesson.isActive}
-                                  onClick={() =>
-                                    toggleLectureStatus(
-                                      section._id,
-                                      lesson._id,
-                                      lesson.isActive ? "Active" : "Disabled",
-                                    )
-                                  }
-                                />
-                              )}
-                              <span
-                                className={`text-[9px] font-bold uppercase ${
-                                  lesson.isActive
-                                    ? "text-green-500"
-                                    : "text-red-500"
-                                }`}
-                              >
-                                {lesson.isActive ? "Active" : "Disabled"}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {lesson.contentType === "live" && (
-                                <button
-                                  onClick={() => toggleLiveStatus(lesson._id, lesson.liveStatus)}
-                                  className={`px-3 py-1 cursor-pointer rounded text-[10px] font-bold uppercase transition-all border ${
-                                    lesson.liveStatus === "live"
-                                      ? "bg-red-500 text-white border-red-500 hover:bg-red-600"
-                                      : "bg-green-600 text-white border-green-600 hover:bg-green-700"
-                                  }`}
-                                  title={lesson.liveStatus === "live" ? "End Live" : "Go Live"}
-                                >
-                                  {lesson.liveStatus === "live" ? "End Live ⏹️" : "Go Live 🔴"}
-                                </button>
-                              )}
-                              <button
-                                onClick={() =>
-                                  navigate(
-                                    `/dashboard/courses/view/${course._id}/lecture/${lesson._id}`,
-                                  )
-                                }
-                                className="p-1.5 cursor-pointer text-primary hover:bg-primary/5 rounded"
-                                title="View Lecture"
-                              >
-                                <Eye size={16} />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  navigate(
-                                    `/dashboard/courses/view/${course._id}/lecture/edit/${lesson._id}`,
-                                  )
-                                }
-                                className="p-1.5 cursor-pointer text-blue-500 hover:bg-blue-500/5 rounded"
-                                title="Edit Lecture"
-                              >
-                                <Edit size={16} />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handleDeleteLecture(section._id, lesson._id)
-                                }
-                                className="p-1.5 cursor-pointer text-red-500 hover:bg-red-500/5 rounded"
-                                title="Delete Lecture"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                      {(!section.lessons || section.lessons.length === 0) && (
-                        <p className="text-xs opacity-20 text-center py-2 italic font-bold">
-                          No lectures added.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* FAQs Section */}
-          <Card>
-            <SectionHeader icon={HelpCircle} title="Course FAQs" />
-            <div className="space-y-4">
-              {(course.faqs || []).map((faq, index) => (
-                <div
-                  key={index}
-                  className="p-4 rounded-lg bg-black/5 space-y-2"
-                >
-                  <p
-                    className="text-sm font-bold"
-                    style={{ color: colors.text }}
-                  >
-                    {faq.question}
-                  </p>
-                  <p
-                    className="text-xs opacity-70 leading-relaxed"
-                    style={{ color: colors.text }}
-                  >
-                    {faq.answer}
-                  </p>
-                </div>
-              ))}
-              {(!course.faqs || course.faqs.length === 0) && (
-                <p className="text-xs opacity-40 text-center py-4">
-                  No FAQs added yet.
-                </p>
-              )}
-            </div>
-          </Card>
-
-          {/* Reviews Section */}
-          <Card>
-            <SectionHeader icon={Star} title="Course Reviews" />
-            <div className="space-y-4">
-              {(course.reviews || []).map((review, index) => (
-                <div
-                  key={index}
-                  className="flex gap-4 items-start p-4 rounded-lg bg-black/5"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold shadow-inner shrink-0 uppercase">
-                    {review.studentName?.charAt(0) || "U"}
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center justify-between">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label style={labelStyle}>Instructor</label>
                       <p
                         className="text-sm font-bold"
                         style={{ color: colors.text }}
                       >
-                        {review.studentName || "Anonymous"}
+                        {typeof course.instructor === "object"
+                          ? course.instructor?.fullName
+                          : course.instructor || "--"}
                       </p>
-                      <div className="flex gap-0.5">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            size={10}
-                            fill={i < review.rating ? "#fbbf24" : "none"}
-                            className={
-                              i < review.rating
-                                ? "text-amber-400"
-                                : "text-black/10"
-                            }
-                          />
-                        ))}
-                      </div>
                     </div>
+                    <div className="space-y-1">
+                      <label style={labelStyle}>Instructor Share</label>
+                      <p
+                        className="text-sm font-bold"
+                        style={{ color: colors.text }}
+                      >
+                        {course.priceForInstructor || 0}%
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label style={labelStyle}>Category</label>
+                    <p className="text-sm font-bold" style={{ color: colors.text }}>
+                      {course.category?.name ||
+                        (typeof course.category === "string"
+                          ? course.category
+                          : "--")}
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label style={labelStyle}>Technology</label>
+                    <p className="text-sm font-bold" style={{ color: colors.text }}>
+                      {course.technology || "--"}
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label style={labelStyle}>Price Details</label>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest"
+                        style={{
+                          backgroundColor: colors.primary + "15",
+                          color: colors.primary,
+                        }}
+                      >
+                        {course.priceType || "Free"}
+                      </span>
+                      {course.priceType?.toLowerCase() === "paid" && (
+                        <p
+                          className="text-sm font-bold"
+                          style={{ color: colors.text }}
+                        >
+                          ₹{course.price}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label style={labelStyle}>Course Badge</label>
+                      <p
+                        className="text-sm font-bold uppercase"
+                        style={{ color: colors.text }}
+                      >
+                        {course.badge || "Normal"}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <label style={labelStyle}>Status</label>
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${
+                          course.isActive
+                            ? "bg-green-100 text-green-600"
+                            : "bg-red-100 text-red-600"
+                        }`}
+                      >
+                        {course.isActive ? "Active" : "Disabled"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label style={labelStyle}>Certificate Template</label>
+                    <p className="text-sm font-bold" style={{ color: colors.text }}>
+                      {course.certificateTemplate?.certificateName ||
+                        "No template assigned"}
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label style={labelStyle}>Stats</label>
+                    <div className="flex gap-4 text-[11px] font-bold opacity-60">
+                      <p>{course.totalStudents || 0} Students</p>
+                      <p>{course.duration || "Not Set"} Duration</p>
+                      <p>{course.rating || 0} Rating</p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Course Details */}
+              <Card>
+                <SectionHeader icon={Layout} title="Course Details" />
+                <div className="space-y-6">
+                  <div className="space-y-1">
+                    <label style={labelStyle}>Course Description</label>
                     <p
-                      className="text-xs opacity-60 italic"
+                      className="text-sm leading-relaxed opacity-80"
                       style={{ color: colors.text }}
                     >
-                      "{review.comment}"
-                    </p>
-                    <p className="text-[8px] font-bold opacity-30 uppercase tracking-widest mt-1">
-                      {review.createdAt
-                        ? new Date(review.createdAt).toLocaleDateString()
-                        : "--"}
+                      {course.description || "No description provided."}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    {actionLoading === review._id ? (
-                      <Loader size={14} />
-                    ) : (
-                      <Toggle
-                        active={review.isApproved !== false}
-                        onClick={() => handleToggleReviewStatus(review._id)}
-                      />
-                    )}
-                    <span
-                      className={`text-[9px] font-bold uppercase ${
-                        review.isApproved !== false
-                          ? "text-green-500"
-                          : "text-red-500"
-                      }`}
-                    >
-                      {review.isApproved !== false ? "Approved" : "Pending"}
-                    </span>
+
+                  <div className="space-y-2">
+                    <label style={labelStyle}>What you will learn</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {course.whatYouWillLearn?.map((item, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-2 p-2 rounded bg-black/5"
+                        >
+                          <CheckCircle size={14} className="text-green-500" />
+                          <span
+                            className="text-sm font-medium"
+                            style={{ color: colors.text }}
+                          >
+                            {item}
+                          </span>
+                        </div>
+                      ))}
+                      {(!course.whatYouWillLearn ||
+                        course.whatYouWillLearn.length === 0) && (
+                        <p className="text-xs opacity-40">No points added.</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              ))}
-              {(!course.reviews || course.reviews.length === 0) && (
-                <p className="text-xs opacity-40 text-center py-4">
-                  No reviews added yet.
-                </p>
+              </Card>
+
+              {/* Course Assets */}
+              <Card>
+                <SectionHeader icon={Play} title="Course Assets" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label style={labelStyle}>Thumbnail Image</label>
+                    <div
+                      className="relative h-44 rounded-lg border border-dashed flex items-center justify-center overflow-hidden"
+                      style={{
+                        borderColor: colors.accent + "30",
+                        backgroundColor: colors.background,
+                      }}
+                    >
+                      {course.thumbnail ? (
+                        <img
+                          src={
+                            typeof course.thumbnail === "string"
+                              ? course.thumbnail
+                              : course.thumbnail.url
+                          }
+                          alt="Thumbnail"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-center opacity-40">
+                          <Layout size={32} className="mx-auto mb-2" />
+                          <p className="text-xs font-bold">No Image</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={labelStyle}>Promo Video</label>
+                    <div
+                      className="h-44 rounded-lg border border-dashed flex items-center justify-center relative overflow-hidden bg-black"
+                      style={{ borderColor: colors.accent + "30" }}
+                    >
+                      {course.promoVideo ? (
+                        <video
+                          src={
+                            typeof course.promoVideo === "string"
+                              ? course.promoVideo
+                              : course.promoVideo.url
+                          }
+                          controls
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-center opacity-40">
+                          <VideoIcon size={32} className="mx-auto mb-2" />
+                          <p className="text-xs font-bold text-white">No Video</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* FAQs Section */}
+              <Card>
+                <SectionHeader icon={HelpCircle} title="Course FAQs" />
+                <div className="space-y-4">
+                  {(course.faqs || []).map((faq, index) => (
+                    <div
+                      key={index}
+                      className="p-4 rounded-lg bg-black/5 space-y-2"
+                    >
+                      <p
+                        className="text-sm font-bold"
+                        style={{ color: colors.text }}
+                      >
+                        {faq.question}
+                      </p>
+                      <p
+                        className="text-xs opacity-70 leading-relaxed"
+                        style={{ color: colors.text }}
+                      >
+                        {faq.answer}
+                      </p>
+                    </div>
+                  ))}
+                  {(!course.faqs || course.faqs.length === 0) && (
+                    <p className="text-xs opacity-40 text-center py-4">
+                      No FAQs added yet.
+                    </p>
+                  )}
+                </div>
+              </Card>
+
+              {/* Reviews Section */}
+              <Card>
+                <SectionHeader icon={Star} title="Course Reviews" />
+                <div className="space-y-4">
+                  {(course.reviews || []).map((review, index) => (
+                    <div
+                      key={index}
+                      className="flex gap-4 items-start p-4 rounded-lg bg-black/5"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold shadow-inner shrink-0 uppercase">
+                        {review.studentName?.charAt(0) || "U"}
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <p
+                            className="text-sm font-bold"
+                            style={{ color: colors.text }}
+                          >
+                            {review.studentName || "Anonymous"}
+                          </p>
+                          <div className="flex gap-0.5">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                size={10}
+                                fill={i < review.rating ? "#fbbf24" : "none"}
+                                className={
+                                  i < review.rating
+                                    ? "text-amber-400"
+                                    : "text-black/10"
+                                }
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <p
+                          className="text-xs opacity-60 italic"
+                          style={{ color: colors.text }}
+                        >
+                          "{review.comment}"
+                        </p>
+                        <p className="text-[8px] font-bold opacity-30 uppercase tracking-widest mt-1">
+                          {review.createdAt
+                            ? new Date(review.createdAt).toLocaleDateString()
+                            : "--"}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {actionLoading === review._id ? (
+                          <Loader size={14} />
+                        ) : (
+                          <Toggle
+                            active={review.isApproved !== false}
+                            onClick={() => handleToggleReviewStatus(review._id)}
+                          />
+                        )}
+                        <span
+                          className={`text-[9px] font-bold uppercase ${
+                            review.isApproved !== false
+                              ? "text-green-500"
+                              : "text-red-500"
+                          }`}
+                        >
+                          {review.isApproved !== false ? "Approved" : "Pending"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {(!course.reviews || course.reviews.length === 0) && (
+                    <p className="text-xs opacity-40 text-center py-4">
+                      No reviews added yet.
+                    </p>
+                  )}
+                </div>
+              </Card>
+
+              {/* Certificate Template */}
+              {course.certificateTemplate && (
+                <Card>
+                  <SectionHeader icon={Award} title="Certificate Template" />
+                  <div className="flex flex-col items-center gap-4">
+                    <div
+                      className="group relative rounded-lg overflow-hidden border-2 border-white shadow-xl cursor-pointer transition-all hover:scale-[1.01] max-w-md w-full"
+                      onClick={() => {
+                        setShowCertModal(true);
+                        setTimeout(() => setShowModalContent(true), 10);
+                      }}
+                    >
+                      <CertificatePreviewCanvas
+                        template={course.certificateTemplate}
+                        width={800}
+                        height={533}
+                        className="w-full h-auto"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center backdrop-blur-xs">
+                        <Maximize2 size={24} className="text-white mb-2" />
+                        <p className="text-white font-bold text-[10px] uppercase tracking-widest">
+                          Preview Full
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">
+                      Template: {course.certificateTemplate?.certificateName}
+                    </p>
+                  </div>
+                </Card>
               )}
             </div>
-          </Card>
+          )}
 
-          {/* Certificate Modal Trigger / Preview */}
-          {course.certificateTemplate && (
-            <Card>
-              <SectionHeader icon={Award} title="Certificate Template" />
-              <div className="flex flex-col items-center gap-4">
+          {activeTab === "content" && (
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+              {/* Curriculum Section */}
+              <div className="lg:col-span-3">
+                <Card>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2
+                      className="text-lg font-bold flex items-center gap-2"
+                      style={{ color: colors.text }}
+                    >
+                      <Monitor size={18} className="text-primary" /> Course Content
+                    </h2>
+                    <button
+                      onClick={handleAddTopic}
+                      disabled={actionLoading === "topic-add"}
+                      className="flex cursor-pointer items-center gap-2 px-4 py-2 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all active:scale-95 text-white disabled:opacity-50"
+                      style={{ backgroundColor: colors.primary }}
+                    >
+                      {actionLoading === "topic-add" ? (
+                        <Loader size={12} />
+                      ) : (
+                        <Plus size={14} />
+                      )}
+                      Add New Topic
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {course.curriculum?.map((section, sIdx) => (
+                      <div
+                        key={section._id}
+                        className="rounded-lg border overflow-hidden"
+                        style={{
+                          backgroundColor: colors.background,
+                          borderColor: colors.accent + "15",
+                        }}
+                      >
+                        <div
+                          className="p-4 flex items-center justify-between border-b"
+                          style={{
+                            backgroundColor: colors.sidebar + "20",
+                            borderColor: colors.accent + "10",
+                          }}
+                        >
+                          <div
+                            className="flex items-center gap-3 cursor-pointer flex-1"
+                            onClick={() => toggleSection(section._id)}
+                          >
+                            <ChevronDown
+                              size={16}
+                              className={`transition-transform duration-300 ${
+                                openSections[section._id] ? "rotate-180" : ""
+                              }`}
+                              style={{ color: colors.text }}
+                            />
+                            <div>
+                              <p
+                                className="text-sm font-bold uppercase tracking-wider"
+                                style={{ color: colors.text }}
+                              >
+                                Topic {sIdx + 1}: {section.title}
+                              </p>
+                              <p className="text-[10px] font-bold opacity-40 uppercase">
+                                {section.lessons?.length || 0} Lectures
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() =>
+                                handleEditTopic(section._id, section.title)
+                              }
+                              disabled={actionLoading === section._id}
+                              className="p-1.5 cursor-pointer text-blue-500 hover:bg-blue-500/10 rounded transition-all"
+                            >
+                              {actionLoading === section._id ? (
+                                <Loader size={12} />
+                              ) : (
+                                <Edit size={16} />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTopic(section._id)}
+                              disabled={actionLoading === section._id}
+                              className="p-1.5 cursor-pointer text-red-500 hover:bg-red-500/10 rounded transition-all"
+                            >
+                              {actionLoading === section._id ? (
+                                <Loader size={12} />
+                              ) : (
+                                <Trash2 size={16} />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+
+                        {openSections[section._id] && (
+                          <div className="p-2 space-y-1">
+                            <button
+                              onClick={() =>
+                                navigate(
+                                  `/dashboard/courses/view/${course._id}/add-lecture/${section._id}`,
+                                )
+                              }
+                              className="w-full p-2 mb-2 rounded border border-dashed border-primary/30 text-primary font-bold text-[10px] uppercase tracking-widest hover:bg-primary/5 transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                              <Plus size={14} /> Add New Lecture
+                            </button>
+
+                            {section.lessons?.map((lesson, lIdx) => {
+                              const typeThemes = {
+                                video: { border: "rgba(59, 130, 246, 0.15)", bg: "rgba(59, 130, 246, 0.02)", iconBg: "rgba(59, 130, 246, 0.1)", iconColor: "#3b82f6", icon: VideoIcon },
+                                pdf: { border: "rgba(239, 68, 68, 0.15)", bg: "rgba(239, 68, 68, 0.02)", iconBg: "rgba(239, 68, 68, 0.1)", iconColor: "#ef4444", icon: FileText },
+                                live: { border: "rgba(244, 63, 94, 0.2)", bg: "rgba(244, 63, 94, 0.03)", iconBg: "rgba(244, 63, 94, 0.1)", iconColor: "#f43f5e", icon: Play },
+                                youtube_zoom: { border: "rgba(99, 102, 241, 0.15)", bg: "rgba(99, 102, 241, 0.02)", iconBg: "rgba(99, 102, 241, 0.1)", iconColor: "#6366f1", icon: Monitor },
+                                webinar: { border: "rgba(16, 185, 129, 0.15)", bg: "rgba(16, 185, 129, 0.02)", iconBg: "rgba(16, 185, 129, 0.1)", iconColor: "#10b981", icon: Layout },
+                                test: { border: "rgba(245, 158, 11, 0.15)", bg: "rgba(245, 158, 11, 0.02)", iconBg: "rgba(245, 158, 11, 0.1)", iconColor: "#f59e0b", icon: CheckCircle },
+                                subjective_test: { border: "rgba(168, 85, 247, 0.15)", bg: "rgba(168, 85, 247, 0.02)", iconBg: "rgba(168, 85, 247, 0.1)", iconColor: "#a855f7", icon: Hash },
+                              };
+                              const typeTheme = typeThemes[lesson.contentType] || typeThemes.video;
+                              const IconComponent = typeTheme.icon;
+
+                              return (
+                                <div
+                                  key={lesson._id}
+                                  className="p-3.5 rounded-xl border mb-2 flex items-center justify-between transition-all hover:shadow-md"
+                                  style={{
+                                    borderColor: typeTheme.border,
+                                    backgroundColor: typeTheme.bg,
+                                  }}
+                                >
+                                  <div className="flex items-center gap-4">
+                                    <div
+                                      className="w-10 h-10 rounded-lg flex items-center justify-center font-bold"
+                                      style={{
+                                        backgroundColor: typeTheme.iconBg,
+                                        color: typeTheme.iconColor,
+                                      }}
+                                    >
+                                      <IconComponent size={20} />
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <p
+                                          className="text-sm font-bold"
+                                          style={{ color: colors.text }}
+                                        >
+                                          {lesson.title}
+                                        </p>
+                                        {lesson.contentType === "live" && (
+                                          <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border ${
+                                            lesson.liveStatus === "live"
+                                              ? "bg-red-50 text-red-500 border-red-100 animate-pulse"
+                                              : lesson.liveStatus === "ended"
+                                              ? "bg-gray-100 text-gray-500 border-gray-200"
+                                              : "bg-amber-50 text-amber-600 border-amber-100"
+                                          }`}>
+                                            {lesson.liveStatus === "live" ? "🔴 Live" : lesson.liveStatus === "ended" ? "Ended" : "Scheduled"}
+                                          </span>
+                                        )}
+                                        {lesson.contentType === "youtube_zoom" && (
+                                          <span className="text-[8px] font-bold uppercase text-blue-500 px-1.5 py-0.5 rounded bg-blue-50 border border-blue-100">
+                                            Zoom/YT Live
+                                          </span>
+                                        )}
+                                        {lesson.contentType === "webinar" && (
+                                          <span className="text-[8px] font-bold uppercase text-emerald-600 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-100">
+                                            Webinar
+                                          </span>
+                                        )}
+                                        {lesson.contentType === "test" && (
+                                          <span className="text-[8px] font-bold uppercase text-amber-500 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-100">
+                                            Quiz / Test
+                                          </span>
+                                        )}
+                                        {lesson.contentType === "subjective_test" && (
+                                          <span className="text-[8px] font-bold uppercase text-purple-500 px-1.5 py-0.5 rounded bg-purple-50 border border-purple-100">
+                                            Subjective Test
+                                          </span>
+                                        )}
+                                        {lesson.isPreview && (
+                                          <span className="text-[8px] font-bold uppercase text-blue-500 px-1.5 py-0.5 rounded bg-blue-50 border border-blue-100">
+                                            Preview
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-3 opacity-40 mt-0.5">
+                                        <div className="flex items-center gap-1">
+                                          <span className="text-[9px] font-bold capitalize">
+                                            {lesson.contentType === "video"
+                                              ? lesson.duration || "--:--"
+                                              : lesson.contentType || "lecture"}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-3">
+                                      {actionLoading === lesson._id ? (
+                                        <Loader size={14} />
+                                      ) : (
+                                        <Toggle
+                                          active={lesson.isActive}
+                                          onClick={() =>
+                                            toggleLectureStatus(
+                                              section._id,
+                                              lesson._id,
+                                              lesson.isActive ? "Active" : "Disabled",
+                                            )
+                                          }
+                                        />
+                                      )}
+                                      <span
+                                        className={`text-[9px] font-bold uppercase ${
+                                          lesson.isActive
+                                            ? "text-green-500"
+                                            : "text-red-500"
+                                        }`}
+                                      >
+                                        {lesson.isActive ? "Active" : "Disabled"}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      {lesson.contentType === "live" && (
+                                        <button
+                                          onClick={() => toggleLiveStatus(lesson._id, lesson.liveStatus)}
+                                          className={`px-3 py-1 cursor-pointer rounded text-[10px] font-bold uppercase transition-all border ${
+                                            lesson.liveStatus === "live"
+                                              ? "bg-red-500 text-white border-red-500 hover:bg-red-600"
+                                              : "bg-green-600 text-white border-green-600 hover:bg-green-700"
+                                          }`}
+                                          title={lesson.liveStatus === "live" ? "End Live" : "Go Live"}
+                                        >
+                                          {lesson.liveStatus === "live" ? "End Live ⏹️" : "Go Live 🔴"}
+                                        </button>
+                                      )}
+                                      <button
+                                        onClick={() =>
+                                          navigate(
+                                            `/dashboard/courses/view/${course._id}/lecture/${lesson._id}`,
+                                          )
+                                        }
+                                        className="p-1.5 cursor-pointer text-primary hover:bg-primary/5 rounded"
+                                        title="View Lecture"
+                                      >
+                                        <Eye size={16} />
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          navigate(
+                                            `/dashboard/courses/view/${course._id}/lecture/edit/${lesson._id}`,
+                                          )
+                                        }
+                                        className="p-1.5 cursor-pointer text-blue-500 hover:bg-blue-500/5 rounded"
+                                        title="Edit Lecture"
+                                      >
+                                        <Edit size={16} />
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          handleDeleteLecture(section._id, lesson._id)
+                                        }
+                                        className="p-1.5 cursor-pointer text-red-500 hover:bg-red-500/5 rounded"
+                                        title="Delete Lecture"
+                                      >
+                                        <Trash2 size={16} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            {(!section.lessons || section.lessons.length === 0) && (
+                              <p className="text-xs opacity-20 text-center py-2 italic font-bold">
+                                No lectures added.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+
+              {/* ADD CONTENT sidebar */}
+              <div className="lg:col-span-1">
                 <div
-                  className="group relative rounded-lg overflow-hidden border-2 border-white shadow-xl cursor-pointer transition-all hover:scale-[1.01] max-w-md w-full"
-                  onClick={() => {
-                    setShowCertModal(true);
-                    setTimeout(() => setShowModalContent(true), 10);
+                  className="p-5 rounded-xl border shadow-sm space-y-4"
+                  style={{
+                    backgroundColor: colors.sidebar || colors.background,
+                    borderColor: colors.accent + "20",
                   }}
                 >
-                  <CertificatePreviewCanvas
-                    template={course.certificateTemplate}
-                    width={800}
-                    height={533}
-                    className="w-full h-auto"
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center backdrop-blur-xs">
-                    <Maximize2 size={24} className="text-white mb-2" />
-                    <p className="text-white font-bold text-[10px] uppercase tracking-widest">
-                      Preview Full
-                    </p>
+                  <h3
+                    className="text-xs font-black uppercase tracking-wider"
+                    style={{ color: colors.textSecondary }}
+                  >
+                    Add Content
+                  </h3>
+                  <div className="flex flex-col gap-2">
+                    {[
+                      { id: "folder", label: "Folder (Topic)", icon: Folder, color: colors.primary, bg: colors.primary + "08", border: colors.primary + "15" },
+                      { id: "video", label: "Video", icon: VideoIcon, color: "#3b82f6", bg: "rgba(59, 130, 246, 0.08)", border: "rgba(59, 130, 246, 0.15)" },
+                      { id: "pdf", label: "PDF", icon: FileText, color: "#ef4444", bg: "rgba(239, 68, 68, 0.08)", border: "rgba(239, 68, 68, 0.15)" },
+                      { id: "live", label: "Live Stream", icon: Play, color: "#f43f5e", bg: "rgba(244, 63, 94, 0.08)", border: "rgba(244, 63, 94, 0.15)" },
+                      { id: "youtube_zoom", label: "YouTube/Zoom Live", icon: Monitor, color: "#6366f1", bg: "rgba(99, 102, 241, 0.08)", border: "rgba(99, 102, 241, 0.15)" },
+                      { id: "webinar", label: "Webinar.gg Live", icon: Layout, color: "#10b981", bg: "rgba(16, 185, 129, 0.08)", border: "rgba(16, 185, 129, 0.15)" },
+                      { id: "test", label: "Test (Quiz)", icon: CheckCircle, color: "#f59e0b", bg: "rgba(245, 158, 11, 0.08)", border: "rgba(245, 158, 11, 0.15)" },
+                      { id: "subjective_test", label: "Subjective Test", icon: Hash, color: "#a855f7", bg: "rgba(168, 85, 247, 0.08)", border: "rgba(168, 85, 247, 0.15)" },
+                    ].map((btn) => (
+                      <button
+                        key={btn.id}
+                        onClick={() => handleAddContentClick(btn.id)}
+                        className="flex items-center gap-3 p-3 rounded-lg border text-left text-xs font-bold transition-all hover:translate-x-1 cursor-pointer"
+                        style={{
+                          backgroundColor: btn.bg,
+                          borderColor: btn.border,
+                          color: btn.color,
+                        }}
+                      >
+                        <btn.icon size={16} />
+                        <span>{btn.label}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
-                <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">
-                  Template: {course.certificateTemplate?.certificateName}
-                </p>
               </div>
+            </div>
+          )}
+
+          {activeTab === "users" && (
+            <Card>
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <SectionHeader icon={Users} title="Enrolled Students" />
+                <div className="relative w-full md:w-72">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 opacity-35" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Search students..."
+                    value={studentSearch}
+                    onChange={(e) => setStudentSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border outline-none text-xs"
+                    style={{
+                      backgroundColor: colors.background,
+                      borderColor: colors.accent + "20",
+                      color: colors.text,
+                    }}
+                  />
+                </div>
+              </div>
+
+              {studentsLoading ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <Loader size={48} />
+                  <p className="text-xs opacity-50 mt-2">Loading students...</p>
+                </div>
+              ) : filteredStudents.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b" style={{ borderColor: colors.accent + "15" }}>
+                        <th className="pb-3 font-bold uppercase tracking-wider opacity-60">Student Info</th>
+                        <th className="pb-3 font-bold uppercase tracking-wider opacity-60">Enrolled At</th>
+                        <th className="pb-3 font-bold uppercase tracking-wider opacity-60">Access</th>
+                        <th className="pb-3 font-bold uppercase tracking-wider opacity-60 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y" style={{ borderColor: colors.accent + "10" }}>
+                      {filteredStudents.map((item) => (
+                        <tr key={item._id} className="hover:bg-black/[0.01]">
+                          <td className="py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary uppercase text-xs">
+                                {item.student?.fullName?.charAt(0) || "U"}
+                              </div>
+                              <div>
+                                <p className="font-bold" style={{ color: colors.text }}>
+                                  {item.student?.fullName || "User"}
+                                </p>
+                                <p className="text-[10px] opacity-60">{item.student?.email || "--"}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 opacity-75">
+                            {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "--"}
+                          </td>
+                          <td className="py-4">
+                            <span
+                              className={`px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase tracking-wider ${
+                                item.isAccessRevoked
+                                  ? "bg-red-50 text-red-500 border border-red-100"
+                                  : "bg-green-50 text-green-500 border border-green-100"
+                              }`}
+                            >
+                              {item.isAccessRevoked ? "Revoked" : "Active"}
+                            </span>
+                          </td>
+                          <td className="py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleToggleAccess(item.student?._id)}
+                                disabled={actionLoading === item.student?._id}
+                                className={`p-1.5 rounded transition-all cursor-pointer ${
+                                  item.isAccessRevoked
+                                    ? "text-green-600 hover:bg-green-50"
+                                    : "text-red-500 hover:bg-red-50"
+                                }`}
+                                title={item.isAccessRevoked ? "Grant Access" : "Revoke Access"}
+                              >
+                                <ShieldAlert size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleResetProgress(item.student?._id)}
+                                disabled={actionLoading === item.student?._id}
+                                className="p-1.5 rounded text-blue-500 hover:bg-blue-50 transition-all cursor-pointer"
+                                title="Reset Progress"
+                              >
+                                <RotateCcw size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-20 opacity-40">
+                  <Users size={32} className="mx-auto mb-2" />
+                  <p className="font-bold">No students found</p>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {["links", "forum", "chat", "posts"].includes(activeTab) && (
+            <Card className="text-center py-20 opacity-60">
+              <p className="text-sm font-bold uppercase tracking-wider">Coming Soon</p>
+              <p className="text-xs opacity-75 mt-1">This feature is under development.</p>
             </Card>
           )}
         </div>

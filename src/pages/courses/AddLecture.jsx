@@ -31,6 +31,7 @@ function AddLecture() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const sectionIdFromUrl = queryParams.get("sectionId");
+  const initialType = queryParams.get("type") || "video";
 
   const [course, setCourse] = useState(null);
   const [quizzes, setQuizzes] = useState([]);
@@ -47,7 +48,7 @@ function AddLecture() {
     isLocked: false,
     lectureSrNo: "",
     status: "Active",
-    contentType: "video",
+    contentType: initialType,
     liveUrl: "",
     liveStatus: "scheduled",
     scheduledAt: "",
