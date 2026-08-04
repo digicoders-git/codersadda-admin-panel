@@ -263,6 +263,24 @@ function ViewCourse() {
     }
   };
 
+  const toggleLiveStatus = async (lessonId, currentLiveStatus) => {
+    const newLiveStatus = currentLiveStatus === "live" ? "ended" : "live";
+    try {
+      setActionLoading(lessonId);
+      const res = await updateLecture(lessonId, {
+        liveStatus: newLiveStatus,
+      });
+      if (res.success) {
+        toast.info(`Live Stream ${newLiveStatus === "live" ? "Started 🔴" : "Ended ⏹️"}`);
+        await fetchCourse();
+      }
+    } catch (error) {
+      toast.error("Failed to update live status");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleToggleReviewStatus = async (reviewId) => {
     try {
       setActionLoading(reviewId);
@@ -642,51 +660,94 @@ function ViewCourse() {
                         <Plus size={14} /> Add New Lecture
                       </button>
 
-                      {section.lessons?.map((lesson, lIdx) => (
-                        <div
-                          key={lesson._id}
-                          className="p-3 rounded-md border border-transparent hover:border-black/5 hover:bg-black/2 flex items-center justify-between group transition-all"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="w-6 h-6 rounded bg-black/5 flex items-center justify-center text-[10px] font-bold opacity-30">
-                              {lIdx + 1}
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <p
-                                  className="text-sm font-bold"
-                                  style={{ color: colors.text }}
-                                >
-                                  {lesson.title}
-                                </p>
-                                {lesson.isPreview && (
-                                  <span className="text-[8px] font-bold uppercase text-blue-500 px-1.5 py-0.5 rounded bg-blue-50 border border-blue-100">
-                                    Preview
-                                  </span>
-                                )}
+                      {section.lessons?.map((lesson, lIdx) => {
+                        const typeThemes = {
+                          video: { border: "rgba(59, 130, 246, 0.15)", bg: "rgba(59, 130, 246, 0.02)", iconBg: "rgba(59, 130, 246, 0.1)", iconColor: "#3b82f6", icon: VideoIcon },
+                          pdf: { border: "rgba(239, 68, 68, 0.15)", bg: "rgba(239, 68, 68, 0.02)", iconBg: "rgba(239, 68, 68, 0.1)", iconColor: "#ef4444", icon: FileText },
+                          live: { border: "rgba(244, 63, 94, 0.2)", bg: "rgba(244, 63, 94, 0.03)", iconBg: "rgba(244, 63, 94, 0.1)", iconColor: "#f43f5e", icon: Play },
+                          youtube_zoom: { border: "rgba(99, 102, 241, 0.15)", bg: "rgba(99, 102, 241, 0.02)", iconBg: "rgba(99, 102, 241, 0.1)", iconColor: "#6366f1", icon: Monitor },
+                          webinar: { border: "rgba(16, 185, 129, 0.15)", bg: "rgba(16, 185, 129, 0.02)", iconBg: "rgba(16, 185, 129, 0.1)", iconColor: "#10b981", icon: Layout },
+                          test: { border: "rgba(245, 158, 11, 0.15)", bg: "rgba(245, 158, 11, 0.02)", iconBg: "rgba(245, 158, 11, 0.1)", iconColor: "#f59e0b", icon: CheckCircle },
+                          subjective_test: { border: "rgba(168, 85, 247, 0.15)", bg: "rgba(168, 85, 247, 0.02)", iconBg: "rgba(168, 85, 247, 0.1)", iconColor: "#a855f7", icon: Hash },
+                        };
+                        const typeTheme = typeThemes[lesson.contentType] || typeThemes.video;
+                        const IconComponent = typeTheme.icon;
+
+                        return (
+                          <div
+                            key={lesson._id}
+                            className="p-3.5 rounded-xl border mb-2 flex items-center justify-between transition-all hover:shadow-md"
+                            style={{
+                              borderColor: typeTheme.border,
+                              backgroundColor: typeTheme.bg,
+                            }}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div
+                                className="w-10 h-10 rounded-lg flex items-center justify-center font-bold"
+                                style={{
+                                  backgroundColor: typeTheme.iconBg,
+                                  color: typeTheme.iconColor,
+                                }}
+                              >
+                                <IconComponent size={20} />
                               </div>
-                              <div className="flex items-center gap-3 opacity-40 mt-0.5">
-                                <div className="flex items-center gap-1">
-                                  {lesson.videoUrl ? (
-                                    <VideoIcon size={10} />
-                                  ) : (
-                                    <FileText size={10} />
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p
+                                    className="text-sm font-bold"
+                                    style={{ color: colors.text }}
+                                  >
+                                    {lesson.title}
+                                  </p>
+                                  {lesson.contentType === "live" && (
+                                    <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border ${
+                                      lesson.liveStatus === "live"
+                                        ? "bg-red-50 text-red-500 border-red-100 animate-pulse"
+                                        : lesson.liveStatus === "ended"
+                                        ? "bg-gray-100 text-gray-500 border-gray-200"
+                                        : "bg-amber-50 text-amber-600 border-amber-100"
+                                    }`}>
+                                      {lesson.liveStatus === "live" ? "🔴 Live" : lesson.liveStatus === "ended" ? "Ended" : "Scheduled"}
+                                    </span>
                                   )}
-                                  <span className="text-[9px] font-bold">
-                                    {lesson.duration || "--:--"}
-                                  </span>
+                                  {lesson.contentType === "youtube_zoom" && (
+                                    <span className="text-[8px] font-bold uppercase text-blue-500 px-1.5 py-0.5 rounded bg-blue-50 border border-blue-100">
+                                      Zoom/YT Live
+                                    </span>
+                                  )}
+                                  {lesson.contentType === "webinar" && (
+                                    <span className="text-[8px] font-bold uppercase text-emerald-600 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-100">
+                                      Webinar
+                                    </span>
+                                  )}
+                                  {lesson.contentType === "test" && (
+                                    <span className="text-[8px] font-bold uppercase text-amber-500 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-100">
+                                      Quiz / Test
+                                    </span>
+                                  )}
+                                  {lesson.contentType === "subjective_test" && (
+                                    <span className="text-[8px] font-bold uppercase text-purple-500 px-1.5 py-0.5 rounded bg-purple-50 border border-purple-100">
+                                      Subjective Test
+                                    </span>
+                                  )}
+                                  {lesson.isPreview && (
+                                    <span className="text-[8px] font-bold uppercase text-blue-500 px-1.5 py-0.5 rounded bg-blue-50 border border-blue-100">
+                                      Preview
+                                    </span>
+                                  )}
                                 </div>
-                                {lesson.pdfUrl && (
-                                  <div className="flex items-center gap-1 text-red-500">
-                                    <FileText size={10} />
-                                    <span className="text-[9px] font-bold uppercase">
-                                      PDF
+                                <div className="flex items-center gap-3 opacity-40 mt-0.5">
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-[9px] font-bold capitalize">
+                                      {lesson.contentType === "video"
+                                        ? lesson.duration || "--:--"
+                                        : lesson.contentType || "lecture"}
                                     </span>
                                   </div>
-                                )}
+                                </div>
                               </div>
                             </div>
-                          </div>
                           <div className="flex items-center gap-6">
                             <div className="flex items-center gap-3">
                               {actionLoading === lesson._id ? (
@@ -713,7 +774,20 @@ function ViewCourse() {
                                 {lesson.isActive ? "Active" : "Disabled"}
                               </span>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-2">
+                              {lesson.contentType === "live" && (
+                                <button
+                                  onClick={() => toggleLiveStatus(lesson._id, lesson.liveStatus)}
+                                  className={`px-3 py-1 cursor-pointer rounded text-[10px] font-bold uppercase transition-all border ${
+                                    lesson.liveStatus === "live"
+                                      ? "bg-red-500 text-white border-red-500 hover:bg-red-600"
+                                      : "bg-green-600 text-white border-green-600 hover:bg-green-700"
+                                  }`}
+                                  title={lesson.liveStatus === "live" ? "End Live" : "Go Live"}
+                                >
+                                  {lesson.liveStatus === "live" ? "End Live ⏹️" : "Go Live 🔴"}
+                                </button>
+                              )}
                               <button
                                 onClick={() =>
                                   navigate(

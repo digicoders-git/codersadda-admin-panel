@@ -225,8 +225,8 @@ const Dashboard = () => {
       {/* Sidebar */}
       <div
         className={`fixed top-0 left-0 h-full z-40 transition-all duration-700 ease-out border-r md:relative md:z-auto flex flex-col ${sidebarOpen
-            ? "translate-x-0 w-64 "
-            : "-translate-x-full w-64 md:translate-x-0 md:w-18"
+          ? "translate-x-0 w-64 "
+          : "-translate-x-full w-64 md:translate-x-0 md:w-18"
           }`}
         style={{
           backgroundColor: colors.sidebar || colors.background,
@@ -310,8 +310,8 @@ const Dashboard = () => {
 
                   <div
                     className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen && sidebarOpen
-                        ? "max-h-96 opacity-100"
-                        : "max-h-0 opacity-0"
+                      ? "max-h-96 opacity-100"
+                      : "max-h-0 opacity-0"
                       }`}
                   >
                     <div className="ml-8 mr-2 mb-2 space-y-1 pt-1">
@@ -559,8 +559,8 @@ const Dashboard = () => {
       {/* Right Sidebar - Integrated */}
       <div
         className={`fixed top-0 right-0 h-full z-40 transition-all duration-700 ease-in-out border-l flex flex-col w-80 md:w-96 shadow-none ${rightSidebarOpen
-            ? "translate-x-0 opacity-100"
-            : "translate-x-full opacity-0 pointer-events-none"
+          ? "translate-x-0 opacity-100"
+          : "translate-x-full opacity-0 pointer-events-none"
           }`}
         style={{
           backgroundColor: colors.sidebar || colors.background,
@@ -574,8 +574,8 @@ const Dashboard = () => {
       {/* Settings Modal */}
       <div
         className={`settings-modal fixed top-0 right-0 w-full sm:w-80 z-50 transform transition-all duration-700 ease-out ${settingsOpen
-            ? "translate-x-0 opacity-100"
-            : "translate-x-full opacity-0"
+          ? "translate-x-0 opacity-100"
+          : "translate-x-full opacity-0"
           } shadow-2xl`}
         style={{ backgroundColor: colors.background }}
       >
