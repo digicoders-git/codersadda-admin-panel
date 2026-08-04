@@ -79,6 +79,17 @@ function CreateLecture() {
     fetchInitialData();
   }, []);
 
+  useEffect(() => {
+    if (selectedCourse && formData.topicId) {
+      const section = selectedCourse.curriculum?.find((s) => s._id === formData.topicId);
+      const nextSrNo = section ? (section.lessons?.length || 0) + 1 : 1;
+      setFormData((prev) => ({
+        ...prev,
+        srNo: nextSrNo,
+      }));
+    }
+  }, [selectedCourse, formData.topicId]);
+
   const handleCategoryChange = async (categoryId) => {
     setFormData((prev) => ({ ...prev, categoryId, courseId: "", topicId: "" }));
     setTopics([]);
@@ -338,21 +349,20 @@ function CreateLecture() {
                       className="absolute left-3 top-1/2 -translate-y-1/2 opacity-30"
                       size={18}
                     />
-                    <input
-                      type="number"
-                      required
-                      value={formData.srNo}
-                      onChange={(e) =>
-                        setFormData({ ...formData, srNo: e.target.value })
-                      }
-                      placeholder="01"
-                      className="w-full pl-10 pr-4 py-3 rounded border outline-none text-sm font-semibold transition-all"
-                      style={{
-                        backgroundColor: colors.background,
-                        borderColor: colors.accent + "30",
-                        color: colors.text,
-                      }}
-                    />
+                     <input
+                       type="number"
+                       readOnly
+                       value={formData.srNo}
+                       placeholder="01"
+                       className="w-full pl-10 pr-4 py-3 rounded border outline-none text-sm font-semibold transition-all"
+                       style={{
+                         backgroundColor: colors.background,
+                         borderColor: colors.accent + "30",
+                         color: colors.text,
+                         cursor: "not-allowed",
+                         opacity: 0.7,
+                       }}
+                     />
                   </div>
                 </div>
                 <div className="md:col-span-3 space-y-1">

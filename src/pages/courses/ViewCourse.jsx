@@ -1204,7 +1204,6 @@ function ViewCourse() {
                       { id: "youtube_zoom", label: "YouTube/Zoom Live", icon: Monitor, color: "#6366f1", bg: "rgba(99, 102, 241, 0.08)", border: "rgba(99, 102, 241, 0.15)" },
                       { id: "webinar", label: "Webinar.gg Live", icon: Layout, color: "#10b981", bg: "rgba(16, 185, 129, 0.08)", border: "rgba(16, 185, 129, 0.15)" },
                       { id: "test", label: "Test (Quiz)", icon: CheckCircle, color: "#f59e0b", bg: "rgba(245, 158, 11, 0.08)", border: "rgba(245, 158, 11, 0.15)" },
-                      { id: "subjective_test", label: "Subjective Test", icon: Hash, color: "#a855f7", bg: "rgba(168, 85, 247, 0.08)", border: "rgba(168, 85, 247, 0.15)" },
                     ].map((btn) => (
                       <button
                         key={btn.id}

@@ -356,7 +356,7 @@ function EditLecture() {
 
                   <div className="space-y-3">
                     <label style={labelStyle}>Choose Content Type</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
                       {[
                         { id: "video", label: "Video", icon: VideoIcon, color: "#3b82f6", bg: "rgba(59, 130, 246, 0.1)" },
                         { id: "pdf", label: "PDF / Notes", icon: FileText, color: "#ef4444", bg: "rgba(239, 68, 68, 0.1)" },
@@ -364,7 +364,6 @@ function EditLecture() {
                         { id: "youtube_zoom", label: "YouTube/Zoom", icon: Monitor, color: "#6366f1", bg: "rgba(99, 102, 241, 0.1)" },
                         { id: "webinar", label: "Webinar", icon: Layout, color: "#10b981", bg: "rgba(16, 185, 129, 0.1)" },
                         { id: "test", label: "Quiz (MCQ)", icon: CheckCircle, color: "#f59e0b", bg: "rgba(245, 158, 11, 0.1)" },
-                        { id: "subjective_test", label: "Written Test", icon: Hash, color: "#a855f7", bg: "rgba(168, 85, 247, 0.1)" },
                       ].map((item) => {
                         const isSelected = formData.contentType === item.id;
                         const IconComponent = item.icon;
