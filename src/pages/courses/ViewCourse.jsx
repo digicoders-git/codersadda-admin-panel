@@ -821,8 +821,8 @@ function ViewCourse() {
                               </button>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       {(!section.lessons || section.lessons.length === 0) && (
                         <p className="text-xs opacity-20 text-center py-2 italic font-bold">
                           No lectures added.
