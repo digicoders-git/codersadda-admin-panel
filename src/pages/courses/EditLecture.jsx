@@ -11,11 +11,14 @@ import {
   Layout,
   Hash,
   Play,
+  CheckCircle,
+  Video as VideoIcon,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import Loader from "../../components/Loader";
 import { getCourseById } from "../../apis/course";
 import { getLectureById, updateLecture } from "../../apis/lecture";
+import { getQuizzes } from "../../apis/quiz";
 import { toast } from "react-toastify";
 
 function EditLecture() {
@@ -27,6 +30,7 @@ function EditLecture() {
   const [actionLoading, setActionLoading] = useState(false);
 
   const [course, setCourse] = useState(null);
+  const [quizzes, setQuizzes] = useState([]);
   const [formData, setFormData] = useState({
     title: "",
     sectionId: "",
@@ -40,6 +44,11 @@ function EditLecture() {
     isLocked: false,
     lectureSrNo: "",
     status: "Active",
+    contentType: "video",
+    liveUrl: "",
+    liveStatus: "scheduled",
+    scheduledAt: "",
+    quizId: "",
   });
 
   const thumbnailInputRef = useRef(null);
@@ -49,13 +58,18 @@ function EditLecture() {
   useEffect(() => {
     const fetchEverything = async () => {
       try {
-        const [courseRes, lectureRes] = await Promise.all([
+        const [courseRes, lectureRes, quizRes] = await Promise.all([
           getCourseById(id),
           getLectureById(lectureId),
+          getQuizzes().catch(() => null),
         ]);
 
         if (courseRes.success) {
           setCourse(courseRes.data);
+        }
+
+        if (quizRes && quizRes.data) {
+          setQuizzes(quizRes.data);
         }
 
         if (lectureRes.success) {
@@ -73,6 +87,11 @@ function EditLecture() {
             isLocked: l.privacy === "locked",
             lectureSrNo: l.srNo || "",
             status: l.isActive ? "Active" : "Disabled",
+            contentType: l.contentType || "video",
+            liveUrl: l.liveUrl || "",
+            liveStatus: l.liveStatus || "scheduled",
+            scheduledAt: l.scheduledAt ? new Date(l.scheduledAt).toISOString().slice(0, 16) : "",
+            quizId: l.quizId || "",
           });
         }
       } catch (error) {
@@ -103,6 +122,11 @@ function EditLecture() {
       payload.append("description", formData.description);
       payload.append("privacy", formData.isLocked ? "locked" : "free");
       payload.append("isActive", formData.status === "Active");
+      payload.append("contentType", formData.contentType);
+      payload.append("liveUrl", formData.liveUrl);
+      payload.append("liveStatus", formData.liveStatus);
+      payload.append("scheduledAt", formData.scheduledAt);
+      payload.append("quizId", formData.quizId);
 
       if (videoInputRef.current?.files[0]) {
         payload.append("video", videoInputRef.current.files[0]);
@@ -329,28 +353,175 @@ function EditLecture() {
                       </select>
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <label style={labelStyle}>Duration (e.g. 10:45)</label>
-                    <div className="relative">
-                      <Clock
-                        className="absolute left-3 top-1/2 -translate-y-1/2 opacity-30"
-                        size={18}
-                      />
+
+                  <div className="space-y-3">
+                    <label style={labelStyle}>Choose Content Type</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                      {[
+                        { id: "video", label: "Video", icon: VideoIcon, color: "#3b82f6", bg: "rgba(59, 130, 246, 0.1)" },
+                        { id: "pdf", label: "PDF / Notes", icon: FileText, color: "#ef4444", bg: "rgba(239, 68, 68, 0.1)" },
+                        { id: "live", label: "Live Stream", icon: Play, color: "#f43f5e", bg: "rgba(244, 63, 94, 0.1)" },
+                        { id: "youtube_zoom", label: "YouTube/Zoom", icon: Monitor, color: "#6366f1", bg: "rgba(99, 102, 241, 0.1)" },
+                        { id: "webinar", label: "Webinar", icon: Layout, color: "#10b981", bg: "rgba(16, 185, 129, 0.1)" },
+                        { id: "test", label: "Quiz (MCQ)", icon: CheckCircle, color: "#f59e0b", bg: "rgba(245, 158, 11, 0.1)" },
+                      ].map((item) => {
+                        const isSelected = formData.contentType === item.id;
+                        const IconComponent = item.icon;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, contentType: item.id })}
+                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-300 active:scale-95 cursor-pointer text-center gap-2 group`}
+                            style={{
+                              borderColor: isSelected ? item.color : colors.accent + "20",
+                              backgroundColor: isSelected ? item.bg : colors.background,
+                            }}
+                          >
+                            <div
+                              className={`p-3 rounded-full transition-transform duration-300 group-hover:scale-110`}
+                              style={{
+                                backgroundColor: isSelected ? "white" : colors.accent + "10",
+                                color: item.color,
+                              }}
+                            >
+                              <IconComponent size={20} />
+                            </div>
+                            <span
+                              className="text-[11px] font-bold tracking-wide transition-all"
+                              style={{
+                                color: isSelected ? colors.text : colors.textSecondary,
+                              }}
+                            >
+                              {item.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {formData.contentType === "video" && (
+                    <div className="space-y-1">
+                      <label style={labelStyle}>Duration (e.g. 10:45)</label>
+                      <div className="relative">
+                        <Clock
+                          className="absolute left-3 top-1/2 -translate-y-1/2 opacity-30"
+                          size={18}
+                        />
+                        <input
+                          readOnly
+                          type="text"
+                          value={formData.duration}
+                          placeholder="Auto-calculating..."
+                          className="w-full pl-10 pr-4 py-3 rounded border outline-none text-sm font-semibold transition-all opacity-70"
+                          style={{
+                            backgroundColor: colors.background,
+                            borderColor: colors.accent + "30",
+                            color: colors.text,
+                            cursor: "not-allowed",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {formData.contentType === "live" && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-1">
+                        <label style={labelStyle}>Live Playback URL (HLS / m3u8)</label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.liveUrl}
+                          onChange={(e) => setFormData({ ...formData, liveUrl: e.target.value })}
+                          placeholder="e.g. http://live.example.com/hls/stream.m3u8"
+                          className="w-full px-4 py-3 rounded border outline-none text-sm font-semibold"
+                          style={{
+                            backgroundColor: colors.background,
+                            borderColor: colors.accent + "30",
+                            color: colors.text,
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label style={labelStyle}>Scheduled Time</label>
+                        <input
+                          type="datetime-local"
+                          required
+                          value={formData.scheduledAt}
+                          onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
+                          className="w-full px-4 py-3 rounded border outline-none text-sm font-semibold"
+                          style={{
+                            backgroundColor: colors.background,
+                            borderColor: colors.accent + "30",
+                            color: colors.text,
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label style={labelStyle}>Live Status</label>
+                        <select
+                          required
+                          value={formData.liveStatus}
+                          onChange={(e) => setFormData({ ...formData, liveStatus: e.target.value })}
+                          className="w-full px-4 py-3 rounded border outline-none text-sm font-semibold cursor-pointer"
+                          style={{
+                            backgroundColor: colors.background,
+                            borderColor: colors.accent + "30",
+                            color: colors.text,
+                          }}
+                        >
+                          <option value="scheduled">Scheduled</option>
+                          <option value="live">Live Now 🔴</option>
+                          <option value="ended">Ended</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  {(formData.contentType === "youtube_zoom" || formData.contentType === "webinar") && (
+                    <div className="space-y-1">
+                      <label style={labelStyle}>Meeting / Stream Link</label>
                       <input
-                        readOnly
-                        type="text"
-                        value={formData.duration}
-                        placeholder="Auto-calculating..."
-                        className="w-full pl-10 pr-4 py-3 rounded border outline-none text-sm font-semibold transition-all opacity-70"
+                        type="url"
+                        required
+                        value={formData.liveUrl}
+                        onChange={(e) => setFormData({ ...formData, liveUrl: e.target.value })}
+                        placeholder="e.g. https://zoom.us/j/meeting_id or https://webinar.gg/join/id"
+                        className="w-full px-4 py-3 rounded border outline-none text-sm font-semibold"
                         style={{
                           backgroundColor: colors.background,
                           borderColor: colors.accent + "30",
                           color: colors.text,
-                          cursor: "not-allowed",
                         }}
                       />
                     </div>
-                  </div>
+                  )}
+
+                  {(formData.contentType === "test" || formData.contentType === "subjective_test") && (
+                    <div className="space-y-1">
+                      <label style={labelStyle}>Select Quiz / Test</label>
+                      <select
+                        required
+                        value={formData.quizId}
+                        onChange={(e) => setFormData({ ...formData, quizId: e.target.value })}
+                        className="w-full px-4 py-3 rounded border outline-none text-sm font-semibold cursor-pointer"
+                        style={{
+                          backgroundColor: colors.background,
+                          borderColor: colors.accent + "30",
+                          color: colors.text,
+                        }}
+                      >
+                        <option value="">-- Choose Quiz --</option>
+                        {quizzes.map((quiz) => (
+                          <option key={quiz._id} value={quiz._id}>
+                            {quiz.title} ({quiz.duration} min)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-1">
