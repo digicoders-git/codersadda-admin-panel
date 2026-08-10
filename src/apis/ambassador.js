@@ -15,6 +15,11 @@ export const rejectAmbassador = async (id, comment) => {
   return response.data;
 };
 
+export const blockAmbassador = async (id, action, comment) => {
+  const response = await http.patch(`/ambassador/admin/block/${id}`, { action, comment });
+  return response.data;
+};
+
 export const getReferralConfig = async () => {
   const response = await http.get('/ambassador/admin/config');
   return response.data;

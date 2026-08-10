@@ -269,22 +269,22 @@ function SupportTickets() {
               <tbody className="divide-y" style={{ borderColor: colors.border }}>
                 {tickets.map((t) => (
                   <tr key={t._id} className="hover:bg-indigo-500/5 transition-colors">
-                    <td className="p-4">
+                    <td className="p-4 align-top">
                       <div className="font-bold text-sm" style={{ color: colors.text }}>
                         {t.name}
                       </div>
-                      <div className="text-xs font-medium flex items-center gap-1.5 mt-0.5 opacity-80" style={{ color: colors.subtext }}>
+                      <div className="text-xs font-medium flex items-center gap-1.5 mt-1 opacity-80" style={{ color: colors.subtext }}>
                         <Mail size={12} className="text-indigo-500" /> {t.email}
                       </div>
                       {t.mobile && (
-                        <div className="text-xs font-medium flex items-center gap-1.5 mt-0.5 opacity-70" style={{ color: colors.subtext }}>
+                        <div className="text-xs font-medium flex items-center gap-1.5 mt-1 opacity-70" style={{ color: colors.subtext }}>
                           <Phone size={12} className="text-indigo-500" /> {t.mobile}
                         </div>
                       )}
                     </td>
 
-                    <td className="p-4">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <td className="p-4 align-top">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 border border-indigo-500/20">
                           <Tag size={10} /> {t.category}
                         </span>
@@ -296,36 +296,41 @@ function SupportTickets() {
                           {t.source === 'Website' ? '🌐 Website' : '📱 Mobile App'}
                         </span>
                       </div>
-                      <div className="font-semibold text-sm line-clamp-1" style={{ color: colors.text }}>
+                      <div className="font-semibold text-sm line-clamp-2" style={{ color: colors.text }}>
                         {t.subject}
                       </div>
                     </td>
 
-                    <td className="p-4 max-w-xs">
-                      <p className="text-xs line-clamp-2 font-medium" style={{ color: colors.subtext }}>
+                    <td className="p-4 max-w-xs align-top">
+                      <p className="text-xs line-clamp-3 font-medium leading-relaxed" style={{ color: colors.subtext }}>
                         {t.message}
                       </p>
                       {t.adminReply && (
-                        <div className="mt-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 p-1.5 rounded-md border border-emerald-500/20 flex items-center gap-1">
-                          <MessageSquare size={10} /> Reply: {t.adminReply}
+                        <div className="mt-2 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 p-2 rounded-md border border-emerald-500/20 flex items-start gap-1.5">
+                          <MessageSquare size={12} className="mt-0.5 flex-shrink-0" /> 
+                          <span className="line-clamp-2">Reply: {t.adminReply}</span>
                         </div>
                       )}
                     </td>
 
-                    <td className="p-4">{getStatusBadge(t.status)}</td>
-
-                    <td className="p-4 text-xs font-medium" style={{ color: colors.subtext }}>
-                      {new Date(t.createdAt).toLocaleDateString('en-IN', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
+                    <td className="p-4 align-top">
+                      <div className="mt-0.5">{getStatusBadge(t.status)}</div>
                     </td>
 
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="p-4 text-xs font-medium align-top" style={{ color: colors.subtext }}>
+                      <div className="mt-0.5">
+                        {new Date(t.createdAt).toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </div>
+                    </td>
+
+                    <td className="p-4 text-right align-top">
+                      <div className="flex items-center justify-end gap-2 mt-0.5">
                         <button
                           onClick={() => handleOpenReplyModal(t)}
                           className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/20 transition-all font-bold"

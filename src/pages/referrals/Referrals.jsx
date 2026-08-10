@@ -27,6 +27,7 @@ import {
   getAmbassadorApplications,
   approveAmbassador,
   rejectAmbassador,
+  blockAmbassador,
   getReferralConfig,
   updateReferralConfig,
   getReferredUsers,
@@ -335,6 +336,35 @@ function Referrals() {
     }
   };
 
+  const handleBlockUnblock = async (id, name, isBlocked) => {
+    const action = isBlocked ? 'unblock' : 'block';
+    const { value: comment } = await Swal.fire({
+      title: isBlocked ? "Unblock Ambassador?" : "Block Ambassador?",
+      input: "textarea",
+      inputLabel: isBlocked ? `Reason to unblock ${name} (Optional)` : `Reason to block ${name}`,
+      inputPlaceholder: "Enter reason here...",
+      showCancelButton: true,
+      confirmButtonColor: isBlocked ? "#10b981" : "#ef4444",
+      inputValidator: (value) => {
+        if (!isBlocked && !value) return "You need to provide a reason for blocking!";
+      },
+    });
+
+    if (comment !== undefined) {
+      try {
+        const res = await blockAmbassador(id, action, comment);
+        if (res.success) {
+          toast.success(`Ambassador ${action}ed`);
+          fetchData();
+        } else {
+          toast.error(res.message);
+        }
+      } catch (err) {
+        toast.error(`${action} failed`);
+      }
+    }
+  };
+
   const handleUpdateConfig = async () => {
     const { value: amount } = await Swal.fire({
       title: "Update Referral Commission",
@@ -420,6 +450,7 @@ function Referrals() {
             { id: "pending", label: "Pending", icon: Clock },
             { id: "approved", label: "Approved", icon: CheckCircle },
             { id: "rejected", label: "Rejected", icon: XCircle },
+            { id: "blocked", label: "Blocked", icon: XCircle },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -588,9 +619,34 @@ function Referrals() {
                             </>
                           )}
                           {app.status === "approved" && (
-                            <div className="flex items-center gap-1 text-green-500 font-bold">
-                              <Award size={16} />
-                              <span className="text-xs">Active Ambassador</span>
+                            <div className="flex flex-col gap-2 w-full">
+                              <div className="flex items-center gap-1 text-green-500 font-bold self-end">
+                                <Award size={16} />
+                                <span className="text-xs">Active Ambassador</span>
+                              </div>
+                              <button
+                                onClick={() => handleBlockUnblock(app._id, app.fullName, false)}
+                                className="px-4 py-2 rounded bg-red-500 text-white text-[10px] font-black uppercase hover:bg-red-600 transition-colors cursor-pointer w-full text-center"
+                              >
+                                Block Account
+                              </button>
+                            </div>
+                          )}
+                          {app.status === "blocked" && (
+                            <div className="flex flex-col gap-2 w-full">
+                              <div className="flex items-center gap-1 text-red-500 font-bold self-end">
+                                <XCircle size={16} />
+                                <span className="text-xs">Blocked Ambassador</span>
+                              </div>
+                              <p className="text-[10px] opacity-40 italic text-right mb-1">
+                                {app.adminComment}
+                              </p>
+                              <button
+                                onClick={() => handleBlockUnblock(app._id, app.fullName, true)}
+                                className="px-4 py-2 rounded bg-green-500 text-white text-[10px] font-black uppercase hover:bg-green-600 transition-colors cursor-pointer w-full text-center"
+                              >
+                                Unblock Account
+                              </button>
                             </div>
                           )}
                           {app.status === "rejected" && (

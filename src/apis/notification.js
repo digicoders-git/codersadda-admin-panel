@@ -1,7 +1,8 @@
 import http from './http';
 
 export const createNotification = async (data) => {
-  const response = await http.post('/notifications/admin/create', data);
+  const config = data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+  const response = await http.post('/notifications/admin/create', data, config);
   return response.data;
 };
 

@@ -94,7 +94,7 @@ function Slider() {
       const res = await apiToggleSliderStatus(id);
       if (res.success) {
         setSliders((prev) =>
-          prev.map((s) => (s._id === id ? { ...s, isActive: !s.isActive } : s)),
+          prev.map((s) => (s._id === id ? { ...s, isActive: res.data.isActive } : s)),
         );
         toast.info("Slider status updated");
       }

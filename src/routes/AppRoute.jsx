@@ -88,9 +88,8 @@ import Coupons from "../pages/coupons/Coupons";
 import AddCoupon from "../pages/coupons/AddCoupon";
 import EditCoupon from "../pages/coupons/EditCoupon";
 import SupportTickets from "../pages/SupportTickets";
+import Faqs from "../pages/faqs/Faqs";
 import Notifications from "../pages/Notifications";
-import CreateNotification from "../pages/CreateNotification";
-
 export const AppRoute = [
   { path: "courses/manage-certificates", component: ManageCertificates },
   { path: "courses/generate-certificate", component: GenerateCertificate },
@@ -102,7 +101,6 @@ export const AppRoute = [
   { path: "sales/jobs", component: JobSales },
   { path: "sales/subscriptions", component: SubscriptionSales },
   { path: "notifications", component: Notifications },
-  { path: "notifications/create", component: CreateNotification },
   { path: "category", component: Category },
   { path: "courses", component: Courses },
   { path: "courses/topics", component: AllTopics },
@@ -198,4 +196,5 @@ export const AppRoute = [
   { path: "coupons/add", component: AddCoupon },
   { path: "coupons/edit/:id", component: EditCoupon },
   { path: "support-tickets", component: SupportTickets },
+  { path: "faqs", component: Faqs },
 ];

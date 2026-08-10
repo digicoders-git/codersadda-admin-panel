@@ -24,6 +24,7 @@ import {
   Globe,
   Ticket,
   LifeBuoy,
+  HelpCircle,
 } from "lucide-react";
 import { Clock } from "./Clock";
 import logo from "../assets/logo.png";
@@ -194,6 +195,7 @@ const Dashboard = () => {
     },
     { name: "Coupons", icon: Ticket, path: "/dashboard/coupons" },
     { name: "Support Tickets", icon: LifeBuoy, path: "/dashboard/support-tickets" },
+    { name: "FAQs", icon: HelpCircle, path: "/dashboard/faqs" },
     { name: "Notifications", icon: Bell, path: "/dashboard/notifications" },
     { name: "Referrals", icon: Share2, path: "/dashboard/referrals" },
     {

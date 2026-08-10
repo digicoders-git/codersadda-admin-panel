@@ -40,15 +40,21 @@ function ViewLectureInstructor() {
 
         if (lectureRes.success) {
           const l = lectureRes.data;
+          let resourceUrl = l.resource?.url;
+          let originalName = l.resource?.public_id?.split("/").pop() || "Download Notes";
+          
+          if (!originalName.includes(".")) {
+             originalName = `${originalName}.pdf`;
+          }
+
           setLecture({
             ...l,
             lectureSrNo: l.srNo,
             isLocked: l.privacy === "locked",
             videoUrl: l.video?.url,
             thumbnailUrl: l.thumbnail?.url,
-            pdfUrl: l.resource?.url,
-            pdfFileName:
-              l.resource?.public_id?.split("/").pop() || "Download Notes",
+            pdfUrl: resourceUrl,
+            pdfFileName: originalName,
           });
         }
       } catch (error) {
@@ -183,11 +189,32 @@ function ViewLectureInstructor() {
                       <h3 className="text-xs font-black uppercase tracking-widest opacity-40 mb-4">
                         Resources
                       </h3>
-                      <a
-                        href={lecture.pdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-3 rounded-xl border hover:bg-black/5 transition-all group"
+                      <button
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          const btn = e.currentTarget;
+                          const originalText = btn.querySelector('.pdf-text').innerText;
+                          btn.querySelector('.pdf-text').innerText = "Loading PDF...";
+                          btn.style.opacity = "0.7";
+                          btn.style.pointerEvents = "none";
+                          
+                          try {
+                            const newWindow = window.open('about:blank', '_blank');
+                            const res = await fetch(lecture.pdfUrl);
+                            const blob = await res.blob();
+                            const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+                            const url = window.URL.createObjectURL(pdfBlob);
+                            newWindow.location.href = url;
+                            setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+                          } catch (err) {
+                            window.open(lecture.pdfUrl, '_blank');
+                          } finally {
+                            btn.querySelector('.pdf-text').innerText = originalText;
+                            btn.style.opacity = "1";
+                            btn.style.pointerEvents = "auto";
+                          }
+                        }}
+                        className="flex items-center w-full text-left gap-3 p-3 rounded-xl border hover:bg-black/5 transition-all group cursor-pointer"
                         style={{ borderColor: colors.accent + "20" }}
                       >
                         <div className="p-2 rounded-lg bg-red-500/10 text-red-500 group-hover:scale-110 transition-transform">
@@ -195,13 +222,13 @@ function ViewLectureInstructor() {
                         </div>
                         <div className="min-w-0">
                           <p
-                            className="text-xs font-bold truncate"
+                            className="text-xs font-bold truncate pdf-text"
                             style={{ color: colors.text }}
                           >
                             {lecture.pdfFileName || "Download Notes"}
                           </p>
                         </div>
-                      </a>
+                      </button>
                     </div>
                   )}
 

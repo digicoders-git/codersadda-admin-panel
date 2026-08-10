@@ -43,6 +43,14 @@ function ViewLecture() {
 
         if (lectureRes.success) {
           const l = lectureRes.data;
+          let resourceUrl = l.resource?.url;
+          let originalName = l.resource?.url?.split("/").pop() || l.resource?.public_id?.split("/").pop() || "Download Notes";
+          
+          // Ensure originalName has an extension for the UI display
+          if (!originalName.includes(".")) {
+             originalName = `${originalName}.pdf`;
+          }
+
           // Map backend lecture fields to frontend state
           setLecture({
             ...l,
@@ -51,8 +59,8 @@ function ViewLecture() {
             videoUrl: l.video?.url,
             videoFileName: l.video?.url?.split("/").pop() || l.video?.public_id?.split("/").pop() || "Video File",
             thumbnailUrl: l.thumbnail?.url,
-            pdfUrl: l.resource?.url,
-            pdfFileName: l.resource?.url?.split("/").pop() || l.resource?.public_id?.split("/").pop() || "Download Notes",
+            pdfUrl: resourceUrl,
+            pdfFileName: originalName,
           });
         }
       } catch (error) {
@@ -205,11 +213,32 @@ function ViewLecture() {
                       <h3 className="text-xs font-black uppercase tracking-widest opacity-40 mb-4">
                         Lecture Resources
                       </h3>
-                      <a
-                        href={lecture.pdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-3 rounded-xl border hover:bg-black/5 transition-all group"
+                      <button
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          const btn = e.currentTarget;
+                          const originalText = btn.querySelector('.pdf-text').innerText;
+                          btn.querySelector('.pdf-text').innerText = "Loading PDF...";
+                          btn.style.opacity = "0.7";
+                          btn.style.pointerEvents = "none";
+                          
+                          try {
+                            const newWindow = window.open('about:blank', '_blank');
+                            const res = await fetch(lecture.pdfUrl);
+                            const blob = await res.blob();
+                            const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+                            const url = window.URL.createObjectURL(pdfBlob);
+                            newWindow.location.href = url;
+                            setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+                          } catch (err) {
+                            window.open(lecture.pdfUrl, '_blank');
+                          } finally {
+                            btn.querySelector('.pdf-text').innerText = originalText;
+                            btn.style.opacity = "1";
+                            btn.style.pointerEvents = "auto";
+                          }
+                        }}
+                        className="flex items-center w-full text-left gap-3 p-3 rounded-xl border hover:bg-black/5 transition-all group cursor-pointer"
                         style={{ borderColor: colors.accent + "20" }}
                       >
                         <div className="p-2 rounded-lg bg-red-500/10 text-red-500 group-hover:scale-110 transition-transform">
@@ -217,7 +246,7 @@ function ViewLecture() {
                         </div>
                         <div className="min-w-0">
                           <p
-                            className="text-xs font-bold truncate"
+                            className="text-xs font-bold truncate pdf-text"
                             style={{ color: colors.text }}
                           >
                             {lecture.pdfFileName || "Download Notes"}
@@ -226,7 +255,7 @@ function ViewLecture() {
                             PDF Document
                           </p>
                         </div>
-                      </a>
+                      </button>
                     </div>
                   )}
 
