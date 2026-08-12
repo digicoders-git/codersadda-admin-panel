@@ -22,6 +22,8 @@ import {
 
 import { toast } from "react-toastify";
 import Loader from "../../components/Loader";
+import Cropper from "react-easy-crop";
+import getCroppedImg from "../../utils/cropImage";
 
 function AddInstructor() {
   const { colors } = useTheme();
@@ -43,6 +45,14 @@ function AddInstructor() {
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Cropping State
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+  const [selectedImageForCrop, setSelectedImageForCrop] = useState(null);
+  const [selectedFileName, setSelectedFileName] = useState("");
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
   useEffect(() => {
     if (id) {
@@ -245,8 +255,14 @@ function AddInstructor() {
                   onChange={(e) => {
                     const file = e.target.files[0];
                     if (file) {
-                      setFormData({ ...formData, profilePicture: file });
-                      setImagePreview(URL.createObjectURL(file));
+                      setSelectedFileName(file.name);
+                      const reader = new FileReader();
+                      reader.addEventListener("load", () => {
+                        setSelectedImageForCrop(reader.result);
+                        setIsCropModalOpen(true);
+                      });
+                      reader.readAsDataURL(file);
+                      e.target.value = null; // reset input
                     }
                   }}
                 />
@@ -479,14 +495,8 @@ function AddInstructor() {
               }}
               disabled={actionLoading}
             >
-              {actionLoading ? (
-                <Loader size={18} variant="button" />
-              ) : (
-                <>
-                  <Save size={18} />{" "}
-                  {id ? "Update Instructor" : "Create Account"}
-                </>
-              )}
+              {actionLoading ? <Loader size={20} /> : <Save size={18} />}
+              {actionLoading ? "Saving..." : "Save Instructor"}
             </button>
             <button
               type="button"
@@ -497,6 +507,95 @@ function AddInstructor() {
               Cancel
             </button>
           </div>
+          {/* Crop Modal */}
+          {isCropModalOpen && selectedImageForCrop && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80">
+              <div
+                className="bg-white p-6 rounded-lg w-[90%] md:w-[600px] max-h-[90vh] flex flex-col"
+                style={{ backgroundColor: colors.sidebar || "#fff" }}
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <h3
+                    className="text-xl font-bold"
+                    style={{ color: colors.text }}
+                  >
+                    Crop Profile Picture
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setIsCropModalOpen(false)}
+                    style={{ color: colors.text }}
+                    className="p-2 hover:bg-gray-200 rounded-full"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="relative w-full h-[400px] bg-black rounded-lg overflow-hidden">
+                  <Cropper
+                    image={selectedImageForCrop}
+                    crop={crop}
+                    zoom={zoom}
+                    aspect={1}
+                    cropShape="round"
+                    showGrid={false}
+                    onCropChange={setCrop}
+                    onCropComplete={(croppedArea, croppedAreaPixels) =>
+                      setCroppedAreaPixels(croppedAreaPixels)
+                    }
+                    onZoomChange={setZoom}
+                  />
+                </div>
+                <div className="mt-6 flex items-center gap-4">
+                  <span style={{ color: colors.text }}>Zoom:</span>
+                  <input
+                    type="range"
+                    min={1}
+                    max={3}
+                    step={0.1}
+                    value={zoom}
+                    onChange={(e) => setZoom(Number(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsCropModalOpen(false)}
+                    className="px-4 py-2 rounded border"
+                    style={{ borderColor: colors.primary, color: colors.primary }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const croppedImageBlob = await getCroppedImg(
+                          selectedImageForCrop,
+                          croppedAreaPixels
+                        );
+                        const file = new File(
+                          [croppedImageBlob],
+                          selectedFileName || "profile.jpg",
+                          { type: "image/jpeg" }
+                        );
+                        setFormData({ ...formData, profilePicture: file });
+                        setImagePreview(URL.createObjectURL(croppedImageBlob));
+                        setIsCropModalOpen(false);
+                      } catch (e) {
+                        console.error(e);
+                        toast.error("Failed to crop image.");
+                      }
+                    }}
+                    className="px-6 py-2 rounded text-white"
+                    style={{ backgroundColor: colors.primary }}
+                  >
+                    Crop & Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </form>
       )}
 
