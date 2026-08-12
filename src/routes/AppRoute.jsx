@@ -45,6 +45,7 @@ import Topics from "../pages/quizzes/Topics";
 import ManageQuestions from "../pages/quizzes/ManageQuestions";
 import Sales from "../pages/sales/Sales";
 import CourseSales from "../pages/sales/CourseSales";
+import LectureSales from "../pages/sales/LectureSales";
 import EbookSales from "../pages/sales/EbookSales";
 import JobSales from "../pages/sales/JobSales";
 import SubscriptionSales from "../pages/sales/SubscriptionSales";
@@ -90,6 +91,16 @@ import EditCoupon from "../pages/coupons/EditCoupon";
 import SupportTickets from "../pages/SupportTickets";
 import Faqs from "../pages/faqs/Faqs";
 import Notifications from "../pages/Notifications";
+
+const TestsPage = () => <Quizzes type="Test" />;
+const AddTestPage = () => <AddQuiz type="Test" />;
+const EditTestPage = () => <EditQuiz type="Test" />;
+const ViewTestPage = () => <ViewQuiz type="Test" />;
+const TestReportPage = () => <QuizReport type="Test" />;
+const UserTestResultPage = () => <UserQuizResult type="Test" />;
+const ManageTestCertificatesPage = () => <ManageQuizCertificates type="Test" />;
+const GenerateTestCertificatePage = () => <GenerateQuizCertificate type="Test" />;
+
 export const AppRoute = [
   { path: "courses/manage-certificates", component: ManageCertificates },
   { path: "courses/generate-certificate", component: GenerateCertificate },
@@ -97,6 +108,7 @@ export const AppRoute = [
   { path: "quizzes/generate-certificate", component: GenerateQuizCertificate },
   { path: "sales", component: Sales },
   { path: "sales/courses", component: CourseSales },
+  { path: "sales/lectures", component: LectureSales },
   { path: "sales/ebooks", component: EbookSales },
   { path: "sales/jobs", component: JobSales },
   { path: "sales/subscriptions", component: SubscriptionSales },
@@ -184,6 +196,17 @@ export const AppRoute = [
     path: "quizzes/report/:quizId/result/:studentId",
     component: UserQuizResult,
   },
+  { path: "tests", component: TestsPage },
+  { path: "tests/add", component: AddTestPage },
+  { path: "tests/edit/:id", component: EditTestPage },
+  { path: "tests/view/:id", component: ViewTestPage },
+  { path: "tests/report/:id", component: TestReportPage },
+  {
+    path: "tests/report/:quizId/result/:studentId",
+    component: UserTestResultPage,
+  },
+  { path: "tests/manage-certificates", component: ManageTestCertificatesPage },
+  { path: "tests/generate-certificate", component: GenerateTestCertificatePage },
   { path: "courses/enrolled/view/:id", component: ViewEnrolledStudent },
   { path: "ebooks/enrolled/view/:id", component: ViewEnrolledStudent },
   { path: "jobs/enrolled/view/:id", component: ViewEnrolledStudent },

@@ -46,6 +46,7 @@ function AddLecture() {
     pdfFileName: "",
     pdfUrl: "",
     isLocked: false,
+    lecturePrice: 0,
     lectureSrNo: "",
     status: "Active",
     contentType: initialType,
@@ -191,6 +192,7 @@ function AddLecture() {
       payload.append("duration", formData.duration);
       payload.append("description", formData.description);
       payload.append("privacy", formData.isLocked ? "locked" : "free");
+      payload.append("price", formData.isLocked ? (formData.lecturePrice || 0) : 0);
       payload.append("isActive", formData.status === "Active");
       payload.append("contentType", formData.contentType || "video");
       if (formData.liveUrl) payload.append("liveUrl", formData.liveUrl);
@@ -262,7 +264,7 @@ function AddLecture() {
           <Loader size={80} />
         </div>
       ) : course ? (
-        <form onSubmit={handleSubmit} className="max-w-full space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Lecture Details */}
           <div className="space-y-6">
             <div
@@ -577,7 +579,7 @@ function AddLecture() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-1">
                     <label style={labelStyle}>Lecture Privacy</label>
                     <div className="flex gap-4">
@@ -623,6 +625,39 @@ function AddLecture() {
                       </button>
                     </div>
                   </div>
+
+                  {/* Lecture Price — only show when Locked */}
+                  {formData.isLocked ? (
+                    <div className="space-y-1">
+                      <label style={labelStyle}>Lecture Price (₹)</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>₹</span>
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="0 = free for enrolled, >0 = paid"
+                          value={formData.lecturePrice === 0 ? "" : formData.lecturePrice}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormData({ ...formData, lecturePrice: val === "" ? 0 : parseFloat(val) || 0 });
+                          }}
+                          className="flex-1 px-4 py-3 rounded border text-sm"
+                          style={{
+                            backgroundColor: colors.background,
+                            borderColor: colors.accent + "30",
+                            color: colors.text,
+                          }}
+                        />
+                      </div>
+                      <p style={{ color: colors.accent, fontSize: 11, marginTop: 4 }}>
+                        Set 0 for free-to-enrolled. Set amount (e.g. ₹99) to require separate payment.
+                      </p>
+                    </div>
+                  ) : (
+                    /* Placeholder to keep layout grid intact */
+                    <div className="hidden md:block"></div>
+                  )}
+
                   <div className="space-y-1">
                     <label style={labelStyle}>Lecture Status</label>
                     <div className="flex gap-4">

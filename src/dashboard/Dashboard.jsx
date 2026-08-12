@@ -118,6 +118,7 @@ const Dashboard = () => {
       submenu: [
         { name: "Dashboard", path: "/dashboard/sales" },
         { name: "Course Sales", path: "/dashboard/sales/courses" },
+        { name: "Lecture Sales", path: "/dashboard/sales/lectures" },
         { name: "Ebooks Sales", path: "/dashboard/sales/ebooks" },
         { name: "Jobs Sales", path: "/dashboard/sales/jobs" },
         { name: "Subscription", path: "/dashboard/sales/subscriptions" },
@@ -138,6 +139,10 @@ const Dashboard = () => {
         { name: "Category", path: "/dashboard/category" },
         { name: "Add Course", path: "/dashboard/courses/add" },
         { name: "All Courses", path: "/dashboard/courses" },
+        { name: "Topics", path: "/dashboard/courses/topics" },
+        { name: "Lectures", path: "/dashboard/lectures" },
+        { name: "Enrolled Students", path: "/dashboard/courses/enrolled" },
+        { name: "Manage Certificate", path: "/dashboard/courses/manage-certificates" },
       ],
     },
     {
@@ -156,6 +161,7 @@ const Dashboard = () => {
       submenu: [
         { name: "All Jobs", path: "/dashboard/jobs" },
         { name: "Add Jobs", path: "/dashboard/jobs/add" },
+        { name: "Job Applications", path: "/dashboard/job-applications" },
         { name: "Enrolled Students", path: "/dashboard/jobs/enrolled" },
       ],
     },
@@ -178,10 +184,22 @@ const Dashboard = () => {
       icon: FileQuestion,
       submenu: [
         { name: "Add Topic", path: "/dashboard/quizzes/topics" },
+        { name: "Add Quiz", path: "/dashboard/quizzes/add" },
         { name: "All Quizzes", path: "/dashboard/quizzes" },
         {
           name: "Manage Certificate",
           path: "/dashboard/quizzes/manage-certificates",
+        },
+      ],
+    },
+    {
+      name: "Tests",
+      icon: FileQuestion,
+      submenu: [
+        { name: "All Tests", path: "/dashboard/tests" },
+        {
+          name: "Manage Certificate",
+          path: "/dashboard/tests/manage-certificates",
         },
       ],
     },

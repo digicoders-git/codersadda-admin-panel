@@ -24,7 +24,7 @@ import Loader from "../../components/Loader";
 import Toggle from "../../components/ui/Toggle";
 import CertificatePreviewCanvas from "../../components/CertificatePreviewCanvas";
 
-export default function ManageQuizCertificates() {
+export default function ManageQuizCertificates({ type = "Quiz" }) {
   const { colors } = useTheme();
   const navigate = useNavigate();
   const [templates, setTemplates] = useState([]);
@@ -49,12 +49,12 @@ export default function ManageQuizCertificates() {
         document.head.removeChild(link);
       }
     };
-  }, []);
+  }, [type]);
 
   const fetchTemplates = async () => {
     try {
       setLoading(true);
-      const res = await getAllQuizCertificateTemplates();
+      const res = await getAllQuizCertificateTemplates(type);
       if (res.success) {
         setTemplates(res.data || []);
       }
@@ -144,7 +144,7 @@ export default function ManageQuizCertificates() {
               className="text-2xl md:text-3xl font-bold flex items-center gap-3 tracking-tight"
               style={{ color: colors.text }}
             >
-              Manage Quiz Certificates
+              {type === "Test" ? "Test Certificates" : "Quiz Certificates"}
             </h1>
             <p
               className="text-xs md:text-sm font-bold opacity-40 mt-1 uppercase tracking-widest"
@@ -176,7 +176,7 @@ export default function ManageQuizCertificates() {
           </div>
 
           <button
-            onClick={() => navigate("/dashboard/quizzes/generate-certificate")}
+            onClick={() => navigate(type === "Test" ? "/dashboard/tests/generate-certificate" : "/dashboard/quizzes/generate-certificate")}
             className="flex-none px-6 py-2.5 cursor-pointer rounded font-black text-xs uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
             style={{
               backgroundColor: colors.primary,
@@ -389,7 +389,7 @@ export default function ManageQuizCertificates() {
             </p>
           </div>
           <button
-            onClick={() => navigate("/dashboard/quizzes/generate-certificate")}
+            onClick={() => navigate(type === "Test" ? "/dashboard/tests/generate-certificate" : "/dashboard/quizzes/generate-certificate")}
             className="mt-4 px-8 py-3 rounded-full font-black text-[10px] uppercase tracking-widest text-white"
             style={{ backgroundColor: colors.primary }}
           >

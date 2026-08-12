@@ -46,3 +46,8 @@ export const exportResultPDF = async (quizId, studentId) => {
     responseType: "blob",
   });
 };
+
+export const sendQuizReminder = async (id) => {
+  const response = await http.post(`/quiz/remind/${id}`);
+  return response.data;
+};

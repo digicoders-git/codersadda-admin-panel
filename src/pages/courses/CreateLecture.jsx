@@ -41,6 +41,7 @@ function CreateLecture() {
     duration: "",
     description: "",
     privacy: "locked",
+    lecturePrice: 0,
     isActive: true,
     videoFileName: "",
     videoUrl: "",
@@ -209,6 +210,7 @@ function CreateLecture() {
       payload.append("duration", formData.duration);
       payload.append("description", formData.description);
       payload.append("privacy", formData.privacy);
+      payload.append("price", formData.privacy === "locked" ? (formData.lecturePrice || 0) : 0);
       payload.append("isActive", formData.isActive);
 
       if (videoInputRef.current?.files[0]) {
@@ -563,6 +565,35 @@ function CreateLecture() {
                     ))}
                   </div>
                 </div>
+
+                {/* Lecture Price — only show when Locked */}
+                {formData.privacy === "locked" && (
+                  <div className="space-y-4">
+                    <label style={labelStyle}>Lecture Price (₹)</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="0 = free for enrolled, >0 = paid"
+                        value={formData.lecturePrice === 0 ? "" : formData.lecturePrice}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormData({ ...formData, lecturePrice: val === "" ? 0 : parseFloat(val) || 0 });
+                        }}
+                        className="w-full px-4 py-3 rounded border text-sm"
+                        style={{
+                          backgroundColor: colors.background,
+                          borderColor: colors.accent + "30",
+                          color: colors.text,
+                        }}
+                      />
+                    </div>
+                    <p style={{ color: colors.accent, fontSize: 11, marginTop: 4 }}>
+                      Set 0 for free-to-enrolled. Set amount (e.g. ₹99) to require separate payment.
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <label style={labelStyle}>Visibility</label>

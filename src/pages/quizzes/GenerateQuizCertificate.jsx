@@ -25,7 +25,7 @@ import {
 import ModernSelect from "../../components/ModernSelect";
 import Toggle from "../../components/ui/Toggle";
 
-export default function GenerateQuizCertificate() {
+export default function GenerateQuizCertificate({ type = "Quiz" }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { colors } = useTheme();
@@ -56,7 +56,7 @@ export default function GenerateQuizCertificate() {
 
   const fetchQuizzes = async () => {
     try {
-      const response = await getQuizzes({ status: "true", limit: 1000 });
+      const response = await getQuizzes({ status: "true", limit: 1000, type });
       if (response.success) {
         const fetchedQuizzes = response.data || [];
         setQuizzes(fetchedQuizzes);
@@ -530,7 +530,7 @@ export default function GenerateQuizCertificate() {
 
         ctx.font = `${weight}${italic}${sizePx}px ${fontStyleValue}`;
         ctx.fillStyle = settings.textColor;
-        ctx.textAlign = "center";
+        ctx.textAlign = settings.textAlign || "center";
         ctx.textBaseline = "middle";
 
         const x = parseFloat(settings.horizontalPosition) || 0;
@@ -556,9 +556,13 @@ export default function GenerateQuizCertificate() {
         ctx.fillText(sampleText, x, y);
 
         const metrics = ctx.measureText(sampleText);
+        let boundX = x - metrics.width / 2;
+        if (settings.textAlign === "left") boundX = x;
+        else if (settings.textAlign === "right") boundX = x - metrics.width;
+        
         layerBounds.current.push({
           id: layer.id,
-          x: x - metrics.width / 2,
+          x: boundX,
           y: y - sizePx / 2,
           width: metrics.width,
           height: sizePx,
@@ -570,8 +574,13 @@ export default function GenerateQuizCertificate() {
           ctx.beginPath();
           ctx.strokeStyle = settings.textColor;
           ctx.lineWidth = sizePx * 0.05;
-          ctx.moveTo(x - lineWidth / 2, lineY);
-          ctx.lineTo(x + lineWidth / 2, lineY);
+          
+          let startX = x - lineWidth / 2;
+          if (settings.textAlign === "left") startX = x;
+          else if (settings.textAlign === "right") startX = x - lineWidth;
+
+          ctx.moveTo(startX, lineY);
+          ctx.lineTo(startX + lineWidth, lineY);
           ctx.stroke();
         }
       });
@@ -602,6 +611,7 @@ export default function GenerateQuizCertificate() {
           pos.y <= l.y + l.height,
       );
     if (clickedLayer) {
+
       setDraggingLayer(clickedLayer.id);
       canvasRef.current.style.cursor = "grabbing";
     }
@@ -648,7 +658,7 @@ export default function GenerateQuizCertificate() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate("/dashboard/quizzes/manage-certificates")}
+            onClick={() => navigate(type === "Test" ? "/dashboard/tests/manage-certificates" : "/dashboard/quizzes/manage-certificates")}
             className="flex items-center gap-2 px-4 py-2 rounded font-medium transition-all active:scale-95 border"
             style={{
               color: colors.text,
@@ -664,13 +674,13 @@ export default function GenerateQuizCertificate() {
               className="text-xl sm:text-2xl font-bold"
               style={{ color: colors.text }}
             >
-              Quiz Certificate Designer
+              {type === "Test" ? "Generate Test Certificate" : "Generate Quiz Certificate"} Designer
             </h2>
             <p
               className="text-sm opacity-50 font-bold"
               style={{ color: colors.textSecondary }}
             >
-              Design templates for quiz completion certificates
+              Design and issue certificates for {type === "Test" ? "tests" : "quizzes"} completion certificates
             </p>
           </div>
         </div>
@@ -703,13 +713,13 @@ export default function GenerateQuizCertificate() {
               style={{ color: colors.text }}
             >
               <CheckCircle2 size={16} style={{ color: colors.primary }} /> 1.
-              Select Quiz
+              Select {type === "Test" ? "Test" : "Quiz"}
             </h3>
             <ModernSelect
               options={quizzes.map((q) => ({ label: q.title, value: q._id }))}
               value={selectedQuiz}
               onChange={handleQuizChange}
-              placeholder="Select a quiz..."
+              placeholder={`Search ${type === "Test" ? "tests" : "quizzes"}...`}
             />
           </div>
 
@@ -884,7 +894,23 @@ export default function GenerateQuizCertificate() {
                       }}
                       placeholder="Preview Text"
                     />
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
+                      <select
+                        value={formData[layer.id].textAlign || "center"}
+                        onChange={(e) =>
+                          updateNestedState(layer.id, "textAlign", e.target.value)
+                        }
+                        className="text-xs p-2 border rounded outline-none"
+                        style={{
+                          backgroundColor: colors.background,
+                          borderColor: colors.accent + "20",
+                          color: colors.text,
+                        }}
+                      >
+                        <option value="left" style={{ backgroundColor: colors.sidebar, color: colors.text }}>Left Align</option>
+                        <option value="center" style={{ backgroundColor: colors.sidebar, color: colors.text }}>Center Align</option>
+                        <option value="right" style={{ backgroundColor: colors.sidebar, color: colors.text }}>Right Align</option>
+                      </select>
                       <select
                         value={formData[layer.id].fontFamily}
                         onChange={(e) =>

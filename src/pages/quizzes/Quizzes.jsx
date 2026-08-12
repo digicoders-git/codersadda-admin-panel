@@ -14,6 +14,7 @@ import {
   Eye,
   Copy,
   FileText,
+  Bell,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import {
@@ -22,6 +23,7 @@ import {
   updateQuiz as apiUpdateQuiz,
   toggleQuizStatus as apiToggleQuizStatus,
   exportReportExcel,
+  sendQuizReminder,
 } from "../../apis/quiz";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify";
@@ -30,13 +32,14 @@ import Loader from "../../components/Loader";
 import ModernSelect from "../../components/ModernSelect";
 import { Loader2 } from "lucide-react";
 
-function Quizzes() {
+function Quizzes({ type = "Quiz" }) {
   const { colors } = useTheme();
   const navigate = useNavigate();
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [courseFilter, setCourseFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState(""); // "", "Active", "Disable"
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -53,6 +56,11 @@ function Quizzes() {
         limit: 10,
         search: searchQuery,
       };
+
+      if (courseFilter) {
+        params.courseId = courseFilter;
+      }
+      params.type = type;
 
       if (statusFilter === "Active") params.status = "true";
       else if (statusFilter === "Disable") params.status = "false";
@@ -82,7 +90,7 @@ function Quizzes() {
     }, 500);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery, statusFilter, type]);
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
@@ -161,27 +169,50 @@ function Quizzes() {
     }
   };
 
+  const handleSendReminder = async (quiz) => {
+    Swal.fire({
+      title: "Send Reminder?",
+      text: `Send a push notification reminder for "${quiz.title}" to all users?`,
+      icon: "info",
+      showCancelButton: true,
+      confirmButtonColor: colors.primary,
+      cancelButtonColor: "#6B7280",
+      confirmButtonText: "Yes, Send!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          setActionLoading(quiz._id);
+          const res = await sendQuizReminder(quiz._id);
+          if (res.success) toast.success("Reminder sent successfully!");
+        } catch (err) {
+          toast.error(err.response?.data?.message || "Failed to send reminder");
+        } finally {
+          setActionLoading(null);
+        }
+      }
+    });
+  };
+
   return (
     <div className="w-full mx-auto pb-20 pt-4 px-4 h-full overflow-auto">
-      {/* actionLoading can be handled at row level to avoid full-page flash if desired, 
-          but for whole-page critical actions like delete we still use it if needed. 
-          For toggle, we will use row-level. */}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: colors.text }}>
-            Quizzes
+            {type === "Test" ? "Tests" : "Quizzes"}
           </h1>
           <p className="text-xs font-bold opacity-40 uppercase tracking-widest">
-            Manage assessments
+            <span className="text-sm opacity-70">
+              Manage all your {type === "Test" ? "tests" : "quizzes"} in one place
+            </span>
           </p>
         </div>
         <button
-          onClick={() => navigate("/dashboard/quizzes/add")}
+          onClick={() => navigate(type === "Test" ? "/dashboard/tests/add" : "/dashboard/quizzes/add")}
           className="flex items-center gap-2 px-6 py-3 rounded font-bold text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95 cursor-pointer"
           style={{ backgroundColor: colors.primary, color: colors.background }}
         >
-          <Plus size={18} /> Add Quiz
+          <Plus size={18} /> Add {type === "Test" ? "Test" : "Quiz"}
         </button>
       </div>
 
@@ -194,7 +225,7 @@ function Quizzes() {
           />
           <input
             type="text"
-            placeholder="Search quizzes..."
+            placeholder={`Search ${type === "Test" ? "tests" : "quizzes"}...`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded border outline-none text-sm font-semibold transition-all focus:ring-2"
@@ -269,8 +300,19 @@ function Quizzes() {
                           <FileQuestion size={20} />
                         </div>
                         <div>
-                          <p className="font-bold line-clamp-1">{quiz.title}</p>
-                          <p className="text-xs opacity-50 line-clamp-1 max-w-[200px]">
+                          <h4 className="font-bold text-sm mb-1">{quiz.title}</h4>
+                          <div className="flex items-center gap-2 mb-2">
+                            {quiz.courseId ? (
+                              <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                                Course: {quiz.courseId.title}
+                              </span>
+                            ) : (
+                              <span className="bg-gray-100 text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                                General
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs opacity-70 line-clamp-1 max-w-[200px]">
                             {quiz.description}
                           </p>
                         </div>
@@ -310,6 +352,32 @@ function Quizzes() {
                             (quiz.customQuestions?.length || 0)}{" "}
                           Questions
                         </span>
+                        {quiz.scheduledStartTime && (() => {
+                          const startTime = new Date(quiz.scheduledStartTime);
+                          const durationMs = (quiz.duration || 0) * 60000;
+                          const endTime = new Date(startTime.getTime() + durationMs);
+                          const now = new Date();
+
+                          if (now > endTime) {
+                            return (
+                              <span className="flex items-center gap-1 font-bold text-red-500 mt-1">
+                                <Clock size={12} /> Ended
+                              </span>
+                            );
+                          } else if (now >= startTime) {
+                            return (
+                              <span className="flex items-center gap-1 font-bold text-green-500 mt-1">
+                                <Clock size={12} /> Ongoing
+                              </span>
+                            );
+                          } else {
+                            return (
+                              <span className="flex items-center gap-1 font-bold text-orange-500 mt-1">
+                                <Clock size={12} /> Starts: {startTime.toLocaleString()}
+                              </span>
+                            );
+                          }
+                        })()}
                       </div>
                     </td>
                     <td className="p-4 text-center">
@@ -383,9 +451,24 @@ function Quizzes() {
                             <FileText size={16} />
                           )}
                         </button>
+                        {quiz.scheduledStartTime && new Date(quiz.scheduledStartTime) > new Date() && (
+                          <button
+                            onClick={() => handleSendReminder(quiz)}
+                            disabled={actionLoading === quiz._id}
+                            className="p-2 rounded border hover:bg-orange-50 text-orange-500 cursor-pointer transition-colors disabled:opacity-50"
+                            style={{ borderColor: colors.accent + "30" }}
+                            title="Send Reminder"
+                          >
+                            {actionLoading === quiz._id ? (
+                              <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                              <Bell size={16} />
+                            )}
+                          </button>
+                        )}
                         <button
                           onClick={() =>
-                            navigate(`/dashboard/quizzes/view/${quiz._id}`)
+                            navigate(type === "Test" ? `/dashboard/tests/view/${quiz._id}` : `/dashboard/quizzes/view/${quiz._id}`)
                           }
                           className="p-2 rounded border hover:bg-black/5 text-gray-600 cursor-pointer transition-colors"
                           style={{ borderColor: colors.accent + "30" }}
@@ -395,7 +478,7 @@ function Quizzes() {
                         </button>
                         <button
                           onClick={() =>
-                            navigate(`/dashboard/quizzes/edit/${quiz._id}`)
+                            navigate(type === "Test" ? `/dashboard/tests/edit/${quiz._id}` : `/dashboard/quizzes/edit/${quiz._id}`)
                           }
                           className="p-2 rounded border hover:bg-black/5 text-blue-500 cursor-pointer transition-colors"
                           style={{ borderColor: colors.accent + "30" }}
@@ -419,7 +502,7 @@ function Quizzes() {
                 <tr>
                   <td colSpan={6} className="p-20 text-center opacity-40">
                     <FileQuestion size={48} className="mx-auto mb-2" />
-                    <p>No quizzes found</p>
+                    <p>No {type === "Test" ? "tests" : "quizzes"} found</p>
                   </td>
                 </tr>
               )}
@@ -434,7 +517,7 @@ function Quizzes() {
             style={{ borderColor: colors.accent + "10" }}
           >
             <p className="text-xs font-bold opacity-40">
-              Showing {quizzes.length} of {pagination.totalCount} quizzes
+              Showing {quizzes.length} of {pagination.totalCount} {type === "Test" ? "tests" : "quizzes"}
             </p>
             <div className="flex items-center gap-1">
               <button

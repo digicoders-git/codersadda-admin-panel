@@ -416,7 +416,7 @@ export default function GenerateCertificate() {
 
         ctx.font = `${weight}${italic}${sizePx}px ${fontStyleValue}`;
         ctx.fillStyle = settings.textColor;
-        ctx.textAlign = "center";
+        ctx.textAlign = settings.textAlign || "center";
         ctx.textBaseline = "middle";
 
         const x = parseFloat(settings.horizontalPosition) || 0;
@@ -446,9 +446,14 @@ export default function GenerateCertificate() {
         const metrics = ctx.measureText(sampleText);
         const textWidth = metrics.width;
         const textHeight = sizePx; // Approximation
+
+        let boundX = x - textWidth / 2;
+        if (settings.textAlign === "left") boundX = x;
+        else if (settings.textAlign === "right") boundX = x - textWidth;
+
         layerBounds.current.push({
           id: layer.id,
-          x: x - textWidth / 2,
+          x: boundX,
           y: y - textHeight / 2,
           width: textWidth,
           height: textHeight,
@@ -461,8 +466,13 @@ export default function GenerateCertificate() {
           ctx.beginPath();
           ctx.strokeStyle = settings.textColor;
           ctx.lineWidth = sizePx * 0.05;
-          ctx.moveTo(x - lineWidth / 2, lineY);
-          ctx.lineTo(x + lineWidth / 2, lineY);
+
+          let startX = x - lineWidth / 2;
+          if (settings.textAlign === "left") startX = x;
+          else if (settings.textAlign === "right") startX = x - lineWidth;
+
+          ctx.moveTo(startX, lineY);
+          ctx.lineTo(startX + lineWidth, lineY);
           ctx.stroke();
         }
       });
@@ -833,7 +843,32 @@ export default function GenerateCertificate() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div>
+                        <label
+                          className="block text-[10px] font-black opacity-40 mb-1.5 uppercase tracking-widest"
+                          style={{ color: colors.textSecondary }}
+                        >
+                          Alignment
+                        </label>
+                        <select
+                          value={formData[layer.id].textAlign || "center"}
+                          onChange={(e) =>
+                            updateNestedState(layer.id, "textAlign", e.target.value)
+                          }
+                          className="w-full border rounded px-2 py-2 text-xs font-semibold outline-none"
+                          style={{
+                            backgroundColor: colors.background,
+                            borderColor: colors.accent + "20",
+                            color: colors.text,
+                          }}
+                        >
+                          <option value="left" style={{ backgroundColor: colors.sidebar, color: colors.text }}>Left Align</option>
+                          <option value="center" style={{ backgroundColor: colors.sidebar, color: colors.text }}>Center Align</option>
+                          <option value="right" style={{ backgroundColor: colors.sidebar, color: colors.text }}>Right Align</option>
+                        </select>
+                      </div>
+
                       <div>
                         <label
                           className="block text-[10px] font-black opacity-40 mb-1.5 uppercase tracking-widest"
@@ -844,11 +879,7 @@ export default function GenerateCertificate() {
                         <select
                           value={formData[layer.id].fontFamily}
                           onChange={(e) =>
-                            updateNestedState(
-                              layer.id,
-                              "fontFamily",
-                              e.target.value,
-                            )
+                            updateNestedState(layer.id, "fontFamily", e.target.value)
                           }
                           className="w-full border rounded px-2 py-2 text-xs font-semibold outline-none"
                           style={{

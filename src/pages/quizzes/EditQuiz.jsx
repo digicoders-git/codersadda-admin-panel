@@ -15,18 +15,20 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import { getQuizById, updateQuiz as apiUpdateQuiz } from "../../apis/quiz";
 import { getAllTopics } from "../../apis/questionTopic";
+import { getAllCourses } from "../../apis/course";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 import ModernSelect from "../../components/ModernSelect";
 import Loader from "../../components/Loader";
 
-function EditQuiz() {
+export default function EditQuiz({ type = "Quiz" }) {
   const { colors } = useTheme();
   const navigate = useNavigate();
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [topics, setTopics] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [selectedTopicId, setSelectedTopicId] = useState("");
 
   const [formData, setFormData] = useState(null);
@@ -41,38 +43,51 @@ function EditQuiz() {
   });
 
   useEffect(() => {
-    const fetchQuiz = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const res = await getQuizById(id);
-        if (res.success && res.data) {
-          setFormData(res.data);
-          setSelectedQuestionIds(res.data.selectedQuestions || []);
-          setManualQuestions(res.data.customQuestions || []);
+        const [quizRes, topicsRes, coursesRes] = await Promise.all([
+          getQuizById(id),
+          getAllTopics("", 1, 100, "true"),
+          getAllCourses({ limit: 100 }),
+        ]);
+
+        if (topicsRes.success) setTopics(topicsRes.data);
+        if (coursesRes.success) setCourses(coursesRes.data);
+
+        if (quizRes.success && quizRes.data) {
+          const quiz = quizRes.data;
+          setFormData({
+            ...quiz,
+            questionTopicId:
+              typeof quiz.questionTopicId === "object"
+                ? quiz.questionTopicId._id
+                : quiz.questionTopicId || "",
+            courseId: quiz.courseId || "general",
+            scheduledStartTime: quiz.scheduledStartTime
+              ? new Date(
+                  new Date(quiz.scheduledStartTime).getTime() -
+                    new Date().getTimezoneOffset() * 60000
+                )
+                  .toISOString()
+                  .slice(0, 16)
+              : "",
+          });
+          setSelectedQuestionIds(quiz.selectedQuestions || []);
+          setManualQuestions(quiz.customQuestions || []);
         } else {
           toast.error("Quiz not found");
-          navigate("/dashboard/quizzes");
+          navigate(type === "Test" ? "/dashboard/tests" : "/dashboard/quizzes");
         }
       } catch (err) {
         console.error(err);
-        toast.error("Failed to fetch quiz details");
-        navigate("/dashboard/quizzes");
+        toast.error("Failed to fetch data");
+        navigate(type === "Test" ? "/dashboard/tests" : "/dashboard/quizzes");
       } finally {
         setLoading(false);
       }
     };
-    const fetchTopics = async () => {
-      try {
-        const res = await getAllTopics("", 1, 100, "true");
-        if (res.success) {
-          setTopics(res.data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch topics:", err);
-      }
-    };
-    fetchQuiz();
-    fetchTopics();
+    fetchData();
   }, [id, navigate]);
 
   useEffect(() => {
@@ -182,6 +197,7 @@ function EditQuiz() {
         status: formData.status === "Active" || formData.status === true,
         questionTopicId:
           formData.questionTopicId?._id || formData.questionTopicId,
+        courseId: formData.courseId,
         selectedQuestions: selectedQuestionIds,
         customQuestions: manualQuestions.map((q) => ({
           question: q.question,
@@ -193,7 +209,7 @@ function EditQuiz() {
       const res = await apiUpdateQuiz(id, payload);
       if (res.success) {
         toast.success("Quiz updated successfully!");
-        navigate("/dashboard/quizzes");
+        navigate(type === "Test" ? "/dashboard/tests" : "/dashboard/quizzes");
       }
     } catch (err) {
       console.error(err);
@@ -213,7 +229,6 @@ function EditQuiz() {
 
   return (
     <div className="w-full mx-auto pb-20 pt-4 px-4 h-full overflow-auto">
-      {/* {actionLoading && <Loader size={128} fullPage={true} />} */}
       <div className="flex items-center gap-4 mb-8">
         <button
           onClick={() => navigate(-1)}
@@ -228,7 +243,7 @@ function EditQuiz() {
         </button>
         <div>
           <h1 className="text-2xl font-bold" style={{ color: colors.text }}>
-            Edit Quiz
+            {type === "Test" ? "Edit Test" : "Edit Quiz"}
           </h1>
           <p className="text-xs font-bold opacity-40 uppercase tracking-widest">
             Update assessment data
@@ -242,7 +257,6 @@ function EditQuiz() {
         </div>
       ) : formData ? (
         <form onSubmit={handleSubmit} className="max-w-4xl space-y-6">
-          {/* Basic Details */}
           <div
             className="p-8 rounded border shadow-sm space-y-6"
             style={{
@@ -285,11 +299,8 @@ function EditQuiz() {
                     <input
                       type="text"
                       value={formData.quizCode || ""}
-                      onChange={(e) =>
-                        setFormData({ ...formData, quizCode: e.target.value })
-                      }
-                      placeholder="e.g. QZ-101"
-                      className="w-full pl-10 pr-4 py-3 rounded border outline-none text-sm font-semibold transition-all"
+                      readOnly
+                      className="w-full pl-10 pr-4 py-3 rounded border outline-none text-sm font-semibold transition-all cursor-not-allowed opacity-70"
                       style={{
                         backgroundColor: colors.background,
                         borderColor: colors.accent + "30",
@@ -299,6 +310,22 @@ function EditQuiz() {
                   </div>
                 </div>
               </div>
+              
+              <div>
+                <label style={labelStyle}>Course</label>
+                <ModernSelect
+                  value={formData.courseId}
+                  onChange={(val) =>
+                    setFormData({ ...formData, courseId: val })
+                  }
+                  options={[
+                    { value: "general", label: "General (No Course)" },
+                    ...courses.map((c) => ({ value: c._id, label: c.title })),
+                  ]}
+                  placeholder="Select Course"
+                />
+              </div>
+
               <div>
                 <label style={labelStyle}>Description</label>
                 <textarea
@@ -316,7 +343,7 @@ function EditQuiz() {
                   }}
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                 <div>
                   <label style={labelStyle}>Duration (Minutes)</label>
                   <input
@@ -386,11 +413,29 @@ function EditQuiz() {
                     placeholder="Select Status"
                   />
                 </div>
+                <div>
+                  <label style={labelStyle}>Scheduled Start Time (Optional)</label>
+                  <input
+                    type="datetime-local"
+                    value={formData.scheduledStartTime}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        scheduledStartTime: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-3 rounded border outline-none text-sm font-semibold"
+                    style={{
+                      backgroundColor: colors.background,
+                      borderColor: colors.accent + "30",
+                      color: colors.text,
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Content Manager */}
           <div
             className="p-8 rounded border shadow-sm space-y-6"
             style={{
@@ -702,7 +747,7 @@ function EditQuiz() {
                       className="w-full py-3.5 rounded font-black text-[10px] uppercase tracking-widest text-white shadow-lg active:scale-95 transition-all"
                       style={{ backgroundColor: colors.primary }}
                     >
-                      Add to Quiz
+                      Add to {type === "Test" ? "Test" : "Quiz"}
                     </button>
                   </div>
                 </div>
@@ -788,7 +833,7 @@ function EditQuiz() {
             </button>
             <button
               type="button"
-              onClick={() => navigate("/dashboard/quizzes")}
+              onClick={() => navigate(type === "Test" ? "/dashboard/tests" : "/dashboard/quizzes")}
               className="flex-1 py-4 rounded font-black text-xs uppercase tracking-widest border opacity-60 hover:opacity-100 transition-all flex items-center justify-center gap-3 cursor-pointer"
               style={{ borderColor: colors.accent + "30", color: colors.text }}
             >
@@ -803,4 +848,3 @@ function EditQuiz() {
   );
 }
 
-export default EditQuiz;

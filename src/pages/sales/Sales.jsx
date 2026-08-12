@@ -17,6 +17,7 @@ import {
   Briefcase,
   CreditCard,
   Clock,
+  PlaySquare,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import Loader from "../../components/Loader";
@@ -83,6 +84,7 @@ function Sales() {
     ebook: 0,
     job: 0,
     subscription: 0,
+    lecture: 0,
   };
 
   const earningsCards = [
@@ -109,6 +111,12 @@ function Sales() {
       amount: `₹${lifetime.job.toLocaleString("en-IN")}`,
       icon: Briefcase,
       color: "#10b981",
+    },
+    {
+      title: "Lecture Sales",
+      amount: `₹${(lifetime.lecture || 0).toLocaleString("en-IN")}`,
+      icon: PlaySquare,
+      color: "#0ea5e9",
     },
     {
       title: "Subscriptions",
@@ -156,6 +164,7 @@ function Sales() {
       }),
       series: [
         { name: "Courses", data: getDataForType("course"), color: "#10b981" },
+        { name: "Lectures", data: getDataForType("lecture"), color: "#0ea5e9" },
         { name: "Ebooks", data: getDataForType("ebook"), color: "#3b82f6" },
         { name: "Jobs", data: getDataForType("job"), color: "#f59e0b" },
         {

@@ -14,8 +14,8 @@ export const getQuizCertificateTemplate = async (quizId) => {
   return response.data;
 };
 
-export const getAllQuizCertificateTemplates = async () => {
-  const response = await http.get('/quiz/certificate/template/all');
+export const getAllQuizCertificateTemplates = async (type = "Quiz") => {
+  const response = await http.get(`/quiz/certificate/template/all?type=${type}`);
   return response.data;
 };
 

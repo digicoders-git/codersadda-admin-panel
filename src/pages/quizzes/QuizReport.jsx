@@ -24,7 +24,7 @@ import { getUsers } from "../../apis/user";
 import { toast } from "react-toastify";
 import Loader from "../../components/Loader";
 
-function QuizReport() {
+export default function QuizReport({ type = "Quiz" }) {
   const { colors } = useTheme();
   const { id } = useParams();
   const navigate = useNavigate();
@@ -49,7 +49,7 @@ function QuizReport() {
           setQuiz(quizRes.data);
         } else {
           toast.error("Quiz not found");
-          navigate("/dashboard/quizzes");
+          navigate(type === "Test" ? "/dashboard/tests" : "/dashboard/quizzes");
           return;
         }
 
@@ -63,7 +63,7 @@ function QuizReport() {
       } catch (err) {
         console.error(err);
         toast.error("Failed to load report data");
-        navigate("/dashboard/quizzes");
+        navigate(type === "Test" ? "/dashboard/tests" : "/dashboard/quizzes");
       } finally {
         setLoading(false);
       }
@@ -159,7 +159,7 @@ function QuizReport() {
           </button>
           <div>
             <h1 className="text-2xl font-bold" style={{ color: colors.text }}>
-              Quiz Report
+              {type === "Test" ? "Test Results" : "Quiz Results"}
             </h1>
             <p className="text-xs font-bold opacity-40 uppercase tracking-widest">
               {quiz.title}
@@ -416,7 +416,7 @@ function QuizReport() {
                       <button
                         onClick={() =>
                           navigate(
-                            `/dashboard/quizzes/report/${quiz._id}/result/${attempt.studentId?._id || attempt.studentId}`,
+                            type === "Test" ? `/dashboard/tests/report/${quiz._id}/result/${attempt.studentId?._id || attempt.studentId}` : `/dashboard/quizzes/report/${quiz._id}/result/${attempt.studentId?._id || attempt.studentId}`
                           )
                         }
                         className="p-2 rounded bg-blue-500/10 hover:bg-blue-500/20 transition-all cursor-pointer text-blue-500"
@@ -456,4 +456,4 @@ function QuizReport() {
   );
 }
 
-export default QuizReport;
+

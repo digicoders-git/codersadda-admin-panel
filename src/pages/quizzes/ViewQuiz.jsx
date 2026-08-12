@@ -22,7 +22,7 @@ import { toast } from "react-toastify";
 import Loader from "../../components/Loader";
 import CertificatePreviewCanvas from "../../components/CertificatePreviewCanvas";
 
-function ViewQuiz() {
+function ViewQuiz({ type = "Quiz" }) {
   const { colors } = useTheme();
   const navigate = useNavigate();
   const { id } = useParams();
@@ -40,12 +40,12 @@ function ViewQuiz() {
           setQuiz(res.data);
         } else {
           toast.error("Quiz not found");
-          navigate("/dashboard/quizzes");
+          navigate(type === "Test" ? "/dashboard/tests" : "/dashboard/quizzes");
         }
       } catch (err) {
         console.error(err);
         toast.error("Failed to fetch quiz details");
-        navigate("/dashboard/quizzes");
+        navigate(type === "Test" ? "/dashboard/tests" : "/dashboard/quizzes");
       } finally {
         setLoading(false);
       }
@@ -149,7 +149,7 @@ function ViewQuiz() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 max-w-5xl mx-auto">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate("/dashboard/quizzes")}
+            onClick={() => navigate(type === "Test" ? "/dashboard/tests" : "/dashboard/quizzes")}
             className="p-2 rounded transition-all cursor-pointer border hover:bg-black/5"
             style={{
               color: colors.text,
@@ -161,7 +161,7 @@ function ViewQuiz() {
           </button>
           <div>
             <h1 className="text-2xl font-bold" style={{ color: colors.text }}>
-              View Quiz Details
+               {type === "Test" ? "Test Details" : "Quiz Details"}
             </h1>
             <p className="text-xs font-bold opacity-40 uppercase tracking-widest">
               Review and preview content
@@ -178,7 +178,7 @@ function ViewQuiz() {
             <Download size={16} /> PDF
           </button>
           <button
-            onClick={() => navigate(`/dashboard/quizzes/report/${id}`)}
+            onClick={() => navigate(type === "Test" ? `/dashboard/tests/report/${id}` : `/dashboard/quizzes/report/${id}`)}
             className="flex items-center gap-2 px-6 py-2.5 rounded font-bold text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all cursor-pointer text-white"
             style={{ backgroundColor: colors.primary }}
           >

@@ -21,7 +21,7 @@ import { getUsers } from "../../apis/user";
 import { toast } from "react-toastify";
 import Loader from "../../components/Loader";
 
-function UserQuizResult() {
+export default function UserQuizResult({ type = "Quiz" }) {
   const { colors } = useTheme();
   const { quizId, studentId } = useParams();
   const navigate = useNavigate();
@@ -67,11 +67,11 @@ function UserQuizResult() {
             });
           } else {
             toast.error("Attempt not found");
-            navigate(`/dashboard/quizzes/report/${quizId}`);
+            navigate(type === "Test" ? `/dashboard/tests/report/${quizId}` : `/dashboard/quizzes/report/${quizId}`);
           }
         } else {
           toast.error("Quiz not found");
-          navigate("/dashboard/quizzes");
+          navigate(type === "Test" ? "/dashboard/tests" : "/dashboard/quizzes");
         }
       } catch (err) {
         console.error(err);
@@ -196,7 +196,7 @@ function UserQuizResult() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate(`/dashboard/quizzes/report/${quizId}`)}
+            onClick={() => navigate(type === "Test" ? `/dashboard/tests/report/${quizId}` : `/dashboard/quizzes/report/${quizId}`)}
             className="p-2 rounded transition-all cursor-pointer border hover:bg-black/5"
             style={{
               color: colors.text,
@@ -208,7 +208,7 @@ function UserQuizResult() {
           </button>
           <div>
             <h1 className="text-2xl font-bold" style={{ color: colors.text }}>
-              Detailed Quiz Result
+              {type === "Test" ? "Test Details" : "Quiz Details"}
             </h1>
             <p className="text-xs font-bold opacity-40 uppercase tracking-widest">
               Review performance metrics
@@ -468,4 +468,4 @@ function UserQuizResult() {
   );
 }
 
-export default UserQuizResult;
+

@@ -16,28 +16,36 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import { createQuiz } from "../../apis/quiz";
 import { getAllTopics } from "../../apis/questionTopic";
+import { getAllCourses } from "../../apis/course";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 import ModernSelect from "../../components/ModernSelect";
 import Loader from "../../components/Loader";
 
-function AddQuiz() {
+export default function AddQuiz({ type = "Quiz" }) {
   const { colors } = useTheme();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [topics, setTopics] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [selectedTopicId, setSelectedTopicId] = useState("");
+
+  const generateRandomCode = () => {
+    return `DCT-${Math.floor(100 + Math.random() * 900)}`;
+  };
 
   const [formData, setFormData] = useState({
     title: "",
-    quizCode: "",
+    quizCode: generateRandomCode(),
     description: "",
-    duration: "",
+    type: type,
     points: "1",
     level: "Beginner",
     status: "Active",
     questionTopicId: "",
+    courseId: "general",
+    scheduledStartTime: "",
   });
 
   const [questions, setQuestions] = useState([]);
@@ -51,20 +59,26 @@ function AddQuiz() {
   });
 
   useEffect(() => {
-    const fetchTopics = async () => {
+    const fetchData = async () => {
       try {
         setPageLoading(true);
-        const res = await getAllTopics("", 1, 100, "true"); // Fetch active topics
-        if (res.success) {
-          setTopics(res.data);
+        const [topicsRes, coursesRes] = await Promise.all([
+          getAllTopics("", 1, 100, "true"), // Fetch active topics
+          getAllCourses({ limit: 100 })
+        ]);
+        if (topicsRes.success) {
+          setTopics(topicsRes.data);
+        }
+        if (coursesRes.success) {
+          setCourses(coursesRes.data);
         }
       } catch (err) {
-        console.error("Failed to fetch topics:", err);
+        console.error("Failed to fetch data:", err);
       } finally {
         setPageLoading(false);
       }
     };
-    fetchTopics();
+    fetchData();
   }, []);
 
   const handleTopicChange = (topicId) => {
@@ -142,6 +156,7 @@ function AddQuiz() {
       setLoading(true);
       const payload = {
         ...formData,
+        type,
         duration: Number(formData.duration),
         points: Number(formData.points),
         status: formData.status === "Active", // Backend likely expects boolean
@@ -155,12 +170,12 @@ function AddQuiz() {
 
       const res = await createQuiz(payload);
       if (res.success) {
-        toast.success("Quiz created successfully!");
-        navigate("/dashboard/quizzes");
+        toast.success(`${type} created successfully!`);
+        navigate(type === "Test" ? "/dashboard/tests" : "/dashboard/quizzes");
       }
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.message || "Failed to create quiz");
+      toast.error(err.response?.data?.message || `Failed to create ${type}`);
     } finally {
       setLoading(false);
     }
@@ -199,7 +214,7 @@ function AddQuiz() {
         </button>
         <div>
           <h1 className="text-2xl font-bold" style={{ color: colors.text }}>
-            Create New Quiz
+            {type === "Test" ? "Create Test" : "Create Quiz"}
           </h1>
           <p className="text-xs font-bold opacity-40 uppercase tracking-widest">
             Setup assessment details
@@ -226,24 +241,28 @@ function AddQuiz() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label style={labelStyle}>Quiz Title</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      title: e.target.value.replace(/[^a-zA-Z\s]/g, ""),
-                    })
-                  }
-                  placeholder="e.g. React.js Fundamentals"
-                  className="w-full px-4 py-3 rounded border outline-none text-sm font-semibold transition-all"
-                  style={{
-                    backgroundColor: colors.background,
-                    borderColor: colors.accent + "30",
-                    color: colors.text,
-                  }}
-                />
+                <div className="relative">
+                  <BookOpen
+                    size={16}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40"
+                  />
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
+                    placeholder="e.g. React Fundamentals"
+                    className="w-full pl-10 pr-4 py-3 rounded border outline-none text-sm font-semibold transition-all focus:border-opacity-100"
+                    style={{
+                      backgroundColor: colors.background,
+                      borderColor: colors.accent + "30",
+                      color: colors.text,
+                    }}
+                  />
+                </div>
               </div>
+
               <div>
                 <label style={labelStyle}>Quiz Code</label>
                 <div className="relative">
@@ -254,11 +273,8 @@ function AddQuiz() {
                   <input
                     type="text"
                     value={formData.quizCode}
-                    onChange={(e) =>
-                      setFormData({ ...formData, quizCode: e.target.value })
-                    }
-                    placeholder="e.g. QZ-101"
-                    className="w-full pl-10 pr-4 py-3 rounded border outline-none text-sm font-semibold transition-all"
+                    readOnly
+                    className="w-full pl-10 pr-4 py-3 rounded border outline-none text-sm font-semibold transition-all cursor-not-allowed opacity-70"
                     style={{
                       backgroundColor: colors.background,
                       borderColor: colors.accent + "30",
@@ -266,6 +282,21 @@ function AddQuiz() {
                     }}
                   />
                 </div>
+              </div>
+
+              <div>
+                <label style={labelStyle}>Course</label>
+                <ModernSelect
+                  value={formData.courseId}
+                  onChange={(val) =>
+                    setFormData({ ...formData, courseId: val })
+                  }
+                  options={[
+                    { value: "general", label: "General (No Course)" },
+                    ...courses.map(c => ({ value: c._id, label: c.title }))
+                  ]}
+                  placeholder="Select Course"
+                />
               </div>
             </div>
             <div>
@@ -285,7 +316,7 @@ function AddQuiz() {
                 }}
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
               <div>
                 <label style={labelStyle}>Duration (Minutes)</label>
                 <input
@@ -353,6 +384,25 @@ function AddQuiz() {
                     setFormData({ ...formData, status: value })
                   }
                   placeholder="Select Status"
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Scheduled Start Time (Optional)</label>
+                <input
+                  type="datetime-local"
+                  value={formData.scheduledStartTime}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      scheduledStartTime: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-3 rounded border outline-none text-sm font-semibold"
+                  style={{
+                    backgroundColor: colors.background,
+                    borderColor: colors.accent + "30",
+                    color: colors.text,
+                  }}
                 />
               </div>
             </div>
@@ -520,6 +570,7 @@ function AddQuiz() {
                   />
                 </div>
                 <div className="space-y-1">
+                  <label className="block text-sm font-bold opacity-70 mb-2 uppercase tracking-widest">{type === "Test" ? "Test" : "Quiz"} Title *</label>                  
                   <p className="text-sm font-black opacity-30 uppercase tracking-widest">
                     No Topic Selected
                   </p>
@@ -750,7 +801,7 @@ function AddQuiz() {
           </button>
           <button
             type="button"
-            onClick={() => navigate("/dashboard/quizzes")}
+            onClick={() => navigate(type === "Test" ? "/dashboard/tests" : "/dashboard/quizzes")}
             className="flex-1 py-4 rounded font-black text-xs uppercase tracking-widest border opacity-60 hover:opacity-100 transition-all flex items-center justify-center gap-3 cursor-pointer"
             style={{ borderColor: colors.accent + "30", color: colors.text }}
           >
@@ -762,4 +813,3 @@ function AddQuiz() {
   );
 }
 
-export default AddQuiz;
