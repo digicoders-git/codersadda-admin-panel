@@ -89,14 +89,20 @@ function Sales() {
 
   const formatCurrency = (val) => {
     if (!val) return "₹0";
-    if (val >= 10000000) {
-      return `₹${Number((val / 10000000).toFixed(2))} Cr`;
-    } else if (val >= 100000) {
-      return `₹${Number((val / 100000).toFixed(2))} L`;
-    } else if (val >= 1000) {
-      return `₹${Number((val / 1000).toFixed(2))} K`;
+    const num = Number(val);
+    if (isNaN(num)) return "₹0";
+    
+    if (num >= 10000000) {
+      const crVal = num / 10000000;
+      // Format with commas to prevent scientific notation (e+33) for huge numbers
+      const formatted = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(crVal);
+      return `₹${formatted} Cr`;
+    } else if (num >= 100000) {
+      return `₹${Number((num / 100000).toFixed(2))} L`;
+    } else if (num >= 1000) {
+      return `₹${Number((num / 1000).toFixed(2))} K`;
     } else {
-      return `₹${Number(val.toFixed(2))}`;
+      return `₹${Number(num.toFixed(2))}`;
     }
   };
 
@@ -385,7 +391,7 @@ function Sales() {
                 </div>
               </div>
               <h3
-                className="text-xl font-black mb-1"
+                className="text-xl font-black mb-1 break-all"
                 style={{ color: colors.text }}
                 title={card.amount}
               >
