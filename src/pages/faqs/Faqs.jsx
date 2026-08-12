@@ -289,8 +289,8 @@ function Faqs() {
                         </td>
                         <td className="px-6 py-4">
                           <Toggle
-                            checked={faq.isActive}
-                            onChange={() => handleStatusChange(faq._id, faq.isActive)}
+                            active={faq.isActive}
+                            onClick={() => handleStatusChange(faq._id, faq.isActive)}
                           />
                         </td>
                         <td className="px-6 py-4 text-right space-x-2">

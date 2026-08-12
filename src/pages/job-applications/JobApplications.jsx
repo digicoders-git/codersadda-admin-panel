@@ -205,8 +205,8 @@ function JobApplications() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                         <button
-                          onClick={() => navigate(`/job-applications/${app._id}`)}
-                          className="text-gray-400 hover:text-blue-500 transition-colors"
+                          onClick={() => navigate(`/dashboard/job-applications/${app._id}`)}
+                          className="p-2 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/10"
                           title="View Details"
                         >
                           <Eye size={20} />

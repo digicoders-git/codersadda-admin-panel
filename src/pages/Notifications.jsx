@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import {
   Bell, CheckCircle, Clock, Trash2, PlusCircle, AlertTriangle,
   Users, BookOpen, Zap, RefreshCw, Filter, X, Send, Loader2,
-  CheckSquare, Square, ChevronLeft, ChevronRight, AlertCircle, Image as ImageIcon
+  CheckSquare, Square, ChevronLeft, ChevronRight, AlertCircle, Image as ImageIcon, Search
 } from 'lucide-react';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
