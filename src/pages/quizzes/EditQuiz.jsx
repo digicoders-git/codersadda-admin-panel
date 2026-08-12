@@ -204,6 +204,7 @@ export default function EditQuiz({ type = "Quiz" }) {
           options: q.options,
           correctAnswer: q.correctAnswer,
         })),
+        scheduledStartTime: formData.scheduledStartTime ? new Date(formData.scheduledStartTime).toISOString() : null,
       };
 
       const res = await apiUpdateQuiz(id, payload);
