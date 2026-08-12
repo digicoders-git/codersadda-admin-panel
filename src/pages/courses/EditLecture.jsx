@@ -595,8 +595,8 @@ function EditLecture() {
                     </div>
                   </div>
 
-                  {/* Lecture Price — only show when Locked */}
-                  {formData.isLocked ? (
+                  {/* Lecture Price — only show when Locked AND course is free */}
+                  {formData.isLocked && course?.priceType === "free" ? (
                     <div className="space-y-1">
                       <label style={labelStyle}>Lecture Price (₹)</label>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
