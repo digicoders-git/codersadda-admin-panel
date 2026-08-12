@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./context/ThemeContext";
 import Dashboard from "./dashboard/Dashboard";
 import Home from "./pages/Home";
@@ -14,6 +14,12 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import InstructorProtectedRoute from "./components/InstructorProtectedRoute";
 import Loader from "./components/Loader";
 import VerifyCertificate from "./pages/VerifyCertificate";
+import { useParams } from "react-router-dom";
+
+const ApplicationRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={`/dashboard/job-applications/${id}`} replace />;
+};
 
 const App = () => {
   return (
@@ -23,6 +29,7 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/loader" element={<Loader />} />
+          <Route path="/job-applications/:id" element={<ApplicationRedirect />} />
           <Route
             path="/verify/:certificateId"
             element={<VerifyCertificate />}

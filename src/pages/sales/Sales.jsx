@@ -87,40 +87,49 @@ function Sales() {
     lecture: 0,
   };
 
+  const formatCurrency = (val) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(val || 0);
+  };
+
   const earningsCards = [
     {
       title: "Total Revenue",
-      amount: `₹${lifetime.totalRevenue.toLocaleString("en-IN")}`,
+      amount: formatCurrency(lifetime.totalRevenue),
       icon: TrendingUp,
       color: "#ef4444",
     },
     {
       title: "Course Sales",
-      amount: `₹${lifetime.course.toLocaleString("en-IN")}`,
+      amount: formatCurrency(lifetime.course),
       icon: BookOpen,
       color: "#3b82f6",
     },
     {
       title: "Ebook Sales",
-      amount: `₹${lifetime.ebook.toLocaleString("en-IN")}`,
+      amount: formatCurrency(lifetime.ebook),
       icon: Book,
       color: "#6366f1",
     },
     {
       title: "Job Postings",
-      amount: `₹${lifetime.job.toLocaleString("en-IN")}`,
+      amount: formatCurrency(lifetime.job),
       icon: Briefcase,
       color: "#10b981",
     },
     {
       title: "Lecture Sales",
-      amount: `₹${(lifetime.lecture || 0).toLocaleString("en-IN")}`,
+      amount: formatCurrency(lifetime.lecture),
       icon: PlaySquare,
       color: "#0ea5e9",
     },
     {
       title: "Subscriptions",
-      amount: `₹${lifetime.subscription.toLocaleString("en-IN")}`,
+      amount: formatCurrency(lifetime.subscription),
       icon: CreditCard,
       color: "#f97316",
     },
@@ -372,8 +381,9 @@ function Sales() {
                 </div>
               </div>
               <h3
-                className="text-2xl font-black mb-1"
+                className="text-2xl font-black mb-1 truncate"
                 style={{ color: colors.text }}
+                title={card.amount}
               >
                 {card.amount}
               </h3>
