@@ -88,12 +88,16 @@ function Sales() {
   };
 
   const formatCurrency = (val) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      notation: 'compact',
-      maximumFractionDigits: 1,
-    }).format(val || 0);
+    if (!val) return "₹0";
+    if (val >= 10000000) {
+      return `₹${Number((val / 10000000).toFixed(2))} Cr`;
+    } else if (val >= 100000) {
+      return `₹${Number((val / 100000).toFixed(2))} L`;
+    } else if (val >= 1000) {
+      return `₹${Number((val / 1000).toFixed(2))} K`;
+    } else {
+      return `₹${Number(val.toFixed(2))}`;
+    }
   };
 
   const earningsCards = [
@@ -381,7 +385,7 @@ function Sales() {
                 </div>
               </div>
               <h3
-                className="text-2xl font-black mb-1 truncate"
+                className="text-xl font-black mb-1"
                 style={{ color: colors.text }}
                 title={card.amount}
               >
