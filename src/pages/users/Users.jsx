@@ -10,6 +10,7 @@ import {
   Globe,
   Phone,
   Mail,
+  Award,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import {
@@ -307,9 +308,16 @@ function Users() {
                           </div>
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold truncate max-w-[150px]">
-                            {user.name || "Unknown"}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold truncate max-w-[150px]">
+                              {user.name || "Unknown"}
+                            </span>
+                            {user.purchaseSubscriptions?.some(sub => (sub.status === 'active' || !sub.status) && (!sub.endDate || new Date(sub.endDate) > new Date())) && (
+                              <span className="bg-amber-100 text-amber-600 text-[9px] px-1.5 py-0.5 rounded border border-amber-200 flex items-center gap-1 font-bold">
+                                <Award size={10} /> PRO
+                              </span>
+                            )}
+                          </div>
                           <div className="flex flex-col opacity-60 text-[10px] font-medium">
                             <span className="flex items-center gap-1">
                               <Mail size={10} /> {user.email || "N/A"}
@@ -355,8 +363,19 @@ function Users() {
                             <Linkedin size={14} />
                           </a>
                         )}
+                        {user.socialLinks?.portfolio && (
+                          <a
+                            href={user.socialLinks.portfolio}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-full hover:bg-black/5 transition-colors opacity-60 hover:opacity-100 text-green-600"
+                          >
+                            <Globe size={14} />
+                          </a>
+                        )}
                         {!user.socialLinks?.github &&
-                          !user.socialLinks?.linkedin && (
+                          !user.socialLinks?.linkedin &&
+                          !user.socialLinks?.portfolio && (
                             <span className="text-[10px] opacity-30 font-bold uppercase tracking-wider">
                               No Links
                             </span>

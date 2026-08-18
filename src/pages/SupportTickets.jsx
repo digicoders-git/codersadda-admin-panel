@@ -90,9 +90,21 @@ function SupportTickets() {
       });
 
       if (res.success) {
+        setTickets(prev => prev.filter(t => {
+          if (t._id === selectedTicket._id) {
+            // If we are filtering by a specific status, and the new status doesn't match, remove it.
+            if (statusFilter !== 'All' && statusText !== statusFilter) {
+              return false;
+            }
+          }
+          return true;
+        }).map(t => 
+          t._id === selectedTicket._id 
+            ? { ...t, status: statusText, adminReply: replyText } 
+            : t
+        ));
         toast.success('Ticket updated successfully!');
         setModalOpen(false);
-        fetchTickets();
       } else {
         toast.error(res.message || 'Failed to update ticket');
       }

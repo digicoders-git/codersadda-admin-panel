@@ -171,8 +171,8 @@ function Quizzes({ type = "Quiz" }) {
 
   const handleSendReminder = async (quiz) => {
     Swal.fire({
-      title: "Send Reminder?",
-      text: `Send a push notification reminder for "${quiz.title}" to all users?`,
+      title: "Send Live Notification?",
+      text: `Send a push notification saying "${quiz.title}" is live to all users?`,
       icon: "info",
       showCancelButton: true,
       confirmButtonColor: colors.primary,
@@ -183,9 +183,9 @@ function Quizzes({ type = "Quiz" }) {
         try {
           setActionLoading(quiz._id);
           const res = await sendQuizReminder(quiz._id);
-          if (res.success) toast.success("Reminder sent successfully!");
+          if (res.success) toast.success("Live notification sent successfully!");
         } catch (err) {
-          toast.error(err.response?.data?.message || "Failed to send reminder");
+          toast.error(err.response?.data?.message || "Failed to send notification");
         } finally {
           setActionLoading(null);
         }
@@ -457,7 +457,7 @@ function Quizzes({ type = "Quiz" }) {
                             disabled={actionLoading === quiz._id}
                             className="p-2 rounded border hover:bg-orange-50 text-orange-500 cursor-pointer transition-colors disabled:opacity-50"
                             style={{ borderColor: colors.accent + "30" }}
-                            title="Send Reminder"
+                            title="Go Live Notification"
                           >
                             {actionLoading === quiz._id ? (
                               <Loader2 size={16} className="animate-spin" />

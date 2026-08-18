@@ -297,8 +297,8 @@ function Referrals() {
       try {
         const res = await approveAmbassador(id);
         if (res.success) {
+          setApplications(prev => prev.filter(a => a._id !== id));
           toast.success(`${name} is now an Ambassador!`);
-          fetchData();
         } else {
           toast.error(res.message);
         }
@@ -325,8 +325,8 @@ function Referrals() {
       try {
         const res = await rejectAmbassador(id, comment);
         if (res.success) {
+          setApplications(prev => prev.filter(a => a._id !== id));
           toast.success(`Application rejected`);
-          fetchData();
         } else {
           toast.error(res.message);
         }
@@ -354,8 +354,8 @@ function Referrals() {
       try {
         const res = await blockAmbassador(id, action, comment);
         if (res.success) {
+          setApplications(prev => prev.filter(a => a._id !== id));
           toast.success(`Ambassador ${action}ed`);
-          fetchData();
         } else {
           toast.error(res.message);
         }
