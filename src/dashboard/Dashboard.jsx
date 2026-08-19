@@ -223,6 +223,7 @@ const Dashboard = () => {
   ];
 
   const themeOptions = [
+    { name: "Brand (Logo)", key: "brand", color: "#0045e7" },
     { name: "Mono", key: "mono", color: "#000000" },
     { name: "Cyan", key: "cyan", color: "#0EA5E9" },
     { name: "Neon", key: "neon", color: "#22C55E" },
@@ -267,7 +268,7 @@ const Dashboard = () => {
             </div>
           )}
         </div>
-        <nav className="mt-5 pt-1 flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
+        <nav className="mt-5 pt-1 flex-1 overflow-y-auto overflow-x-hidden sidebar-scrollbar">
           {navLinks.map((link, index) => {
             if (link.submenu) {
               const isOpen = openSubmenu === link.name;
@@ -545,7 +546,7 @@ const Dashboard = () => {
                 (e.currentTarget.style.backgroundColor = "transparent")
               }
             >
-              {/* <Settings className='w-5 h-5 md:w-6 md:h-6' /> */}
+              <Settings className='w-5 h-5 md:w-6 md:h-6' />
             </button>
             <div
               className="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center"

@@ -21,6 +21,8 @@ function AddWebsiteService() {
   const [iconFile, setIconFile] = useState(null);
   const [preview, setPreview] = useState("https://placehold.co/150x150?text=Service+Icon");
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleIconChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -44,6 +46,7 @@ function AddWebsiteService() {
       return;
     }
 
+    setIsSubmitting(true);
     const data = new FormData();
     data.append("title", formData.title);
     data.append("description", formData.description);
@@ -61,6 +64,8 @@ function AddWebsiteService() {
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to add service");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -192,11 +197,12 @@ function AddWebsiteService() {
           </button>
           <button
             type="submit"
-            className="px-6 py-2.5 rounded-lg text-white font-bold text-sm flex items-center gap-2 shadow hover:opacity-90 cursor-pointer"
+            disabled={isSubmitting}
+            className={`px-6 py-2.5 rounded-lg text-white font-bold text-sm flex items-center gap-2 shadow hover:opacity-90 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
             style={{ backgroundColor: colors.primary }}
           >
             <Save size={16} />
-            <span>Save Service</span>
+            <span>{isSubmitting ? "Saving..." : "Save Service"}</span>
           </button>
         </div>
       </form>

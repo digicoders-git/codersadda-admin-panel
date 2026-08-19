@@ -64,6 +64,8 @@ function EditWebsiteService() {
     }
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.description) {
@@ -71,6 +73,7 @@ function EditWebsiteService() {
       return;
     }
 
+    setIsSubmitting(true);
     const data = new FormData();
     data.append("title", formData.title);
     data.append("description", formData.description);
@@ -88,6 +91,8 @@ function EditWebsiteService() {
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to update service");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -221,11 +226,12 @@ function EditWebsiteService() {
           </button>
           <button
             type="submit"
-            className="px-6 py-2.5 rounded-lg text-white font-bold text-sm flex items-center gap-2 shadow hover:opacity-90 cursor-pointer"
+            disabled={isSubmitting}
+            className={`px-6 py-2.5 rounded-lg text-white font-bold text-sm flex items-center gap-2 shadow hover:opacity-90 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
             style={{ backgroundColor: colors.primary }}
           >
             <Save size={16} />
-            <span>Update Service</span>
+            <span>{isSubmitting ? "Updating..." : "Update Service"}</span>
           </button>
         </div>
       </form>

@@ -13,7 +13,7 @@ export const useTheme = () => {
 export const ThemeProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentTheme, setCurrentTheme] = useState(() => {
-    return localStorage.getItem("currentTheme") || "mono";
+    return "brand"; // Force brand theme for the user
   });
 
   useEffect(() => {
@@ -21,6 +21,28 @@ export const ThemeProvider = ({ children }) => {
   }, [currentTheme]);
 
   const themes = {
+    brand: {
+      dark: {
+        background: "#00061a",
+        sidebar: "#00113f",    // Exact Navy
+        primary: "#004bfe",    // Exact Blue
+        accent: "#26954f",     // Exact Green
+        warning: "#dca85d",    // Exact Orange/Golden
+        danger: "#ef4444",
+        text: "#FFFFFF",
+        textSecondary: "#9CA3AF",
+      },
+      light: {
+        background: "#F0F6FF",
+        sidebar: "#FFFFFF",
+        primary: "#004bfe",
+        accent: "#26954f",
+        warning: "#dca85d",
+        danger: "#ef4444",
+        text: "#00113f",
+        textSecondary: "#475569",
+      },
+    },
     mono: {
       dark: {
         background: "#000000",
