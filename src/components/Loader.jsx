@@ -83,7 +83,7 @@ const Loader = ({ size = 128, fullPage = false, variant = "full" }) => {
         {/* Inner Logo - Only show if size is large enough */}
         {size >= 60 ? (
           <div
-            className="relative z-10 flex items-center justify-center rounded-full bg-white shadow-lg p-3 animate-pulse"
+            className="relative z-10 flex items-center justify-center rounded-full bg-white shadow-lg p-2 animate-pulse"
             style={{
               height: `${innerSize}px`,
               width: `${innerSize}px`,
@@ -92,7 +92,7 @@ const Loader = ({ size = 128, fullPage = false, variant = "full" }) => {
             <img
               src={mainLogoo}
               alt="Loading..."
-              className="h-full w-full object-contain"
+              className="h-full w-full object-contain scale-[1.3]"
             />
           </div>
         ) : (

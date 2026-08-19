@@ -102,15 +102,15 @@ const InstructorDashboard = () => {
             <div className="transition-all duration-500 ease-out flex items-center justify-center w-full">
               <img
                 src={mainLogo}
-                className="max-w-[140px] h-auto object-contain"
+                className="max-w-[220px] h-auto object-contain scale-[1.3]"
                 alt="CodersAdda"
               />
             </div>
           ) : (
-            <div className="w-10  h-10 flex items-center justify-center transition-all duration-500 overflow-hidden">
+            <div className="w-12 h-12 flex items-center justify-center transition-all duration-500 overflow-hidden">
               <img
                 src={logo}
-                className="w-full h-full object-contain scale-[1]"
+                className="w-full h-full object-contain scale-125"
                 alt="CA"
               />
             </div>
