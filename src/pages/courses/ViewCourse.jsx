@@ -30,6 +30,10 @@ import {
   ShieldAlert,
   RotateCcw,
   Search,
+  Radio,
+  Square,
+  Copy,
+  Check,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import {
@@ -50,6 +54,8 @@ import Swal from "sweetalert2";
 import Toggle from "../../components/ui/Toggle";
 import Loader from "../../components/Loader";
 import CertificatePreviewCanvas from "../../components/CertificatePreviewCanvas";
+import liveSessionApi from "../../apis/liveSession";
+import CreateLiveSession from "./CreateLiveSession";
 
 function ViewCourse() {
   const { colors } = useTheme();
@@ -67,6 +73,13 @@ function ViewCourse() {
   const [students, setStudents] = useState([]);
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [studentSearch, setStudentSearch] = useState("");
+
+  // Live sessions state
+  const [liveSessions, setLiveSessions] = useState([]);
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [showCreateLive, setShowCreateLive] = useState(false);
+  const [liveActionLoading, setLiveActionLoading] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
 
   const labelStyle = {
     color: colors.textSecondary,
@@ -151,7 +164,123 @@ function ViewCourse() {
     if (activeTab === "users") {
       fetchStudents();
     }
+    if (activeTab === "live") {
+      fetchLiveSessions();
+    }
   }, [activeTab, id]);
+
+  const fetchLiveSessions = async () => {
+    try {
+      setLiveLoading(true);
+      const res = await liveSessionApi.getByCourse(id);
+      setLiveSessions(res.data || []);
+    } catch {
+      // silent
+    } finally {
+      setLiveLoading(false);
+    }
+  };
+
+  const handleGoLive = async (session) => {
+    const result = await Swal.fire({
+      title: "Go Live?",
+      html: `<p>This will mark <b>${session.title}</b> as LIVE. Students will see the Join button.</p>`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#EF4444",
+      confirmButtonText: "Yes, Go Live!",
+    });
+    if (!result.isConfirmed) return;
+    try {
+      setLiveActionLoading(session._id);
+      await liveSessionApi.goLive(session._id);
+      setLiveSessions((prev) => prev.map((s) => s._id === session._id ? { ...s, status: "live" } : s));
+      toast.success("Session is now LIVE!");
+      Swal.fire({
+        title: "🎥 OBS Stream Credentials",
+        html: `<div style="text-align:left;font-size:13px;">
+          <p style="margin-bottom:8px;"><b>Server (Ingest Endpoint):</b></p>
+          <code style="background:#f3f4f6;padding:6px 10px;border-radius:4px;display:block;word-break:break-all;margin-bottom:12px;">${session.ingestEndpoint}</code>
+          <p style="margin-bottom:8px;"><b>Stream Key:</b></p>
+          <code style="background:#f3f4f6;padding:6px 10px;border-radius:4px;display:block;word-break:break-all;">${session.streamKey}</code>
+          <p style="margin-top:12px;color:#6b7280;font-size:12px;">OBS → Settings → Stream → Service: Custom → paste above values</p>
+        </div>`,
+        confirmButtonText: "Got it!",
+        confirmButtonColor: "#EF4444",
+      });
+    } catch {
+      toast.error("Failed to go live");
+    } finally {
+      setLiveActionLoading(null);
+    }
+  };
+
+  const handleEndLive = async (session) => {
+    const { value: recordingUrl } = await Swal.fire({
+      title: "End Live Session",
+      input: "url",
+      inputLabel: "Recording URL (leave empty if not ready)",
+      inputPlaceholder: "https://s3.amazonaws.com/...",
+      showCancelButton: true,
+      confirmButtonText: "End Session",
+      confirmButtonColor: "#6B7280",
+    });
+    if (recordingUrl === undefined) return;
+    try {
+      setLiveActionLoading(session._id);
+      await liveSessionApi.endLive(session._id, recordingUrl || "");
+      setLiveSessions((prev) => prev.map((s) => s._id === session._id ? { ...s, status: "ended", recordingUrl: recordingUrl || "" } : s));
+      toast.success("Session ended.");
+    } catch {
+      toast.error("Failed to end session");
+    } finally {
+      setLiveActionLoading(null);
+    }
+  };
+
+  const handleDeleteLiveSession = (sessionId) => {
+    Swal.fire({
+      title: "Delete Session?",
+      text: "This cannot be undone!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#EF4444",
+      confirmButtonText: "Yes, delete!",
+    }).then(async (result) => {
+      if (!result.isConfirmed) return;
+      try {
+        setLiveActionLoading(sessionId);
+        await liveSessionApi.delete(sessionId);
+        setLiveSessions((prev) => prev.filter((s) => s._id !== sessionId));
+        toast.success("Deleted");
+      } catch {
+        toast.error("Failed to delete");
+      } finally {
+        setLiveActionLoading(null);
+      }
+    });
+  };
+
+  const copyToClipboard = (text, key) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(key);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const liveStatusBadge = (status) => {
+    const map = {
+      scheduled: { bg: "bg-blue-100", text: "text-blue-700", label: "Scheduled" },
+      live: { bg: "bg-red-100", text: "text-red-700", label: "🔴 LIVE" },
+      ended: { bg: "bg-gray-100", text: "text-gray-600", label: "Ended" },
+    };
+    const s = map[status] || map.scheduled;
+    return <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${s.bg} ${s.text}`}>{s.label}</span>;
+  };
+
+  const formatLiveDate = (d) => {
+    if (!d) return "-";
+    return new Date(d).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  };
 
   const handleToggleCourseStatus = async () => {
     try {
@@ -507,6 +636,7 @@ function ViewCourse() {
             { id: "chat", label: "Chat" },
             { id: "posts", label: "Posts" },
             { id: "users", label: "Users" },
+            { id: "live", label: "🔴 Live Classes" },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1335,6 +1465,126 @@ function ViewCourse() {
               <p className="text-sm font-bold uppercase tracking-wider">Coming Soon</p>
               <p className="text-xs opacity-75 mt-1">This feature is under development.</p>
             </Card>
+          )}
+
+          {activeTab === "live" && (
+            <div>
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-lg font-bold" style={{ color: colors.text }}>Live Classes</h2>
+                  <p className="text-xs font-bold opacity-40 uppercase tracking-widest">Manage live sessions for this course</p>
+                </div>
+                {!showCreateLive && (
+                  <button
+                    onClick={() => setShowCreateLive(true)}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded font-bold text-xs uppercase tracking-widest shadow transition-all active:scale-95 cursor-pointer"
+                    style={{ backgroundColor: colors.primary, color: colors.background }}
+                  >
+                    <Plus size={16} /> Schedule Live Class
+                  </button>
+                )}
+              </div>
+
+              {/* Create Form */}
+              {showCreateLive && (
+                <Card className="mb-6">
+                  <CreateLiveSession
+                    courseId={id}
+                    courseName={course?.title}
+                    onSuccess={() => { setShowCreateLive(false); fetchLiveSessions(); }}
+                    onCancel={() => setShowCreateLive(false)}
+                  />
+                </Card>
+              )}
+
+              {/* Sessions List */}
+              {liveLoading ? (
+                <div className="flex items-center justify-center p-20"><Loader size={60} /></div>
+              ) : liveSessions.length === 0 ? (
+                <Card className="text-center py-20">
+                  <Radio size={40} className="mx-auto mb-3 opacity-30" style={{ color: colors.text }} />
+                  <p className="font-bold opacity-40" style={{ color: colors.text }}>No live sessions yet</p>
+                  <p className="text-xs opacity-30 mt-1" style={{ color: colors.text }}>Schedule your first live class above</p>
+                </Card>
+              ) : (
+                <Card>
+                  <div className="rounded border overflow-hidden" style={{ borderColor: colors.accent + "20" }}>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr style={{ backgroundColor: colors.accent + "10" }}>
+                          {["Title / Topic", "Scheduled At", "Duration", "Status", "Actions"].map((h) => (
+                            <th key={h} className="text-left px-4 py-3 text-xs font-black uppercase tracking-widest opacity-60" style={{ color: colors.text }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {liveSessions.map((session, i) => (
+                          <tr
+                            key={session._id}
+                            style={{ backgroundColor: i % 2 === 0 ? colors.background : colors.accent + "05", borderTop: `1px solid ${colors.accent}15` }}
+                          >
+                            <td className="px-4 py-3">
+                              <p className="font-bold" style={{ color: colors.text }}>{session.title}</p>
+                              <p className="text-xs opacity-50" style={{ color: colors.text }}>{session.topic}</p>
+                            </td>
+                            <td className="px-4 py-3 text-xs font-semibold opacity-70" style={{ color: colors.text }}>
+                              {formatLiveDate(session.scheduledAt)}
+                            </td>
+                            <td className="px-4 py-3 text-xs font-semibold opacity-70" style={{ color: colors.text }}>
+                              {session.durationMinutes} min
+                            </td>
+                            <td className="px-4 py-3">{liveStatusBadge(session.status)}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                {session.status === "scheduled" && (
+                                  <button
+                                    onClick={() => handleGoLive(session)}
+                                    disabled={liveActionLoading === session._id}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                                    style={{ backgroundColor: "#EF4444", color: "#fff" }}
+                                  >
+                                    {liveActionLoading === session._id ? <Loader size={12} variant="button" /> : <><Radio size={11} /> Go Live</>}
+                                  </button>
+                                )}
+                                {session.status === "live" && (
+                                  <button
+                                    onClick={() => handleEndLive(session)}
+                                    disabled={liveActionLoading === session._id}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                                    style={{ backgroundColor: "#6B7280", color: "#fff" }}
+                                  >
+                                    {liveActionLoading === session._id ? <Loader size={12} variant="button" /> : <><Square size={11} /> End Live</>}
+                                  </button>
+                                )}
+                                {(session.status === "scheduled" || session.status === "live") && (
+                                  <button
+                                    onClick={() => copyToClipboard(session.streamKey, session._id + "_key")}
+                                    title="Copy Stream Key"
+                                    className="p-1.5 rounded border text-xs transition-all hover:bg-black/5 cursor-pointer"
+                                    style={{ borderColor: colors.accent + "30", color: colors.text }}
+                                  >
+                                    {copiedId === session._id + "_key" ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleDeleteLiveSession(session._id)}
+                                  disabled={liveActionLoading === session._id}
+                                  className="p-1.5 rounded border text-xs transition-all hover:bg-red-50 cursor-pointer disabled:opacity-50"
+                                  style={{ borderColor: "#EF444430", color: "#EF4444" }}
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              )}
+            </div>
           )}
         </div>
       ) : (
