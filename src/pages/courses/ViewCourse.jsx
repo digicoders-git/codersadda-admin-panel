@@ -173,7 +173,8 @@ function ViewCourse() {
     try {
       setLiveLoading(true);
       const res = await liveSessionApi.getByCourse(id);
-      setLiveSessions(res.data || []);
+      const sessions = Array.isArray(res.data) ? res.data : (Array.isArray(res) ? res : []);
+      setLiveSessions(sessions);
     } catch {
       // silent
     } finally {
@@ -279,9 +280,25 @@ function ViewCourse() {
   };
 
   const copyToClipboard = (text, key) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(key);
-    setTimeout(() => setCopiedId(null), 2000);
+    if (!text) { toast.error("Nothing to copy — value is empty"); return; }
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        setCopiedId(key);
+        toast.success("Copied!");
+        setTimeout(() => setCopiedId(null), 2000);
+      })
+      .catch(() => {
+        // fallback for non-HTTPS
+        const el = document.createElement("textarea");
+        el.value = text;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+        setCopiedId(key);
+        toast.success("Copied!");
+        setTimeout(() => setCopiedId(null), 2000);
+      });
   };
 
   const liveStatusBadge = (status) => {
