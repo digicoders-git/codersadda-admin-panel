@@ -199,14 +199,25 @@ function ViewCourse() {
       Swal.fire({
         title: "🎥 OBS Stream Credentials",
         html: `<div style="text-align:left;font-size:13px;">
-          <p style="margin-bottom:8px;"><b>Server (Ingest Endpoint):</b></p>
-          <code style="background:#f3f4f6;padding:6px 10px;border-radius:4px;display:block;word-break:break-all;margin-bottom:12px;">${session.ingestEndpoint}</code>
-          <p style="margin-bottom:8px;"><b>Stream Key:</b></p>
-          <code style="background:#f3f4f6;padding:6px 10px;border-radius:4px;display:block;word-break:break-all;">${session.streamKey}</code>
-          <p style="margin-top:12px;color:#6b7280;font-size:12px;">OBS → Settings → Stream → Service: Custom → paste above values</p>
+          <p style="margin-bottom:6px;font-weight:600;">① OBS खोलो → Settings → Stream</p>
+          <p style="margin-bottom:6px;color:#6b7280;">Service: <b>Custom</b> select karo</p>
+          <hr style="margin:10px 0;border-color:#e5e7eb;"/>
+          <p style="margin-bottom:6px;"><b>② Server (Ingest Endpoint):</b></p>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+            <code id="swal-ingest" style="background:#f3f4f6;padding:6px 10px;border-radius:4px;flex:1;word-break:break-all;font-size:11px;">${session.ingestEndpoint}</code>
+            <button onclick="navigator.clipboard.writeText('${session.ingestEndpoint}');this.innerText='✅';setTimeout(()=>this.innerText='📋 Copy',1500)" style="background:#3B82F6;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;white-space:nowrap;">📋 Copy</button>
+          </div>
+          <p style="margin-bottom:6px;"><b>③ Stream Key:</b></p>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+            <code id="swal-key" style="background:#f3f4f6;padding:6px 10px;border-radius:4px;flex:1;word-break:break-all;font-size:11px;">${session.streamKey}</code>
+            <button onclick="navigator.clipboard.writeText('${session.streamKey}');this.innerText='✅';setTimeout(()=>this.innerText='📋 Copy',1500)" style="background:#3B82F6;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;white-space:nowrap;">📋 Copy</button>
+          </div>
+          <hr style="margin:10px 0;border-color:#e5e7eb;"/>
+          <p style="color:#6b7280;font-size:12px;">④ Apply → OK → OBS mein <b>Start Streaming</b> dabao 🚀</p>
         </div>`,
-        confirmButtonText: "Got it!",
+        confirmButtonText: "Got it, Start Streaming!",
         confirmButtonColor: "#EF4444",
+        width: 520,
       });
     } catch {
       toast.error("Failed to go live");
@@ -1558,14 +1569,34 @@ function ViewCourse() {
                                   </button>
                                 )}
                                 {(session.status === "scheduled" || session.status === "live") && (
-                                  <button
-                                    onClick={() => copyToClipboard(session.streamKey, session._id + "_key")}
-                                    title="Copy Stream Key"
-                                    className="p-1.5 rounded border text-xs transition-all hover:bg-black/5 cursor-pointer"
-                                    style={{ borderColor: colors.accent + "30", color: colors.text }}
-                                  >
-                                    {copiedId === session._id + "_key" ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
-                                  </button>
+                                  <div className="flex items-center gap-1">
+                                    <div className="relative group">
+                                      <button
+                                        onClick={() => copyToClipboard(session.ingestEndpoint, session._id + "_ingest")}
+                                        className="flex items-center gap-1 p-1.5 rounded border text-xs transition-all hover:bg-blue-50 cursor-pointer"
+                                        style={{ borderColor: "#3B82F630", color: "#3B82F6" }}
+                                      >
+                                        {copiedId === session._id + "_ingest" ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
+                                        <span className="text-xs">Server</span>
+                                      </button>
+                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                        Copy Ingest Endpoint
+                                      </div>
+                                    </div>
+                                    <div className="relative group">
+                                      <button
+                                        onClick={() => copyToClipboard(session.streamKey, session._id + "_key")}
+                                        className="flex items-center gap-1 p-1.5 rounded border text-xs transition-all hover:bg-purple-50 cursor-pointer"
+                                        style={{ borderColor: "#8B5CF630", color: "#8B5CF6" }}
+                                      >
+                                        {copiedId === session._id + "_key" ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
+                                        <span className="text-xs">Key</span>
+                                      </button>
+                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                        Copy Stream Key
+                                      </div>
+                                    </div>
+                                  </div>
                                 )}
                                 <button
                                   onClick={() => handleDeleteLiveSession(session._id)}
