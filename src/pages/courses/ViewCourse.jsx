@@ -55,7 +55,7 @@ import Toggle from "../../components/ui/Toggle";
 import Loader from "../../components/Loader";
 import CertificatePreviewCanvas from "../../components/CertificatePreviewCanvas";
 import liveSessionApi from "../../apis/liveSession";
-import CreateLiveSession from "./CreateLiveSession";
+import CreateLiveSession from "../live/CreateLiveSession";
 
 function ViewCourse() {
   const { colors } = useTheme();
