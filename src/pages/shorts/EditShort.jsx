@@ -184,14 +184,18 @@ function EditShort() {
                 }}
               >
                 {formData.videoPreview ? (
-                  <>
+                  <div
+                    className="relative w-full h-full flex items-center justify-center bg-black"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <video
-                      src={formData.videoPreview}
-                      className="w-full h-full object-cover"
+                      src={formData.videoPreview?.replace("coders-adda-backend.onrender.com", "api.codersadda.com")}
+                      controls
+                      autoPlay
+                      muted
+                      playsInline
+                      className="w-full h-full object-contain"
                     />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                      <Play size={48} className="text-white opacity-80" />
-                    </div>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -202,11 +206,11 @@ function EditShort() {
                           videoFile: null,
                         });
                       }}
-                      className="absolute top-2 right-2 p-1 bg-red-500 rounded text-white"
+                      className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white shadow-md z-10 cursor-pointer"
                     >
                       <X size={14} />
                     </button>
-                  </>
+                  </div>
                 ) : (
                   <div className="text-center opacity-40 p-4">
                     <VideoIcon size={48} className="mx-auto mb-2" />

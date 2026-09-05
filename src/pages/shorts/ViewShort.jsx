@@ -173,11 +173,12 @@ function ViewShort() {
         <div className="flex justify-center bg-black/5 rounded-xl p-4">
           <div className="relative aspect-9/16 w-full max-w-sm rounded-lg overflow-hidden shadow-2xl bg-black">
             <video
-              src={short.video?.url}
+              src={short.video?.url?.replace("coders-adda-backend.onrender.com", "api.codersadda.com")}
               className="w-full h-full object-contain"
               controls
               autoPlay
               loop
+              playsInline
             />
           </div>
         </div>

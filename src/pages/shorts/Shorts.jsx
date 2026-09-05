@@ -163,15 +163,23 @@ function Shorts() {
               }}
             >
               {/* Video Preview / Placeholder */}
-              <div className="relative aspect-[9/16] bg-black/5 flex items-center justify-center overflow-hidden group">
+              <div
+                onClick={() => navigate(`/dashboard/shorts/view/${short._id}`)}
+                className="relative aspect-[9/16] bg-black flex items-center justify-center overflow-hidden group cursor-pointer"
+              >
                 <video
-                  src={short.video?.url}
+                  src={short.video?.url?.replace("coders-adda-backend.onrender.com", "api.codersadda.com")}
+                  preload="metadata"
+                  muted
+                  playsInline
+                  onMouseEnter={(e) => e.target.play().catch(() => {})}
+                  onMouseLeave={(e) => { e.target.pause(); e.target.currentTime = 0; }}
                   className={`w-full h-full object-cover transition-opacity ${!short.isActive ? "opacity-50 grayscale" : ""}`}
                 />
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-all flex items-center justify-center">
-                  <Video className="text-white opacity-80" size={48} />
+                <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-all flex items-center justify-center pointer-events-none">
+                  <Video className="text-white opacity-60 group-hover:opacity-0 transition-opacity" size={48} />
                 </div>
-                <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/60 rounded text-[10px] font-bold text-white flex items-center gap-1">
+                <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/60 rounded text-[10px] font-bold text-white flex items-center gap-1 pointer-events-none">
                   <Play size={10} fill="white" /> Preview
                 </div>
               </div>
