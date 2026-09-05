@@ -227,20 +227,26 @@ function ViewCourse() {
   };
 
   const handleEndLive = async (session) => {
-    const { value: recordingUrl } = await Swal.fire({
-      title: "End Live Session",
+    const { value: recordingUrl, isDismissed, dismiss } = await Swal.fire({
+      title: "🛑 End Live Session",
       input: "url",
-      inputLabel: "Recording URL (leave empty if not ready)",
+      inputLabel: "Recording URL (optional — paste if available)",
       inputPlaceholder: "https://s3.amazonaws.com/...",
       showCancelButton: true,
-      confirmButtonText: "End Session",
+      showDenyButton: true,
+      confirmButtonText: "Save & End",
+      denyButtonText: "Skip & End",
+      cancelButtonText: "Cancel",
       confirmButtonColor: "#6B7280",
+      denyButtonColor: "#EF4444",
+      html: `<div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Recording URL baad mein bhi add kar sakte ho. Abhi nahi hai toh <b>Skip & End</b> dabao.</div>`,
     });
-    if (recordingUrl === undefined) return;
+    if (isDismissed && dismiss === Swal.DismissReason.cancel) return;
+    const finalUrl = dismiss === "deny" ? "" : (recordingUrl || "");
     try {
       setLiveActionLoading(session._id);
-      await liveSessionApi.endLive(session._id, recordingUrl || "");
-      setLiveSessions((prev) => prev.map((s) => s._id === session._id ? { ...s, status: "ended", recordingUrl: recordingUrl || "" } : s));
+      await liveSessionApi.endLive(session._id, finalUrl);
+      setLiveSessions((prev) => prev.map((s) => s._id === session._id ? { ...s, status: "ended", recordingUrl: finalUrl } : s));
       toast.success("Session ended.");
     } catch {
       toast.error("Failed to end session");
