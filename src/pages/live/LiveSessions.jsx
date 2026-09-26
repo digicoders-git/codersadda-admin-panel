@@ -50,23 +50,7 @@ function LiveSessions() {
       setActionLoading(session._id);
       await liveSessionApi.goLive(session._id);
       setSessions((prev) => prev.map((s) => s._id === session._id ? { ...s, status: "live" } : s));
-      toast.success("Session is now LIVE!");
-
-      // Show OBS credentials
-      Swal.fire({
-        title: "🎥 OBS Stream Credentials",
-        html: `
-          <div style="text-align:left; font-size:13px;">
-            <p style="margin-bottom:8px;"><b>Server (Ingest Endpoint):</b></p>
-            <code style="background:#f3f4f6;padding:6px 10px;border-radius:4px;display:block;word-break:break-all;margin-bottom:12px;">${session.ingestEndpoint}</code>
-            <p style="margin-bottom:8px;"><b>Stream Key:</b></p>
-            <code style="background:#f3f4f6;padding:6px 10px;border-radius:4px;display:block;word-break:break-all;">${session.streamKey}</code>
-            <p style="margin-top:12px;color:#6b7280;font-size:12px;">OBS → Settings → Stream → Service: Custom → paste above values</p>
-          </div>
-        `,
-        confirmButtonText: "Got it!",
-        confirmButtonColor: "#EF4444",
-      });
+      toast.success("Session is now LIVE! Students can now join.");
     } catch {
       toast.error("Failed to go live");
     } finally {
@@ -78,8 +62,8 @@ function LiveSessions() {
     const { value: recordingUrl } = await Swal.fire({
       title: "End Live Session",
       input: "url",
-      inputLabel: "Recording URL (S3 .m3u8 link) — leave empty if not ready",
-      inputPlaceholder: "https://s3.amazonaws.com/...",
+      inputLabel: "Recording URL (leave empty if not ready yet)",
+      inputPlaceholder: "https://...",
       showCancelButton: true,
       confirmButtonText: "End Session",
       confirmButtonColor: "#6B7280",

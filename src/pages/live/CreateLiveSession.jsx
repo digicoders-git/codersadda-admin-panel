@@ -16,6 +16,9 @@ function CreateLiveSession({ courseId, courseName, onSuccess, onCancel }) {
     teacherName: "",
     scheduledAt: "",
     durationMinutes: 60,
+    playbackUrl: "",      // e.g. YouTube Live link, HLS URL, Zoom link
+    streamKey: "",        // Optional: OBS stream key
+    ingestEndpoint: "",   // Optional: RTMP ingest endpoint
   });
 
   const handleChange = (e) => {
@@ -37,7 +40,6 @@ function CreateLiveSession({ courseId, courseName, onSuccess, onCancel }) {
         course: courseId,
         durationMinutes: Number(form.durationMinutes),
         status: "scheduled",
-        // IVS credentials injected by backend from .env
       });
       toast.success("Live session scheduled!");
       onSuccess?.();
@@ -65,13 +67,8 @@ function CreateLiveSession({ courseId, courseName, onSuccess, onCancel }) {
         )}
       </div>
 
-      {/* IVS Info */}
-      <div className="mb-5 p-3 rounded border" style={{ borderColor: "#EF444430", backgroundColor: "#EF44440A" }}>
-        <p className="text-xs font-black uppercase tracking-widest text-red-500 mb-1">📡 AWS IVS Channel Connected</p>
-        <p className="text-xs text-red-400">Stream credentials are auto-configured from server.</p>
-      </div>
-
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Title */}
         <div>
           <label className="block text-xs font-black uppercase tracking-widest mb-1.5 opacity-60" style={{ color: colors.text }}>
             Session Title *
@@ -88,6 +85,7 @@ function CreateLiveSession({ courseId, courseName, onSuccess, onCancel }) {
           />
         </div>
 
+        {/* Topic */}
         <div>
           <label className="block text-xs font-black uppercase tracking-widest mb-1.5 opacity-60" style={{ color: colors.text }}>
             Topic
@@ -103,6 +101,7 @@ function CreateLiveSession({ courseId, courseName, onSuccess, onCancel }) {
           />
         </div>
 
+        {/* Teacher Name */}
         <div>
           <label className="block text-xs font-black uppercase tracking-widest mb-1.5 opacity-60" style={{ color: colors.text }}>
             Teacher Name
@@ -118,6 +117,7 @@ function CreateLiveSession({ courseId, courseName, onSuccess, onCancel }) {
           />
         </div>
 
+        {/* Date & Duration */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-black uppercase tracking-widest mb-1.5 opacity-60" style={{ color: colors.text }}>
@@ -150,6 +150,63 @@ function CreateLiveSession({ courseId, courseName, onSuccess, onCancel }) {
           </div>
         </div>
 
+        {/* Playback / Stream URL */}
+        <div>
+          <label className="block text-xs font-black uppercase tracking-widest mb-1.5 opacity-60" style={{ color: colors.text }}>
+            Live / Playback URL
+          </label>
+          <input
+            type="url"
+            name="playbackUrl"
+            value={form.playbackUrl}
+            onChange={handleChange}
+            placeholder="e.g. YouTube Live link, Zoom link, HLS .m3u8 URL"
+            className="w-full px-4 py-2.5 rounded border outline-none text-sm font-semibold"
+            style={inputStyle}
+          />
+          <p className="text-[10px] opacity-40 mt-1" style={{ color: colors.text }}>
+            Students will see this link to join / watch the live class.
+          </p>
+        </div>
+
+        {/* Optional OBS fields */}
+        <details className="rounded border p-3" style={{ borderColor: colors.accent + "20" }}>
+          <summary className="text-xs font-black uppercase tracking-widest opacity-50 cursor-pointer" style={{ color: colors.text }}>
+            OBS Stream Credentials (Optional)
+          </summary>
+          <div className="mt-3 space-y-3">
+            <div>
+              <label className="block text-xs font-black uppercase tracking-widest mb-1.5 opacity-60" style={{ color: colors.text }}>
+                RTMP Ingest Endpoint
+              </label>
+              <input
+                type="text"
+                name="ingestEndpoint"
+                value={form.ingestEndpoint}
+                onChange={handleChange}
+                placeholder="rtmps://..."
+                className="w-full px-4 py-2.5 rounded border outline-none text-sm font-semibold"
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-black uppercase tracking-widest mb-1.5 opacity-60" style={{ color: colors.text }}>
+                Stream Key
+              </label>
+              <input
+                type="text"
+                name="streamKey"
+                value={form.streamKey}
+                onChange={handleChange}
+                placeholder="Stream key for OBS"
+                className="w-full px-4 py-2.5 rounded border outline-none text-sm font-semibold"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+        </details>
+
+        {/* Buttons */}
         <div className="flex gap-3 pt-2">
           <button
             type="submit"
