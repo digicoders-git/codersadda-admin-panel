@@ -58,6 +58,7 @@ import CertificatePreviewCanvas from "../../components/CertificatePreviewCanvas"
 import liveClassApi from "../../apis/liveClass";
 import CreateLiveClass from "../live/CreateLiveClass";
 import { getMediaUrl } from "../../utils/mediaUrl";
+import LiveStreamPreviewModal from "../../components/LiveStreamPreviewModal";
 
 function ViewCourse() {
   const { colors } = useTheme();
@@ -82,6 +83,7 @@ function ViewCourse() {
   const [showCreateLive, setShowCreateLive] = useState(false);
   const [liveActionLoading, setLiveActionLoading] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
+  const [previewClass, setPreviewClass] = useState(null);
 
   const labelStyle = {
     color: colors.textSecondary,
@@ -1668,18 +1670,16 @@ function ViewCourse() {
                                       </button>
                                     )}
 
-                                    {/* Preview Live (HLS link) */}
-                                    {["LIVE_HIDDEN", "LIVE"].includes(session.status) && session.streamName && (
-                                      <a
-                                        href={`https://live.codersadda.com/live/${session.streamName}.m3u8`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                    {/* Preview Live Stream in Modal */}
+                                    {["SCHEDULED", "LIVE_HIDDEN", "LIVE"].includes(session.status) && session.streamName && (
+                                      <button
+                                        onClick={() => setPreviewClass(session)}
                                         className="flex items-center gap-1 px-2.5 py-1.5 rounded text-[10px] font-black uppercase tracking-wider cursor-pointer border transition-all hover:bg-black/5"
                                         style={{ borderColor: colors.accent + "30", color: colors.text }}
-                                        title="Preview live stream"
+                                        title="Open Live Video Preview"
                                       >
-                                        <Radio size={11} /> Preview
-                                      </a>
+                                        <Radio size={11} className={session.status === "LIVE" ? "text-red-500 animate-pulse" : ""} /> Preview
+                                      </button>
                                     )}
 
                                     {/* Watch Recording */}
@@ -1792,6 +1792,20 @@ function ViewCourse() {
             </div>
           </div>
         </div>
+      )}
+      {/* Live Stream Embedded Preview Modal */}
+      {previewClass && (
+        <LiveStreamPreviewModal
+          classData={previewClass}
+          isOpen={!!previewClass}
+          onClose={() => setPreviewClass(null)}
+          onStatusChange={(id, newStatus) => {
+            setLiveSessions((prev) =>
+              prev.map((s) => (s._id === id ? { ...s, status: newStatus } : s))
+            );
+            fetchLiveSessions();
+          }}
+        />
       )}
     </div>
   );

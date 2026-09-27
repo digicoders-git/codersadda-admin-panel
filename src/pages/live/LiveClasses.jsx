@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import Loader from "../../components/Loader";
 import { getMediaUrl } from "../../utils/mediaUrl";
+import LiveStreamPreviewModal from "../../components/LiveStreamPreviewModal";
 
 // ── Status config ──────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -31,6 +32,7 @@ function LiveClasses() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [search, setSearch] = useState("");
+  const [previewClass, setPreviewClass] = useState(null);
 
   const fetchAll = useCallback(async () => {
     try {
@@ -303,18 +305,16 @@ function LiveClasses() {
                           </button>
                         )}
 
-                        {/* Preview Live (HLS link) */}
-                        {!busy && ["LIVE_HIDDEN", "LIVE"].includes(cls.status) && cls.streamName && (
-                          <a
-                            href={`https://live.codersadda.com/live/${cls.streamName}.m3u8`}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        {/* Preview Stream in Embedded Video Player Modal */}
+                        {!busy && ["SCHEDULED", "LIVE_HIDDEN", "LIVE"].includes(cls.status) && cls.streamName && (
+                          <button
+                            onClick={() => setPreviewClass(cls)}
                             className="flex items-center gap-1 px-2.5 py-1.5 rounded text-[10px] font-black uppercase tracking-wider cursor-pointer border transition-all hover:bg-black/5"
                             style={{ borderColor: colors.accent + "30", color: colors.text }}
-                            title="Preview live stream"
+                            title="Open Live Video Preview"
                           >
-                            <Radio size={11} /> Preview
-                          </a>
+                            <Radio size={11} className={cls.status === "LIVE" ? "text-red-500 animate-pulse" : ""} /> Preview
+                          </button>
                         )}
 
                         {/* Watch Recording */}
@@ -361,6 +361,21 @@ function LiveClasses() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Live Stream Embedded Preview Modal */}
+      {previewClass && (
+        <LiveStreamPreviewModal
+          classData={previewClass}
+          isOpen={!!previewClass}
+          onClose={() => setPreviewClass(null)}
+          onStatusChange={(id, newStatus) => {
+            setClasses((prev) =>
+              prev.map((c) => (c._id === id ? { ...c, status: newStatus } : c))
+            );
+            fetchAll();
+          }}
+        />
       )}
     </div>
   );
