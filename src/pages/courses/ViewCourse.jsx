@@ -34,6 +34,7 @@ import {
   Square,
   Copy,
   Check,
+  EyeOff,
 } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
 import {
@@ -54,7 +55,7 @@ import Swal from "sweetalert2";
 import Toggle from "../../components/ui/Toggle";
 import Loader from "../../components/Loader";
 import CertificatePreviewCanvas from "../../components/CertificatePreviewCanvas";
-import liveSessionApi from "../../apis/liveSession";
+import liveClassApi from "../../apis/liveClass";
 import CreateLiveClass from "../live/CreateLiveClass";
 import { getMediaUrl } from "../../utils/mediaUrl";
 
@@ -173,8 +174,12 @@ function ViewCourse() {
   const fetchLiveSessions = async () => {
     try {
       setLiveLoading(true);
-      const res = await liveSessionApi.getByCourse(id);
-      const sessions = Array.isArray(res.data) ? res.data : (Array.isArray(res) ? res : []);
+      const res = await liveClassApi.getAll();
+      const all = res?.data?.data || [];
+      // Filter by this course
+      const sessions = all.filter(
+        (s) => (s.courseId?._id || s.courseId) === id
+      );
       setLiveSessions(sessions);
     } catch {
       // silent
@@ -184,74 +189,97 @@ function ViewCourse() {
   };
 
   const handleGoLive = async (session) => {
+    // In the new system, SRS triggers LIVE_HIDDEN automatically.
+    // Admin uses "Show on App" to make it visible.
+    // Here we replicate that: show OBS credentials from the existing session.
+    const rtmpServer = `rtmp://live.codersadda.com/live`;
+    const obsKey = session.streamName ? `${session.streamName}?secret=${session.streamName}` : "—";
+    Swal.fire({
+      title: "🎥 OBS Stream Credentials",
+      html: `<div style="text-align:left;font-size:13px;">
+        <p style="margin-bottom:6px;font-weight:600;">① OBS खोलो → Settings → Stream</p>
+        <p style="margin-bottom:6px;color:#6b7280;">Service: <b>Custom</b> select karo</p>
+        <hr style="margin:10px 0;border-color:#e5e7eb;"/>
+        <p style="margin-bottom:6px;"><b>② RTMP Server:</b></p>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <code style="background:#f3f4f6;padding:6px 10px;border-radius:4px;flex:1;word-break:break-all;font-size:11px;">${rtmpServer}</code>
+          <button onclick="navigator.clipboard.writeText('${rtmpServer}');this.innerText='✅';setTimeout(()=>this.innerText='📋 Copy',1500)" style="background:#3B82F6;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;white-space:nowrap;">📋 Copy</button>
+        </div>
+        <p style="margin-bottom:6px;"><b>③ Stream Key:</b></p>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <code style="background:#f3f4f6;padding:6px 10px;border-radius:4px;flex:1;word-break:break-all;font-size:11px;">${session.streamName || '—'}</code>
+          <button onclick="navigator.clipboard.writeText('${session.streamName || ''}');this.innerText='✅';setTimeout(()=>this.innerText='📋 Copy',1500)" style="background:#3B82F6;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;white-space:nowrap;">📋 Copy</button>
+        </div>
+        <hr style="margin:10px 0;border-color:#e5e7eb;"/>
+        <p style="color:#6b7280;font-size:12px;">④ Apply → OK → OBS mein <b>Start Streaming</b> dabao 🚀<br/>Stream start hone ke baad Admin Panel → Live Classes → <b>Show on App</b> click karo</p>
+      </div>`,
+      confirmButtonText: "Got it!",
+      confirmButtonColor: "#EF4444",
+      width: 540,
+    });
+  };
+
+  const handleShowOnApp = async (session) => {
     const result = await Swal.fire({
-      title: "Go Live?",
-      html: `<p>This will mark <b>${session.title}</b> as LIVE. Students will see the Join button.</p>`,
+      title: "Show on App?",
+      html: `<p>Students will see <b>${session.title}</b> as 🔴 LIVE and can join.</p>`,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#EF4444",
-      confirmButtonText: "Yes, Go Live!",
+      confirmButtonText: "Yes, Show on App!",
     });
     if (!result.isConfirmed) return;
     try {
       setLiveActionLoading(session._id);
-      await liveSessionApi.goLive(session._id);
-      setLiveSessions((prev) => prev.map((s) => s._id === session._id ? { ...s, status: "live" } : s));
-      toast.success("Session is now LIVE!");
-      Swal.fire({
-        title: "🎥 OBS Stream Credentials",
-        html: `<div style="text-align:left;font-size:13px;">
-          <p style="margin-bottom:6px;font-weight:600;">① OBS खोलो → Settings → Stream</p>
-          <p style="margin-bottom:6px;color:#6b7280;">Service: <b>Custom</b> select karo</p>
-          <hr style="margin:10px 0;border-color:#e5e7eb;"/>
-          <p style="margin-bottom:6px;"><b>② Server (Ingest Endpoint):</b></p>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-            <code id="swal-ingest" style="background:#f3f4f6;padding:6px 10px;border-radius:4px;flex:1;word-break:break-all;font-size:11px;">${session.ingestEndpoint}</code>
-            <button onclick="navigator.clipboard.writeText('${session.ingestEndpoint}');this.innerText='✅';setTimeout(()=>this.innerText='📋 Copy',1500)" style="background:#3B82F6;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;white-space:nowrap;">📋 Copy</button>
-          </div>
-          <p style="margin-bottom:6px;"><b>③ Stream Key:</b></p>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-            <code id="swal-key" style="background:#f3f4f6;padding:6px 10px;border-radius:4px;flex:1;word-break:break-all;font-size:11px;">${session.streamKey}</code>
-            <button onclick="navigator.clipboard.writeText('${session.streamKey}');this.innerText='✅';setTimeout(()=>this.innerText='📋 Copy',1500)" style="background:#3B82F6;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;white-space:nowrap;">📋 Copy</button>
-          </div>
-          <hr style="margin:10px 0;border-color:#e5e7eb;"/>
-          <p style="color:#6b7280;font-size:12px;">④ Apply → OK → OBS mein <b>Start Streaming</b> dabao 🚀</p>
-        </div>`,
-        confirmButtonText: "Got it, Start Streaming!",
-        confirmButtonColor: "#EF4444",
-        width: 520,
-      });
-    } catch {
-      toast.error("Failed to go live");
+      await liveClassApi.showOnApp(session._id);
+      setLiveSessions((prev) => prev.map((s) => s._id === session._id ? { ...s, status: "LIVE" } : s));
+      toast.success("Class is now LIVE for students!");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to show on app");
     } finally {
       setLiveActionLoading(null);
     }
   };
 
-  const handleEndLive = async (session) => {
-    const { value: recordingUrl, isDismissed, dismiss } = await Swal.fire({
-      title: "🛑 End Live Session",
-      input: "url",
-      inputLabel: "Recording URL (optional — paste if available)",
-      inputPlaceholder: "https://s3.amazonaws.com/...",
+  const handleHideFromApp = async (session) => {
+    const result = await Swal.fire({
+      title: "Hide from App?",
+      html: `<p>Students will not see <b>${session.title}</b> until you show again.</p>`,
+      icon: "warning",
       showCancelButton: true,
-      showDenyButton: true,
-      confirmButtonText: "Save & End",
-      denyButtonText: "Skip & End",
-      cancelButtonText: "Cancel",
-      confirmButtonColor: "#6B7280",
-      denyButtonColor: "#EF4444",
-      html: `<div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Recording URL baad mein bhi add kar sakte ho. Abhi nahi hai toh <b>Skip & End</b> dabao.</div>`,
+      confirmButtonColor: "#F97316",
+      confirmButtonText: "Hide",
     });
-    if (isDismissed && dismiss === Swal.DismissReason.cancel) return;
-    const finalUrl = dismiss === "deny" ? "" : (recordingUrl || "");
+    if (!result.isConfirmed) return;
     try {
       setLiveActionLoading(session._id);
-      await liveSessionApi.endLive(session._id, finalUrl);
-      setLiveSessions((prev) => prev.map((s) => s._id === session._id ? { ...s, status: "ended", recordingUrl: finalUrl } : s));
-      toast.success("Session ended.");
-    } catch {
-      toast.error("Failed to end session");
+      await liveClassApi.hideFromApp(session._id);
+      setLiveSessions((prev) => prev.map((s) => s._id === session._id ? { ...s, status: "LIVE_HIDDEN" } : s));
+      toast.success("Class hidden from students");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to hide");
+    } finally {
+      setLiveActionLoading(null);
+    }
+  };
+
+  const handleCancelLiveSession = async (session) => {
+    const result = await Swal.fire({
+      title: "Cancel Class?",
+      text: "This cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#EF4444",
+      confirmButtonText: "Cancel Class",
+    });
+    if (!result.isConfirmed) return;
+    try {
+      setLiveActionLoading(session._id);
+      await liveClassApi.cancel(session._id);
+      setLiveSessions((prev) => prev.map((s) => s._id === session._id ? { ...s, status: "CANCELLED" } : s));
+      toast.success("Class cancelled");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to cancel");
     } finally {
       setLiveActionLoading(null);
     }
@@ -269,7 +297,7 @@ function ViewCourse() {
       if (!result.isConfirmed) return;
       try {
         setLiveActionLoading(sessionId);
-        await liveSessionApi.delete(sessionId);
+        await liveClassApi.delete(sessionId);
         setLiveSessions((prev) => prev.filter((s) => s._id !== sessionId));
         toast.success("Deleted");
       } catch {
@@ -304,11 +332,15 @@ function ViewCourse() {
 
   const liveStatusBadge = (status) => {
     const map = {
-      scheduled: { bg: "bg-blue-100", text: "text-blue-700", label: "Scheduled" },
-      live: { bg: "bg-red-100", text: "text-red-700", label: "🔴 LIVE" },
-      ended: { bg: "bg-gray-100", text: "text-gray-600", label: "Ended" },
+      SCHEDULED:   { bg: "bg-blue-100",   text: "text-blue-700",  label: "Scheduled" },
+      LIVE_HIDDEN: { bg: "bg-orange-100",  text: "text-orange-700",label: "Live (Hidden)" },
+      LIVE:        { bg: "bg-red-100",     text: "text-red-700",   label: "🔴 LIVE" },
+      ENDED:       { bg: "bg-gray-100",    text: "text-gray-600",  label: "Ended" },
+      PROCESSING:  { bg: "bg-yellow-100",  text: "text-yellow-700",label: "Processing…" },
+      RECORDED:    { bg: "bg-green-100",   text: "text-green-700", label: "✅ Recorded" },
+      CANCELLED:   { bg: "bg-pink-100",    text: "text-pink-700",  label: "Cancelled" },
     };
-    const s = map[status] || map.scheduled;
+    const s = map[status] || map.SCHEDULED;
     return <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${s.bg} ${s.text}`}>{s.label}</span>;
   };
 
@@ -1590,69 +1622,118 @@ function ViewCourse() {
                               {formatLiveDate(session.scheduledAt)}
                             </td>
                             <td className="px-4 py-3 text-xs font-semibold opacity-70" style={{ color: colors.text }}>
-                              {session.durationMinutes} min
+                              {session.expectedDurationMinutes || session.durationMinutes || 60} min
                             </td>
                             <td className="px-4 py-3">{liveStatusBadge(session.status)}</td>
                             <td className="px-4 py-3">
-                              <div className="flex items-center gap-2">
-                                {session.status === "scheduled" && (
-                                  <button
-                                    onClick={() => handleGoLive(session)}
-                                    disabled={liveActionLoading === session._id}
-                                    className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-                                    style={{ backgroundColor: "#EF4444", color: "#fff" }}
-                                  >
-                                    {liveActionLoading === session._id ? <Loader size={12} variant="button" /> : <><Radio size={11} /> Go Live</>}
-                                  </button>
-                                )}
-                                {session.status === "live" && (
-                                  <button
-                                    onClick={() => handleEndLive(session)}
-                                    disabled={liveActionLoading === session._id}
-                                    className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-                                    style={{ backgroundColor: "#6B7280", color: "#fff" }}
-                                  >
-                                    {liveActionLoading === session._id ? <Loader size={12} variant="button" /> : <><Square size={11} /> End Live</>}
-                                  </button>
-                                )}
-                                {(session.status === "scheduled" || session.status === "live") && (
-                                  <div className="flex items-center gap-1">
-                                    <div className="relative group">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {liveActionLoading === session._id ? (
+                                  <Loader size={18} variant="button" />
+                                ) : (
+                                  <>
+                                    {/* OBS Setup Modal */}
+                                    {session.status === "SCHEDULED" && (
                                       <button
-                                        onClick={() => copyToClipboard(session.ingestEndpoint, session._id + "_ingest")}
-                                        className="flex items-center gap-1 p-1.5 rounded border text-xs transition-all hover:bg-blue-50 cursor-pointer"
-                                        style={{ borderColor: "#3B82F630", color: "#3B82F6" }}
+                                        onClick={() => handleGoLive(session)}
+                                        className="flex items-center gap-1 px-2.5 py-1.5 rounded text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 cursor-pointer"
+                                        style={{ backgroundColor: "#3B82F6", color: "#fff" }}
+                                        title="View OBS Stream Info"
                                       >
-                                        {copiedId === session._id + "_ingest" ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
-                                        <span className="text-xs">Server</span>
+                                        <Radio size={11} /> Stream Setup
                                       </button>
-                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                                        Copy Ingest Endpoint
-                                      </div>
-                                    </div>
-                                    <div className="relative group">
+                                    )}
+
+                                    {/* Show on App — when LIVE_HIDDEN */}
+                                    {session.status === "LIVE_HIDDEN" && (
                                       <button
-                                        onClick={() => copyToClipboard(session.streamKey, session._id + "_key")}
-                                        className="flex items-center gap-1 p-1.5 rounded border text-xs transition-all hover:bg-purple-50 cursor-pointer"
-                                        style={{ borderColor: "#8B5CF630", color: "#8B5CF6" }}
+                                        onClick={() => handleShowOnApp(session)}
+                                        className="flex items-center gap-1 px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-wider cursor-pointer transition-all active:scale-95"
+                                        style={{ backgroundColor: "#EF4444", color: "#fff" }}
+                                        title="Show to students"
                                       >
-                                        {copiedId === session._id + "_key" ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
-                                        <span className="text-xs">Key</span>
+                                        <Eye size={11} /> Show on App
                                       </button>
-                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                                        Copy Stream Key
+                                    )}
+
+                                    {/* Hide from App — when LIVE */}
+                                    {session.status === "LIVE" && (
+                                      <button
+                                        onClick={() => handleHideFromApp(session)}
+                                        className="flex items-center gap-1 px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-wider cursor-pointer transition-all active:scale-95"
+                                        style={{ backgroundColor: "#F97316", color: "#fff" }}
+                                        title="Hide from students"
+                                      >
+                                        <EyeOff size={11} /> Hide
+                                      </button>
+                                    )}
+
+                                    {/* Preview Live (HLS link) */}
+                                    {["LIVE_HIDDEN", "LIVE"].includes(session.status) && session.streamName && (
+                                      <a
+                                        href={`https://live.codersadda.com/live/${session.streamName}.m3u8`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1 px-2.5 py-1.5 rounded text-[10px] font-black uppercase tracking-wider cursor-pointer border transition-all hover:bg-black/5"
+                                        style={{ borderColor: colors.accent + "30", color: colors.text }}
+                                        title="Preview live stream"
+                                      >
+                                        <Radio size={11} /> Preview
+                                      </a>
+                                    )}
+
+                                    {/* Watch Recording */}
+                                    {session.status === "RECORDED" && session.recordingUrl && (
+                                      <a
+                                        href={session.recordingUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1 px-2.5 py-1.5 rounded text-[10px] font-black uppercase tracking-wider cursor-pointer border transition-all hover:bg-black/5"
+                                        style={{ borderColor: "#22C55E30", color: "#16A34A" }}
+                                      >
+                                        ▶ Recording
+                                      </a>
+                                    )}
+
+                                    {/* Stream Key copy */}
+                                    {session.streamName && (
+                                      <div className="relative group">
+                                        <button
+                                          onClick={() => copyToClipboard(session.streamName, session._id + "_key")}
+                                          className="flex items-center gap-1 p-1.5 rounded border text-xs transition-all hover:bg-purple-50 cursor-pointer"
+                                          style={{ borderColor: "#8B5CF630", color: "#8B5CF6" }}
+                                          title="Copy Stream Key"
+                                        >
+                                          {copiedId === session._id + "_key" ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
+                                          <span className="text-[10px] font-bold">Key</span>
+                                        </button>
                                       </div>
-                                    </div>
-                                  </div>
+                                    )}
+
+                                    {/* Cancel — only SCHEDULED */}
+                                    {session.status === "SCHEDULED" && (
+                                      <button
+                                        onClick={() => handleCancelLiveSession(session)}
+                                        className="p-1.5 rounded border text-[10px] cursor-pointer hover:bg-orange-50 transition-all"
+                                        style={{ borderColor: "#F9731630", color: "#F97316" }}
+                                        title="Cancel class"
+                                      >
+                                        <X size={13} />
+                                      </button>
+                                    )}
+
+                                    {/* Delete */}
+                                    {["SCHEDULED", "CANCELLED", "RECORDED", "ENDED"].includes(session.status) && (
+                                      <button
+                                        onClick={() => handleDeleteLiveSession(session._id)}
+                                        className="p-1.5 rounded border text-xs transition-all hover:bg-red-50 cursor-pointer"
+                                        style={{ borderColor: "#EF444430", color: "#EF4444" }}
+                                        title="Delete class"
+                                      >
+                                        <Trash2 size={13} />
+                                      </button>
+                                    )}
+                                  </>
                                 )}
-                                <button
-                                  onClick={() => handleDeleteLiveSession(session._id)}
-                                  disabled={liveActionLoading === session._id}
-                                  className="p-1.5 rounded border text-xs transition-all hover:bg-red-50 cursor-pointer disabled:opacity-50"
-                                  style={{ borderColor: "#EF444430", color: "#EF4444" }}
-                                >
-                                  <Trash2 size={13} />
-                                </button>
                               </div>
                             </td>
                           </tr>

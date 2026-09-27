@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import http from "../../apis/http";
 import { toast } from "react-toastify";
+import { getMediaUrl } from "../../utils/mediaUrl";
 
 const InstructorLiveClasses = () => {
   const { colors } = useTheme();
@@ -183,8 +184,18 @@ const InstructorLiveClasses = () => {
               }}
             >
               <div className="space-y-3">
+                {item.thumbnailUrl && (
+                  <div className="relative rounded-xl overflow-hidden aspect-video bg-black/5 border" style={{ borderColor: colors.accent + "20" }}>
+                    <img
+                      src={getMediaUrl(item.thumbnailUrl)}
+                      alt={item.title}
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
                 <div className="flex justify-between items-start gap-2">
-                  <span className="text-xs px-2.5 py-0.5 rounded-md bg-blue-500/10 text-blue-500 font-medium">
+                  <span className="text-xs px-2.5 py-0.5 rounded-md bg-blue-500/10 text-blue-500 font-medium truncate max-w-[160px]">
                     {item.courseId?.title || "Course"}
                   </span>
                   {getStatusBadge(item.status)}
@@ -197,6 +208,12 @@ const InstructorLiveClasses = () => {
                   {item.title}
                 </h3>
 
+                {item.topic && (
+                  <p className="text-xs font-semibold text-blue-500 line-clamp-1">
+                    Topic: {item.topic}
+                  </p>
+                )}
+
                 {item.description && (
                   <p className="text-xs text-gray-500 line-clamp-2">
                     {item.description}
@@ -207,26 +224,26 @@ const InstructorLiveClasses = () => {
                   <div className="flex items-center gap-2">
                     <Calendar size={14} className="text-gray-400" />
                     <span>
-                      {new Date(item.scheduledStartTime).toLocaleDateString("en-IN", {
-                        weekday: "short",
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
+                      {item.scheduledAt || item.scheduledStartTime
+                        ? new Date(item.scheduledAt || item.scheduledStartTime).toLocaleDateString("en-IN", {
+                            weekday: "short",
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })
+                        : "—"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock size={14} className="text-gray-400" />
                     <span>
-                      {new Date(item.scheduledStartTime).toLocaleTimeString("en-IN", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                      {item.scheduledEndTime &&
-                        ` - ${new Date(item.scheduledEndTime).toLocaleTimeString("en-IN", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}`}
+                      {item.scheduledAt || item.scheduledStartTime
+                        ? new Date(item.scheduledAt || item.scheduledStartTime).toLocaleTimeString("en-IN", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "—"}
+                      {item.expectedDurationMinutes && ` (${item.expectedDurationMinutes} min)`}
                     </span>
                   </div>
                 </div>
