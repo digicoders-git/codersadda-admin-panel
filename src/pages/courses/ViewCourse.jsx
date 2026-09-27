@@ -56,6 +56,7 @@ import Loader from "../../components/Loader";
 import CertificatePreviewCanvas from "../../components/CertificatePreviewCanvas";
 import liveSessionApi from "../../apis/liveSession";
 import CreateLiveClass from "../live/CreateLiveClass";
+import { getMediaUrl } from "../../utils/mediaUrl";
 
 function ViewCourse() {
   const { colors } = useTheme();
@@ -1563,9 +1564,12 @@ function ViewCourse() {
                               <div className="flex items-center gap-3">
                                 {session.thumbnailUrl ? (
                                   <img
-                                    src={session.thumbnailUrl}
+                                    src={getMediaUrl(session.thumbnailUrl)}
                                     alt={session.title}
-                                    className="w-12 h-8 rounded object-cover border shrink-0"
+                                    onError={(e) => {
+                                      e.target.style.display = 'none';
+                                    }}
+                                    className="w-12 h-8 rounded object-cover border shrink-0 bg-black/5"
                                     style={{ borderColor: colors.accent + "30" }}
                                   />
                                 ) : (

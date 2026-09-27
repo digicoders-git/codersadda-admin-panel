@@ -6,6 +6,7 @@ import liveClassApi from "../../apis/liveClass";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import Loader from "../../components/Loader";
+import { getMediaUrl } from "../../utils/mediaUrl";
 
 // ── Status config ──────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -210,9 +211,12 @@ function LiveClasses() {
                       <div className="flex items-center gap-3">
                         {cls.thumbnailUrl ? (
                           <img
-                            src={cls.thumbnailUrl}
+                            src={getMediaUrl(cls.thumbnailUrl)}
                             alt={cls.title}
-                            className="w-12 h-8 rounded object-cover border shrink-0"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                            className="w-12 h-8 rounded object-cover border shrink-0 bg-black/5"
                             style={{ borderColor: colors.accent + "30" }}
                           />
                         ) : (
