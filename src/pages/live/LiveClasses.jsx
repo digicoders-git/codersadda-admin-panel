@@ -209,12 +209,13 @@ function LiveClasses() {
                     {/* Title & Thumbnail */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        {cls.thumbnailUrl ? (
+                        {getMediaUrl(cls.thumbnailUrl || cls.courseId?.thumbnail) ? (
                           <img
-                            src={getMediaUrl(cls.thumbnailUrl)}
+                            src={getMediaUrl(cls.thumbnailUrl || cls.courseId?.thumbnail)}
                             alt={cls.title}
                             onError={(e) => {
-                              e.target.style.display = 'none';
+                              e.target.onerror = null;
+                              e.target.src = "https://placehold.co/100x60?text=Live";
                             }}
                             className="w-12 h-8 rounded object-cover border shrink-0 bg-black/5"
                             style={{ borderColor: colors.accent + "30" }}

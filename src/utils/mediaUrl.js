@@ -2,17 +2,34 @@
  * Resolves media URLs (images, videos, thumbnails) to full accessible URLs.
  */
 export const getMediaUrl = (url) => {
-  if (!url || typeof url !== "string") return "";
+  if (!url) return "";
+  if (typeof url === "object") {
+    url = url.url || url.localUrl || "";
+  }
+  if (typeof url !== "string") return "";
 
-  const trimmed = url.trim();
+  let trimmed = url.trim();
   if (!trimmed) return "";
+
+  // Fix old or dev hostnames
+  if (
+    trimmed.includes("localhost") ||
+    trimmed.includes("127.0.0.1") ||
+    trimmed.includes("onrender.com")
+  ) {
+    trimmed = trimmed.replace(
+      /https?:\/\/[^\/]+/,
+      "https://api.codersadda.com"
+    );
+  }
+
+  // Ensure HTTPS for api.codersadda.com
+  if (trimmed.startsWith("http://api.codersadda.com")) {
+    trimmed = trimmed.replace("http://", "https://");
+  }
 
   // Already a full external URL
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-    // Fix any localhost:3900 URLs saved during local dev
-    if (trimmed.includes("localhost:3900") || trimmed.includes("127.0.0.1:3900")) {
-      return trimmed.replace(/http:\/\/(localhost|127\.0\.0\.1):3900/, "https://api.codersadda.com");
-    }
     return trimmed;
   }
 

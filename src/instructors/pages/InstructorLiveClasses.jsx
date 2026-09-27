@@ -184,12 +184,15 @@ const InstructorLiveClasses = () => {
               }}
             >
               <div className="space-y-3">
-                {item.thumbnailUrl && (
+                {getMediaUrl(item.thumbnailUrl || item.courseId?.thumbnail) && (
                   <div className="relative rounded-xl overflow-hidden aspect-video bg-black/5 border" style={{ borderColor: colors.accent + "20" }}>
                     <img
-                      src={getMediaUrl(item.thumbnailUrl)}
+                      src={getMediaUrl(item.thumbnailUrl || item.courseId?.thumbnail)}
                       alt={item.title}
-                      onError={(e) => { e.target.style.display = 'none'; }}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "https://placehold.co/300x180?text=Live+Class";
+                      }}
                       className="w-full h-full object-cover"
                     />
                   </div>

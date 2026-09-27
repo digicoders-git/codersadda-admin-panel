@@ -1594,12 +1594,13 @@ function ViewCourse() {
                           >
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-3">
-                                {session.thumbnailUrl ? (
+                                {getMediaUrl(session.thumbnailUrl || course?.thumbnail) ? (
                                   <img
-                                    src={getMediaUrl(session.thumbnailUrl)}
+                                    src={getMediaUrl(session.thumbnailUrl || course?.thumbnail)}
                                     alt={session.title}
                                     onError={(e) => {
-                                      e.target.style.display = 'none';
+                                      e.target.onerror = null;
+                                      e.target.src = "https://placehold.co/100x60?text=Live";
                                     }}
                                     className="w-12 h-8 rounded object-cover border shrink-0 bg-black/5"
                                     style={{ borderColor: colors.accent + "30" }}
