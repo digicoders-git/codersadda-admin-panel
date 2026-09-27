@@ -34,6 +34,7 @@ const LiveStreamPreviewModal = ({
   const [actionLoading, setActionLoading] = useState(false);
   const [copiedField, setCopiedField] = useState(null);
   const [isMuted, setIsMuted] = useState(true); // default muted for autoplay compliance
+  const [retryKey, setRetryKey] = useState(0);
 
   const streamName = classData?.streamName || "";
   const hlsUrl = streamName ? `https://live.codersadda.com/live/${streamName}.m3u8` : "";
@@ -47,18 +48,21 @@ const LiveStreamPreviewModal = ({
 
   // Setup HLS video playback
   useEffect(() => {
-    if (!isOpen || !hlsUrl || !videoRef.current) return;
+    if (!isOpen || !hlsUrl) return;
 
     let hlsInstance = null;
-    let checkTimer = null;
+    let pollInterval = null;
+    let isCancelled = false;
 
-    const initPlayer = () => {
+    const attachHls = () => {
       const video = videoRef.current;
-      if (!video) return;
+      if (!video || isCancelled) return;
 
       if (Hls.isSupported()) {
         if (hlsRef.current) {
-          hlsRef.current.destroy();
+          try {
+            hlsRef.current.destroy();
+          } catch (e) {}
         }
 
         hlsInstance = new Hls({
@@ -66,9 +70,12 @@ const LiveStreamPreviewModal = ({
           lowLatencyMode: true,
           liveSyncDurationCount: 3,
           liveMaxLatencyDurationCount: 6,
-          manifestLoadingTimeOut: 5000,
-          manifestLoadingMaxRetry: 10,
+          manifestLoadingTimeOut: 6000,
+          manifestLoadingMaxRetry: Infinity,
           manifestLoadingRetryDelay: 2000,
+          levelLoadingTimeOut: 6000,
+          levelLoadingMaxRetry: Infinity,
+          levelLoadingRetryDelay: 2000,
         });
 
         hlsRef.current = hlsInstance;
@@ -76,32 +83,42 @@ const LiveStreamPreviewModal = ({
         hlsInstance.attachMedia(video);
 
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+          if (isCancelled) return;
           setStreamStatus("online");
-          video.play().catch(() => {
-            // Autoplay with sound might be blocked, muted will work
-            video.muted = true;
-            setIsMuted(true);
-            video.play().catch(() => {});
-          });
+          video.muted = true;
+          setIsMuted(true);
+          video.play().catch(() => {});
         });
 
         hlsInstance.on(Hls.Events.ERROR, (event, data) => {
+          if (isCancelled) return;
           if (data.fatal) {
+            setStreamStatus("offline");
             switch (data.type) {
               case Hls.ErrorTypes.NETWORK_ERROR:
-                setStreamStatus("offline");
-                // Retry in 3 seconds
-                checkTimer = setTimeout(() => {
-                  if (hlsRef.current) {
-                    hlsRef.current.loadSource(hlsUrl);
+                console.log("[HLS] Network error, restarting load in 2s...");
+                setTimeout(() => {
+                  if (!isCancelled && hlsRef.current) {
+                    try {
+                      hlsRef.current.startLoad();
+                    } catch (e) {
+                      attachHls();
+                    }
                   }
-                }, 3000);
+                }, 2000);
                 break;
               case Hls.ErrorTypes.MEDIA_ERROR:
+                console.log("[HLS] Media error, attempting recovery...");
                 hlsInstance.recoverMediaError();
                 break;
               default:
-                hlsInstance.destroy();
+                console.log("[HLS] Unrecoverable error, reinitializing in 3s...");
+                try {
+                  hlsInstance.destroy();
+                } catch (e) {}
+                setTimeout(() => {
+                  if (!isCancelled) attachHls();
+                }, 3000);
                 break;
             }
           }
@@ -109,30 +126,48 @@ const LiveStreamPreviewModal = ({
       } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
         // Native Safari HLS
         video.src = hlsUrl;
+        video.muted = true;
+        setIsMuted(true);
         video.addEventListener("loadedmetadata", () => {
+          if (isCancelled) return;
           setStreamStatus("online");
-          video.play().catch(() => {
-            video.muted = true;
-            setIsMuted(true);
-            video.play().catch(() => {});
-          });
+          video.play().catch(() => {});
         });
         video.addEventListener("error", () => {
+          if (isCancelled) return;
           setStreamStatus("offline");
         });
       }
     };
 
-    initPlayer();
+    // Initial check and start
+    attachHls();
+
+    // Fallback periodic poll if stream stays offline
+    pollInterval = setInterval(() => {
+      if (streamStatus !== "online" && !isCancelled) {
+        // Test if manifest is available via quick fetch
+        fetch(hlsUrl, { method: "HEAD", cache: "no-cache" })
+          .then((res) => {
+            if (res.ok && streamStatus !== "online" && !isCancelled) {
+              attachHls();
+            }
+          })
+          .catch(() => {});
+      }
+    }, 4000);
 
     return () => {
-      if (checkTimer) clearTimeout(checkTimer);
+      isCancelled = true;
+      if (pollInterval) clearInterval(pollInterval);
       if (hlsRef.current) {
-        hlsRef.current.destroy();
+        try {
+          hlsRef.current.destroy();
+        } catch (e) {}
         hlsRef.current = null;
       }
     };
-  }, [isOpen, hlsUrl]);
+  }, [isOpen, hlsUrl, retryKey]);
 
   if (!isOpen || !classData) return null;
 
@@ -253,9 +288,21 @@ const LiveStreamPreviewModal = ({
                   OBS Studio me <b>Start Streaming</b> dabayein. Stream start hone ke baad player automatically live video dikhayega.
                 </p>
               </div>
-              <div className="flex items-center gap-2 text-xs text-gray-500 pt-2">
-                <RefreshCw size={12} className="animate-spin text-blue-400" />
-                <span>Auto-detecting stream signals...</span>
+              <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <RefreshCw size={12} className="animate-spin text-blue-400" />
+                  <span>Auto-detecting stream signals...</span>
+                </div>
+                <button
+                  onClick={() => {
+                    setStreamStatus("checking");
+                    setRetryKey((k) => k + 1);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 text-blue-300 text-xs font-medium transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <RefreshCw size={12} />
+                  <span>Check Stream Now</span>
+                </button>
               </div>
             </div>
           )}
