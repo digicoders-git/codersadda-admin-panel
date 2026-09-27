@@ -55,7 +55,7 @@ import Toggle from "../../components/ui/Toggle";
 import Loader from "../../components/Loader";
 import CertificatePreviewCanvas from "../../components/CertificatePreviewCanvas";
 import liveSessionApi from "../../apis/liveSession";
-import CreateLiveSession from "../live/CreateLiveSession";
+import CreateLiveClass from "../live/CreateLiveClass";
 
 function ViewCourse() {
   const { colors } = useTheme();
@@ -1523,9 +1523,10 @@ function ViewCourse() {
               {/* Create Form */}
               {showCreateLive && (
                 <Card className="mb-6">
-                  <CreateLiveSession
+                  <CreateLiveClass
                     courseId={id}
                     courseName={course?.title}
+                    instructorId={course?.instructor?._id || course?.instructor}
                     onSuccess={() => { setShowCreateLive(false); fetchLiveSessions(); }}
                     onCancel={() => setShowCreateLive(false)}
                   />
@@ -1559,8 +1560,27 @@ function ViewCourse() {
                             style={{ backgroundColor: i % 2 === 0 ? colors.background : colors.accent + "05", borderTop: `1px solid ${colors.accent}15` }}
                           >
                             <td className="px-4 py-3">
-                              <p className="font-bold" style={{ color: colors.text }}>{session.title}</p>
-                              <p className="text-xs opacity-50" style={{ color: colors.text }}>{session.topic}</p>
+                              <div className="flex items-center gap-3">
+                                {session.thumbnailUrl ? (
+                                  <img
+                                    src={session.thumbnailUrl}
+                                    alt={session.title}
+                                    className="w-12 h-8 rounded object-cover border shrink-0"
+                                    style={{ borderColor: colors.accent + "30" }}
+                                  />
+                                ) : (
+                                  <div
+                                    className="w-12 h-8 rounded flex items-center justify-center border shrink-0 bg-black/5"
+                                    style={{ borderColor: colors.accent + "20" }}
+                                  >
+                                    <Radio size={14} className="opacity-30" />
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="font-bold" style={{ color: colors.text }}>{session.title}</p>
+                                  <p className="text-xs opacity-50" style={{ color: colors.text }}>{session.topic || session.description}</p>
+                                </div>
+                              </div>
                             </td>
                             <td className="px-4 py-3 text-xs font-semibold opacity-70" style={{ color: colors.text }}>
                               {formatLiveDate(session.scheduledAt)}

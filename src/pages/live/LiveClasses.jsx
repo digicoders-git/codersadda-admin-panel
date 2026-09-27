@@ -205,12 +205,34 @@ function LiveClasses() {
                       borderTop: `1px solid ${colors.accent}15`,
                     }}
                   >
-                    {/* Title */}
+                    {/* Title & Thumbnail */}
                     <td className="px-4 py-3">
-                      <p className="font-bold" style={{ color: colors.text }}>{cls.title}</p>
-                      {cls.description && (
-                        <p className="text-xs opacity-40 mt-0.5 truncate max-w-[180px]" style={{ color: colors.text }}>{cls.description}</p>
-                      )}
+                      <div className="flex items-center gap-3">
+                        {cls.thumbnailUrl ? (
+                          <img
+                            src={cls.thumbnailUrl}
+                            alt={cls.title}
+                            className="w-12 h-8 rounded object-cover border shrink-0"
+                            style={{ borderColor: colors.accent + "30" }}
+                          />
+                        ) : (
+                          <div
+                            className="w-12 h-8 rounded flex items-center justify-center border shrink-0 bg-black/5"
+                            style={{ borderColor: colors.accent + "20" }}
+                          >
+                            <Radio size={14} className="opacity-30" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-bold truncate max-w-[200px]" style={{ color: colors.text }}>{cls.title}</p>
+                          {cls.topic && (
+                            <p className="text-[11px] font-semibold text-blue-500 truncate max-w-[200px]">{cls.topic}</p>
+                          )}
+                          {cls.description && (
+                            <p className="text-xs opacity-40 mt-0.5 truncate max-w-[200px]" style={{ color: colors.text }}>{cls.description}</p>
+                          )}
+                        </div>
+                      </div>
                     </td>
 
                     {/* Course */}
