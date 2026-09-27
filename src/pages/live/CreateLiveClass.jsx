@@ -52,7 +52,7 @@ function CreateLiveClass() {
         expectedDurationMinutes: Number(form.expectedDurationMinutes),
       });
       toast.success("Live class scheduled! Stream credentials generated.");
-      navigate("/dashboard/live/classes");
+      navigate("/dashboard/live-classes");
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to schedule class");
     } finally {

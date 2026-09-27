@@ -132,7 +132,7 @@ function LiveClasses() {
             <RefreshCw size={16} />
           </button>
           <button
-            onClick={() => navigate("/dashboard/live/create")}
+            onClick={() => navigate("/dashboard/live-classes/create")}
             className="flex items-center gap-2 px-5 py-2.5 rounded font-bold text-xs uppercase tracking-widest shadow transition-all active:scale-95 cursor-pointer"
             style={{ backgroundColor: colors.primary, color: colors.background }}
           >

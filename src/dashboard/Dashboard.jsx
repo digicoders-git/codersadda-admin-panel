@@ -25,6 +25,7 @@ import {
   Ticket,
   LifeBuoy,
   HelpCircle,
+  Radio,
 } from "lucide-react";
 import { Clock } from "./Clock";
 import logo from "../assets/logo.png";
@@ -112,6 +113,14 @@ const Dashboard = () => {
   const navLinks = [
     { name: "Dashboard", icon: BarChart3, path: "/dashboard" },
     { name: "Users", icon: Users, path: "/dashboard/users" },
+    {
+      name: "Live Classes",
+      icon: Radio,
+      submenu: [
+        { name: "All Live Classes", path: "/dashboard/live-classes" },
+        { name: "Schedule Live Class", path: "/dashboard/live-classes/create" },
+      ],
+    },
     {
       name: "Sales",
       icon: TrendingUp,

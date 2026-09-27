@@ -91,6 +91,10 @@ import EditCoupon from "../pages/coupons/EditCoupon";
 import SupportTickets from "../pages/SupportTickets";
 import Faqs from "../pages/faqs/Faqs";
 import Notifications from "../pages/Notifications";
+import LiveClasses from "../pages/live/LiveClasses";
+import CreateLiveClass from "../pages/live/CreateLiveClass";
+import LiveSessions from "../pages/live/LiveSessions";
+import CreateLiveSession from "../pages/live/CreateLiveSession";
 
 const TestsPage = () => <Quizzes type="Test" />;
 const AddTestPage = () => <AddQuiz type="Test" />;
@@ -102,6 +106,11 @@ const ManageTestCertificatesPage = () => <ManageQuizCertificates type="Test" />;
 const GenerateTestCertificatePage = () => <GenerateQuizCertificate type="Test" />;
 
 export const AppRoute = [
+  { path: "live-classes", component: LiveClasses },
+  { path: "live-classes/create", component: CreateLiveClass },
+  { path: "live-classes/edit/:id", component: CreateLiveClass },
+  { path: "live-sessions", component: LiveSessions },
+  { path: "live-sessions/create", component: CreateLiveSession },
   { path: "courses/manage-certificates", component: ManageCertificates },
   { path: "courses/generate-certificate", component: GenerateCertificate },
   { path: "quizzes/manage-certificates", component: ManageQuizCertificates },

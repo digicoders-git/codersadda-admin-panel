@@ -5,9 +5,11 @@ import MyEarning from "../pages/MyEarning";
 import ViewCourseInstructor from "../pages/ViewCourseInstructor";
 import ViewLectureInstructor from "../pages/ViewLectureInstructor";
 import InstructorProfile from "../pages/InstructorProfile";
+import InstructorLiveClasses from "../pages/InstructorLiveClasses";
 
 export const InstructorRoute = [
   { path: "", component: InstructorHome },
+  { path: "live-classes", component: InstructorLiveClasses },
   { path: "my-courses", component: MyCourses },
   { path: "my-courses/view/:id", component: ViewCourseInstructor },
   {
@@ -18,3 +20,4 @@ export const InstructorRoute = [
   { path: "earnings", component: MyEarning },
   { path: "profile", component: InstructorProfile },
 ];
+

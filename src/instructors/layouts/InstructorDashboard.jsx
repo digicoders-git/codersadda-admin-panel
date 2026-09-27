@@ -12,6 +12,7 @@ import {
   LogOut,
   ChevronDown,
   GraduationCap,
+  Radio,
 } from "lucide-react";
 import { Clock } from "../../dashboard/Clock";
 import logo from "../../assets/logo.png";
@@ -34,6 +35,11 @@ const InstructorDashboard = () => {
 
   const navLinks = [
     { name: "Dashboard", icon: BarChart3, path: "/instructor-dashboard" },
+    {
+      name: "Live Classes",
+      icon: Radio,
+      path: "/instructor-dashboard/live-classes",
+    },
     {
       name: "My Courses",
       icon: BookOpen,
