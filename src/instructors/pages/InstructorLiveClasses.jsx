@@ -15,7 +15,7 @@ import {
   ExternalLink,
   Info,
 } from "lucide-react";
-import axiosInstance from "../../utils/axiosInstance";
+import http from "../../apis/http";
 import { toast } from "react-toastify";
 
 const InstructorLiveClasses = () => {
@@ -30,7 +30,7 @@ const InstructorLiveClasses = () => {
   const fetchMyClasses = async () => {
     try {
       setLoading(true);
-      const res = await axiosInstance.get("/live-class/instructor/classes");
+      const res = await http.get("/live-class/instructor/classes");
       if (res.data?.success) {
         setClasses(res.data.data || []);
       }
@@ -51,7 +51,7 @@ const InstructorLiveClasses = () => {
       setObsLoading(true);
       setSelectedObs(null);
       setShowKey(false);
-      const res = await axiosInstance.get(
+      const res = await http.get(
         `/live-class/instructor/classes/${classItem._id}/obs`
       );
       if (res.data?.success) {
